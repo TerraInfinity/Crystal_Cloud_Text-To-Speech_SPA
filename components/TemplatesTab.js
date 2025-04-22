@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
 
 const TemplatesTab = () => {
   const { templates, actions, availableVoices } = useTTS();
   const [templateName, setTemplateName] = useState('');
+  const [templateDescription, setTemplateDescription] = useState(''); // Added description state
   const [sections, setSections] = useState([]);
   const [editingTemplate, setEditingTemplate] = useState(null);
 
@@ -15,6 +15,7 @@ const TemplatesTab = () => {
       const yogaKriyaTemplate = {
         id: 'yogaKriya',
         name: 'Yoga Kriya',
+        description: 'Pre-defined sections for Yoga practice with Tuning In, Warm-Up, Kriya Sequence, Relaxation, Meditation, and Closing sections.', // Added description
         sections: [
           {
             id: `section-tuning-${Date.now()}`,
@@ -98,6 +99,7 @@ const TemplatesTab = () => {
     const template = {
       id: editingTemplate?.id || `template-${Date.now()}`,
       name: templateName,
+      description: templateDescription, // Include description in template
       sections: sections
     };
 
@@ -108,6 +110,7 @@ const TemplatesTab = () => {
 
   const clearForm = () => {
     setTemplateName('');
+    setTemplateDescription(''); // Clear description
     setSections([]);
     setEditingTemplate(null);
   };
@@ -116,6 +119,7 @@ const TemplatesTab = () => {
     if (template.id === 'general') return;
     setEditingTemplate(template);
     setTemplateName(template.name);
+    setTemplateDescription(template.description || ''); //Set description if exists
     setSections(template.sections);
   };
 
@@ -130,7 +134,7 @@ const TemplatesTab = () => {
             Create New
           </button>
         </div>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -142,6 +146,19 @@ const TemplatesTab = () => {
               onChange={(e) => setTemplateName(e.target.value)}
               className="input-field"
               placeholder="Enter template name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Template Description (optional)
+            </label>
+            <textarea
+              value={templateDescription}
+              onChange={(e) => setTemplateDescription(e.target.value)}
+              className="input-field"
+              rows={3}
+              placeholder="Enter template description"
             />
           </div>
 
@@ -247,7 +264,7 @@ const TemplatesTab = () => {
                 key={template.id}
                 className="flex justify-between items-center p-3 border rounded-lg"
               >
-                <span className="font-medium">{template.name}</span>
+                <span className="font-medium">{template.name} - {template.description}</span> {/*Display description*/}
                 <div className="space-x-2">
                   <button
                     onClick={() => editTemplate(template)}
