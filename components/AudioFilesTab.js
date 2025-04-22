@@ -217,17 +217,39 @@ const AudioFilesTab = () => {
                   </div>
                 </div>
 
-                <div className="mt-2">
-                  <label className="block text-sm text-gray-600 mb-1">Volume</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={audio.volume || 1}
-                    onChange={(e) => updateAudioVolume(audio.id, parseFloat(e.target.value))}
-                    className="w-full"
-                  />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Placeholder Text</label>
+                    <input
+                      type="text"
+                      value={audio.placeholder || ''}
+                      onChange={(e) => actions.updateAudio(audio.id, {
+                        ...audio,
+                        placeholder: e.target.value
+                      })}
+                      className="input-field"
+                      placeholder="e.g., beep, laugh"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Used in text as: [sound:{audio.placeholder || audio.name.toLowerCase().replace(/\s+/g, '_')}]
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Volume</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={audio.volume || 1}
+                      onChange={(e) => actions.updateAudio(audio.id, {
+                        ...audio,
+                        volume: parseFloat(e.target.value)
+                      })}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </div>
             ))}

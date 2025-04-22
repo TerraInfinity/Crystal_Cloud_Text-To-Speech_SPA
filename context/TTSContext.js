@@ -305,6 +305,7 @@ export const TTSProvider = ({ children }) => {
       saveAudio: (audioData) => dispatch({ type: 'SAVE_AUDIO', payload: audioData }),
       deleteAudio: (audioId) => dispatch({ type: 'DELETE_AUDIO', payload: audioId }),
       setSelectedAudio: (audioId) => dispatch({ type: 'SET_SELECTED_AUDIO', payload: audioId }),
+      updateAudio: (audioId, audioData) => dispatch({ type: 'SAVE_AUDIO', payload: { ...audioData, id: audioId } }),
       
       // Add audio to a section
       addAudioToSection: (audio) => {
