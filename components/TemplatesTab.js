@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
 
 const TemplatesTab = () => {
@@ -7,6 +7,62 @@ const TemplatesTab = () => {
   const [templateName, setTemplateName] = useState('');
   const [sections, setSections] = useState([]);
   const [editingTemplate, setEditingTemplate] = useState(null);
+
+  // Load initial templates if not present
+  useEffect(() => {
+    if (!templates || Object.keys(templates).length === 0) {
+      // Add Yoga Kriya template as default
+      const yogaKriyaTemplate = {
+        id: 'yogaKriya',
+        name: 'Yoga Kriya',
+        sections: [
+          {
+            id: `section-tuning-${Date.now()}`,
+            title: 'Tuning In (Intro)',
+            type: 'audio-only',
+            text: '',
+            voice: null,
+          },
+          {
+            id: `section-warmup-${Date.now()}`,
+            title: 'Warm-Up',
+            type: 'text-to-audio',
+            text: '',
+            voice: null,
+          },
+          {
+            id: `section-kriya-${Date.now()}`,
+            title: 'Kriya Sequence',
+            type: 'text-to-audio',
+            text: '',
+            voice: null,
+          },
+          {
+            id: `section-relaxation-${Date.now()}`,
+            title: 'Relaxation',
+            type: 'text-to-audio',
+            text: '',
+            voice: null,
+          },
+          {
+            id: `section-meditation-${Date.now()}`,
+            title: 'Meditation',
+            type: 'text-to-audio',
+            text: '',
+            voice: null,
+          },
+          {
+            id: `section-closing-${Date.now()}`,
+            title: 'Closing',
+            type: 'audio-only',
+            text: '',
+            voice: null,
+          }
+        ]
+      };
+      actions.saveTemplate(yogaKriyaTemplate);
+    }
+  }, [templates, actions]);
 
   const addSection = () => {
     setSections([...sections, {
@@ -47,6 +103,7 @@ const TemplatesTab = () => {
 
     actions.saveTemplate(template);
     clearForm();
+    actions.setNotification({ type: 'success', message: 'Template saved successfully!' });
   };
 
   const clearForm = () => {
@@ -56,6 +113,7 @@ const TemplatesTab = () => {
   };
 
   const editTemplate = (template) => {
+    if (template.id === 'general') return;
     setEditingTemplate(template);
     setTemplateName(template.name);
     setSections(template.sections);
@@ -64,9 +122,14 @@ const TemplatesTab = () => {
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h2 className="text-xl font-semibold mb-4">
-          {editingTemplate ? 'Edit Template' : 'Create New Template'}
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">
+            {editingTemplate ? 'Edit Template' : 'Create New Template'}
+          </h2>
+          <button onClick={clearForm} className="btn btn-secondary">
+            Create New
+          </button>
+        </div>
         
         <div className="space-y-4">
           <div>
@@ -179,26 +242,33 @@ const TemplatesTab = () => {
         <h2 className="text-xl font-semibold mb-4">Saved Templates</h2>
         <div className="space-y-3">
           {Object.values(templates || {}).map(template => (
-            <div
-              key={template.id}
-              className="flex justify-between items-center p-3 border rounded-lg"
-            >
-              <span className="font-medium">{template.name}</span>
-              <div className="space-x-2">
-                <button
-                  onClick={() => editTemplate(template)}
-                  className="btn btn-secondary btn-sm"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => actions.deleteTemplate(template.id)}
-                  className="btn btn-danger btn-sm"
-                >
-                  Delete
-                </button>
+            template.id !== 'general' && (
+              <div
+                key={template.id}
+                className="flex justify-between items-center p-3 border rounded-lg"
+              >
+                <span className="font-medium">{template.name}</span>
+                <div className="space-x-2">
+                  <button
+                    onClick={() => editTemplate(template)}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      actions.deleteTemplate(template.id);
+                      if (editingTemplate?.id === template.id) {
+                        clearForm();
+                      }
+                    }}
+                    className="btn btn-danger btn-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
+            )
           ))}
         </div>
       </div>

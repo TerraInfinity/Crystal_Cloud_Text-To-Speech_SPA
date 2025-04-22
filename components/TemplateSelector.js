@@ -111,7 +111,13 @@ const TemplateSelector = () => {
             className="select-field"
           >
             <option value="general">General Template</option>
-            <option value="yogaKriya">Yoga Kriya Template</option>
+            {Object.values(templates || {}).map(template => (
+              template.id !== 'general' && (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              )
+            ))}
           </select>
         </div>
         
