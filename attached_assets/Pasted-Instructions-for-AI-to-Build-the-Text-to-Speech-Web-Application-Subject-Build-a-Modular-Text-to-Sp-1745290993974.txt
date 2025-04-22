@@ -1,0 +1,158 @@
+Instructions for AI to Build the Text-to-Speech Web Application
+Subject: Build a Modular Text-to-Speech Web Application
+Hello AI Builder,
+Please create a single-page Text-to-Speech (TTS) web application using Next.js with React that converts text into downloadable .mp3 audio files. The app should support multiple speech engines, customizable templates, and advanced text processing tools. It must be modular, easy to maintain, and optimized for deployment on serverless platforms like Vercel. Additionally, design it as a standalone SPA that can later be adapted into a reusable component for embedding in other web pages.
+Key Features
+1. Text Input and Import
+Add a large <textarea> for manual text entry.
+
+Enable importing text from:
+URLs (fetch HTML and convert to plain text by stripping tags).
+
+Uploaded .txt files.
+Support large texts (optimized for up to 3000 lines).
+2. Speech Engines and Customization
+Demo Mode: Use the Web Speech API for free, browser-based processing (no character limit).
+
+Production Mode: Integrate ElevenLabs and AWS Polly, configurable with API keys.
+
+Include a dropdown to select the speech engine and voice.
+
+Add an "Advanced" option per text section to set a default voice, overridable with in-text tags (e.g., [voice:Alice]).
+3. Templates and Section Types
+General Template: Single text input with manual section creation.
+
+Yoga Kriya Template: Predefined sections with specific types:
+Tuning In (Intro): Audio-only (default: tuning_in.mp3).
+
+Warm-Up: Text-to-audio.
+
+Kriya Sequence: Text-to-audio.
+
+Relaxation: Text-to-audio.
+
+Meditation: Text-to-audio.
+
+Closing: Audio-only (default: closing.mp3).
+Allow toggling between text-to-audio and audio-only for each section.
+
+Support custom templates that users can create and save locally.
+4. Text Sections Area
+Display sections as expandable cards with:
+Edit, rename, delete, and reorder (drag-and-drop) functionality.
+Include an "Add to Section" button to move content from the main input to a selected section.
+5. Audio Integration
+Use default audio files (tuning_in.mp3, closing.mp3) for Yoga Kriya template’s audio-only sections.
+
+Allow users to upload custom MP3s for audio-only sections.
+
+Convert text-to-audio sections using the selected speech engine.
+
+Merge audio files locally with the Web Audio API or server-side with ffmpeg.
+6. Tools Tab
+HTML/URL Parsing: Input a URL or HTML, strip tags, and extract plain text.
+
+AI Transformation:
+Predefined prompts (e.g., "Extract Yoga Kriya sections from text").
+
+Custom prompts for user-defined AI processing.
+
+Support AI providers (e.g., Anthropic, ChatGPT) with API key input.
+7. Settings Tab
+Manage API keys for speech engines (ElevenLabs, AWS Polly) and AI providers.
+
+Configure storage options (e.g., AWS S3, local system).
+
+Select speech engine and toggle between local (Demo) and cloud (Production) modes.
+8. Demo Mode
+Use Web Speech API with no character limit.
+
+Preload the Yoga Kriya template with sample content (e.g., from a demo_kundalini_kriya.json file).
+Technical Requirements
+Framework: Next.js with React.
+
+Deployment: Optimize for Vercel (serverless).
+
+State Management: Use React Context API for global state.
+
+APIs:
+Speech: Web Speech API (local), ElevenLabs, AWS Polly (cloud).
+
+AI: Anthropic, ChatGPT (configurable via API keys).
+
+Storage: AWS S3 or local filesystem.
+UI: Use Tailwind CSS for a responsive, modern design.
+
+Modularity:
+Separate frontend and backend logic.
+
+Organize code into directories: /components, /pages, /api, /utils, /services.
+Error Handling:
+Handle API key failures with fallbacks.
+
+Support resumable processing for large texts.
+
+Show user-friendly notifications for errors.
+Implementation Steps
+Setup and UI:
+Create a Next.js project with a single page (/pages/index.js).
+
+Build the main layout with:
+Text input area.
+
+Template selection dropdown.
+
+Tabs for "Tools" and "Settings."
+Use Tailwind CSS for styling.
+Text Input and Import:
+Implement <textarea> for manual input.
+
+Add URL fetching (use fetch and a library like html-to-text).
+
+Enable .txt file uploads with the HTML <input type="file"> element.
+Templates and Sections:
+Create a template system with General and Yoga Kriya options.
+
+Build section cards with edit, rename, delete, and drag-and-drop (use a library like react-beautiful-dnd).
+
+Add toggles for section types (text-to-audio, audio-only).
+Audio Handling:
+Integrate default audio files for Yoga Kriya (tuning_in.mp3, closing.mp3).
+
+Add custom MP3 upload functionality.
+
+Implement text-to-speech with Web Speech API (Demo) and ElevenLabs/AWS Polly (Production).
+
+Merge audio using Web Audio API or ffmpeg in a serverless API route (/api/merge-audio).
+Tools and AI Integration:
+Build a Tools tab with URL/HTML parsing and AI transformation features.
+
+Use predefined prompts and allow custom prompts with API key support for AI providers.
+Settings and Modularity:
+Create a Settings tab for API key input and storage configuration.
+
+Ensure code is split into reusable components and services (e.g., /services/speech.js).
+Embeddability:
+Wrap the app in a root component (e.g., <TTSApp />) in /components/TTSApp.js.
+
+Design it to accept props (e.g., initialText, template) for future embedding in other pages.
+Additional Notes
+Standalone SPA: The app should work as a fully functional single-page application.
+
+Embeddable Design: Structure the code so <TTSApp /> can be imported and used as a component elsewhere, with customizable props.
+
+Documentation: Add comments in the code to explain key sections (e.g., audio merging, API integrations).
+
+Sample Content: Include a demo_kundalini_kriya.json file with sample Yoga Kriya text for Demo Mode.
+Directory Structure
+my-tts-app/
+├── /components/       # Reusable UI components (e.g., TTSApp, SectionCard)
+├── /pages/            # Next.js pages (index.js as the SPA)
+│   ├── /api/          # Serverless API routes (e.g., merge-audio)
+├── /services/         # Logic for speech, AI, and storage
+├── /utils/            # Helper functions (e.g., HTML parsing)
+├── /public/           # Static files (e.g., tuning_in.mp3, closing.mp3)
+└── /styles/           # Tailwind CSS configuration
+
+Thank you for building this app! Please let me know if you need clarification or run into issues.
+
