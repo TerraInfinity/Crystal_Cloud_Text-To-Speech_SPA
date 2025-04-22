@@ -1,0 +1,254 @@
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+
+// Initial state for the TTS application
+const initialState = {
+  // Text input state
+  inputText: '',
+  
+  // Template and sections
+  currentTemplate: 'general',
+  sections: [],
+  
+  // Speech engine settings
+  speechEngine: 'webSpeech', // webSpeech, elevenLabs, awsPolly
+  selectedVoice: null,
+  availableVoices: [],
+  
+  // API keys
+  elevenLabsApiKey: '',
+  awsPollyAccessKey: '',
+  awsPollySecretKey: '',
+  anthropicApiKey: '',
+  openaiApiKey: '',
+  
+  // UI state
+  activeTab: 'main', // main, tools, settings
+  isProcessing: false,
+  errorMessage: null,
+  notification: null,
+  
+  // Audio state
+  generatedAudios: {},
+  mergedAudio: null,
+  isPlaying: false,
+  
+  // Mode
+  mode: 'demo', // demo, production
+};
+
+// Reducer to handle all state changes
+function ttsReducer(state, action) {
+  switch (action.type) {
+    case 'SET_INPUT_TEXT':
+      return { ...state, inputText: action.payload };
+      
+    case 'SET_TEMPLATE':
+      return { ...state, currentTemplate: action.payload };
+      
+    case 'SET_SECTIONS':
+      return { ...state, sections: action.payload };
+      
+    case 'ADD_SECTION':
+      return { ...state, sections: [...state.sections, action.payload] };
+      
+    case 'UPDATE_SECTION':
+      return {
+        ...state,
+        sections: state.sections.map(section => 
+          section.id === action.payload.id ? action.payload : section
+        )
+      };
+      
+    case 'REMOVE_SECTION':
+      return {
+        ...state,
+        sections: state.sections.filter(section => section.id !== action.payload)
+      };
+      
+    case 'REORDER_SECTIONS':
+      return { ...state, sections: action.payload };
+      
+    case 'SET_SPEECH_ENGINE':
+      return { ...state, speechEngine: action.payload };
+      
+    case 'SET_SELECTED_VOICE':
+      return { ...state, selectedVoice: action.payload };
+      
+    case 'SET_AVAILABLE_VOICES':
+      return { ...state, availableVoices: action.payload };
+      
+    case 'SET_API_KEY':
+      return { ...state, [action.payload.key]: action.payload.value };
+      
+    case 'SET_ACTIVE_TAB':
+      return { ...state, activeTab: action.payload };
+      
+    case 'SET_PROCESSING':
+      return { ...state, isProcessing: action.payload };
+      
+    case 'SET_ERROR':
+      return { ...state, errorMessage: action.payload };
+      
+    case 'SET_NOTIFICATION':
+      return { ...state, notification: action.payload };
+      
+    case 'SET_GENERATED_AUDIO':
+      return {
+        ...state,
+        generatedAudios: {
+          ...state.generatedAudios,
+          [action.payload.sectionId]: action.payload.audioUrl
+        }
+      };
+      
+    case 'SET_MERGED_AUDIO':
+      return { ...state, mergedAudio: action.payload };
+      
+    case 'SET_PLAYING':
+      return { ...state, isPlaying: action.payload };
+      
+    case 'SET_MODE':
+      return { ...state, mode: action.payload };
+      
+    case 'LOAD_DEMO_CONTENT':
+      return { ...state, ...action.payload };
+      
+    case 'RESET_STATE':
+      return { ...initialState };
+      
+    default:
+      return state;
+  }
+}
+
+// Create context
+const TTSContext = createContext();
+
+// Provider component
+export const TTSProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(ttsReducer, initialState);
+  
+  // Initialize available voices when the component mounts
+  useEffect(() => {
+    const initVoices = async () => {
+      if (state.speechEngine === 'webSpeech') {
+        // Get Web Speech API voices
+        const synth = window.speechSynthesis;
+        
+        // Wait for voices to be loaded
+        const getVoices = () => {
+          const voices = synth.getVoices();
+          if (voices.length > 0) {
+            dispatch({
+              type: 'SET_AVAILABLE_VOICES',
+              payload: voices
+            });
+            
+            // Set default voice
+            if (!state.selectedVoice && voices.length > 0) {
+              dispatch({
+                type: 'SET_SELECTED_VOICE',
+                payload: voices[0]
+              });
+            }
+          } else {
+            setTimeout(getVoices, 100);
+          }
+        };
+        
+        getVoices();
+      }
+    };
+    
+    initVoices();
+  }, [state.speechEngine]);
+  
+  // Load demo content
+  const loadDemoContent = async () => {
+    try {
+      dispatch({ type: 'SET_PROCESSING', payload: true });
+      
+      // Fetch demo content
+      const response = await fetch('/demo_kundalini_kriya.json');
+      if (!response.ok) throw new Error('Failed to load demo content');
+      
+      const demoData = await response.json();
+      
+      // Update state with demo data
+      dispatch({
+        type: 'LOAD_DEMO_CONTENT',
+        payload: {
+          currentTemplate: 'yogaKriya',
+          sections: demoData.sections,
+          mode: 'demo'
+        }
+      });
+      
+      dispatch({
+        type: 'SET_NOTIFICATION',
+        payload: { type: 'success', message: 'Demo content loaded successfully!' }
+      });
+    } catch (error) {
+      dispatch({
+        type: 'SET_ERROR',
+        payload: `Error loading demo content: ${error.message}`
+      });
+    } finally {
+      dispatch({ type: 'SET_PROCESSING', payload: false });
+    }
+  };
+  
+  // Clear notification after 5 seconds
+  useEffect(() => {
+    if (state.notification) {
+      const timer = setTimeout(() => {
+        dispatch({ type: 'SET_NOTIFICATION', payload: null });
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [state.notification]);
+  
+  // Prepare the value object with state and actions
+  const value = {
+    ...state,
+    dispatch,
+    actions: {
+      setInputText: (text) => dispatch({ type: 'SET_INPUT_TEXT', payload: text }),
+      setTemplate: (template) => dispatch({ type: 'SET_TEMPLATE', payload: template }),
+      addSection: (section) => dispatch({ type: 'ADD_SECTION', payload: section }),
+      updateSection: (section) => dispatch({ type: 'UPDATE_SECTION', payload: section }),
+      removeSection: (sectionId) => dispatch({ type: 'REMOVE_SECTION', payload: sectionId }),
+      reorderSections: (sections) => dispatch({ type: 'REORDER_SECTIONS', payload: sections }),
+      setSpeechEngine: (engine) => dispatch({ type: 'SET_SPEECH_ENGINE', payload: engine }),
+      setSelectedVoice: (voice) => dispatch({ type: 'SET_SELECTED_VOICE', payload: voice }),
+      setActiveTab: (tab) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tab }),
+      setApiKey: (key, value) => dispatch({ type: 'SET_API_KEY', payload: { key, value } }),
+      setMode: (mode) => dispatch({ type: 'SET_MODE', payload: mode }),
+      loadDemoContent,
+      setNotification: (notification) => dispatch({ type: 'SET_NOTIFICATION', payload: notification }),
+      setError: (error) => dispatch({ type: 'SET_ERROR', payload: error }),
+      setProcessing: (isProcessing) => dispatch({ type: 'SET_PROCESSING', payload: isProcessing }),
+      setGeneratedAudio: (sectionId, audioUrl) => 
+        dispatch({ type: 'SET_GENERATED_AUDIO', payload: { sectionId, audioUrl } }),
+      setMergedAudio: (audioUrl) => dispatch({ type: 'SET_MERGED_AUDIO', payload: audioUrl }),
+      setPlaying: (isPlaying) => dispatch({ type: 'SET_PLAYING', payload: isPlaying }),
+      resetState: () => dispatch({ type: 'RESET_STATE' })
+    }
+  };
+  
+  return (
+    <TTSContext.Provider value={value}>
+      {children}
+    </TTSContext.Provider>
+  );
+};
+
+// Custom hook to use the TTS context
+export const useTTS = () => {
+  const context = useContext(TTSContext);
+  if (context === undefined) {
+    throw new Error('useTTS must be used within a TTSProvider');
+  }
+  return context;
+};

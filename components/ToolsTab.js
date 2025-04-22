@@ -1,0 +1,329 @@
+import React, { useState } from 'react';
+import { useTTS } from '../context/TTSContext';
+import { parseTextFromHtml } from '../utils/textUtils';
+
+const ToolsTab = () => {
+  const { actions, isProcessing } = useTTS();
+  
+  // State for HTML/URL parsing
+  const [htmlInput, setHtmlInput] = useState('');
+  const [parseResult, setParseResult] = useState('');
+  
+  // State for AI transformation
+  const [aiInput, setAiInput] = useState('');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiResult, setAiResult] = useState('');
+  const [aiProvider, setAiProvider] = useState('openai');
+  const [selectedPresetPrompt, setSelectedPresetPrompt] = useState('');
+  
+  // Preset prompts for AI transformation
+  const presetPrompts = [
+    {
+      id: 'yoga-extract',
+      label: 'Extract Yoga Kriya sections from text',
+      prompt: 'Extract and organize the following Yoga Kriya practice into these sections: Tuning In, Warm-Up, Kriya Sequence, Relaxation, Meditation, and Closing. Keep the original instructions intact but separate them into the appropriate sections.'
+    },
+    {
+      id: 'simplify',
+      label: 'Simplify text',
+      prompt: 'Simplify the following text to make it easier to understand while preserving all important information and instructions.'
+    },
+    {
+      id: 'format-speech',
+      label: 'Format for speech',
+      prompt: 'Format the following text to be more suitable for text-to-speech conversion. Add pauses (using commas and periods), spell out abbreviations, and remove any visual elements that wouldn\'t make sense when heard.'
+    }
+  ];
+  
+  // Handle HTML/URL parsing
+  const parseHtmlOrUrl = async () => {
+    if (!htmlInput.trim()) {
+      actions.setError('Please enter HTML or a URL');
+      return;
+    }
+    
+    try {
+      actions.setProcessing(true);
+      
+      // Check if input is a URL
+      const isUrl = htmlInput.trim().startsWith('http');
+      
+      if (isUrl) {
+        // Process URL using API
+        const response = await fetch('/api/processUrl', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: htmlInput })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to process URL');
+        }
+        
+        const data = await response.json();
+        setParseResult(data.text);
+      } else {
+        // Process HTML directly in the browser
+        const plainText = parseTextFromHtml(htmlInput);
+        setParseResult(plainText);
+      }
+      
+      actions.setNotification({
+        type: 'success',
+        message: 'Text extracted successfully'
+      });
+    } catch (error) {
+      actions.setError(`Error parsing content: ${error.message}`);
+    } finally {
+      actions.setProcessing(false);
+    }
+  };
+  
+  // Apply parsed result to main input
+  const applyParsedResult = () => {
+    if (parseResult) {
+      actions.setInputText(parseResult);
+      actions.setActiveTab('main');
+      actions.setNotification({
+        type: 'success',
+        message: 'Text applied to input area'
+      });
+    }
+  };
+  
+  // Handle preset prompt selection
+  const handlePresetPromptChange = (e) => {
+    const selectedId = e.target.value;
+    setSelectedPresetPrompt(selectedId);
+    
+    if (selectedId) {
+      const selected = presetPrompts.find(p => p.id === selectedId);
+      if (selected) {
+        setAiPrompt(selected.prompt);
+      }
+    } else {
+      setAiPrompt('');
+    }
+  };
+  
+  // Process text with AI
+  const processWithAI = async () => {
+    if (!aiInput.trim()) {
+      actions.setError('Please enter text to process');
+      return;
+    }
+    
+    if (!aiPrompt.trim()) {
+      actions.setError('Please enter a prompt or select a preset');
+      return;
+    }
+    
+    try {
+      actions.setProcessing(true);
+      
+      // Call AI processing API
+      const response = await fetch('/api/aiTransform', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: aiInput,
+          prompt: aiPrompt,
+          provider: aiProvider
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to process with AI');
+      }
+      
+      const data = await response.json();
+      setAiResult(data.result);
+      
+      actions.setNotification({
+        type: 'success',
+        message: 'AI processing completed'
+      });
+    } catch (error) {
+      actions.setError(`Error processing with AI: ${error.message}`);
+    } finally {
+      actions.setProcessing(false);
+    }
+  };
+  
+  // Apply AI result to main input
+  const applyAiResult = () => {
+    if (aiResult) {
+      actions.setInputText(aiResult);
+      actions.setActiveTab('main');
+      actions.setNotification({
+        type: 'success',
+        message: 'AI processed text applied to input area'
+      });
+    }
+  };
+  
+  return (
+    <div className="space-y-8">
+      {/* HTML/URL Parsing Tool */}
+      <div className="bg-white p-4 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-medium mb-4">HTML/URL Parsing</h3>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Enter a URL or paste HTML
+          </label>
+          <textarea
+            value={htmlInput}
+            onChange={(e) => setHtmlInput(e.target.value)}
+            className="input-field h-32"
+            placeholder="https://example.com or <html>...</html>"
+            disabled={isProcessing}
+          ></textarea>
+        </div>
+        
+        <div className="mb-4">
+          <button
+            onClick={parseHtmlOrUrl}
+            className="btn btn-primary w-full"
+            disabled={isProcessing || !htmlInput.trim()}
+          >
+            Extract Text
+          </button>
+        </div>
+        
+        {parseResult && (
+          <div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Extracted Text
+              </label>
+              <textarea
+                value={parseResult}
+                onChange={(e) => setParseResult(e.target.value)}
+                className="input-field h-32"
+                disabled={isProcessing}
+              ></textarea>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={applyParsedResult}
+                className="btn btn-secondary"
+                disabled={isProcessing}
+              >
+                Use This Text
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* AI Transformation Tool */}
+      <div className="bg-white p-4 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-medium mb-4">AI Transformation</h3>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Text to Process
+          </label>
+          <textarea
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            className="input-field h-32"
+            placeholder="Enter your text to be processed by AI..."
+            disabled={isProcessing}
+          ></textarea>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Preset Prompts
+            </label>
+            <select
+              value={selectedPresetPrompt}
+              onChange={handlePresetPromptChange}
+              className="select-field"
+              disabled={isProcessing}
+            >
+              <option value="">Select a preset prompt</option>
+              {presetPrompts.map(prompt => (
+                <option key={prompt.id} value={prompt.id}>
+                  {prompt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              AI Provider
+            </label>
+            <select
+              value={aiProvider}
+              onChange={(e) => setAiProvider(e.target.value)}
+              className="select-field"
+              disabled={isProcessing}
+            >
+              <option value="openai">OpenAI (ChatGPT)</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Prompt
+          </label>
+          <textarea
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            className="input-field h-24"
+            placeholder="Enter instructions for the AI..."
+            disabled={isProcessing}
+          ></textarea>
+        </div>
+        
+        <div className="mb-4">
+          <button
+            onClick={processWithAI}
+            className="btn btn-primary w-full"
+            disabled={isProcessing || !aiInput.trim() || !aiPrompt.trim()}
+          >
+            Process with AI
+          </button>
+        </div>
+        
+        {aiResult && (
+          <div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                AI Result
+              </label>
+              <textarea
+                value={aiResult}
+                onChange={(e) => setAiResult(e.target.value)}
+                className="input-field h-32"
+                disabled={isProcessing}
+              ></textarea>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={applyAiResult}
+                className="btn btn-secondary"
+                disabled={isProcessing}
+              >
+                Use This Text
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ToolsTab;
