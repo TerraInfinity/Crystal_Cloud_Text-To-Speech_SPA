@@ -2,6 +2,9 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
 // Initial state for the TTS application
 const initialState = {
+  // Templates
+  templates: {},
+  
   // Text input state
   inputText: '',
   inputType: 'text', // 'text' or 'audio'
@@ -326,7 +329,31 @@ export const TTSProvider = ({ children }) => {
         });
       },
       
-      resetState: () => dispatch({ type: 'RESET_STATE' })
+      resetState: () => dispatch({ type: 'RESET_STATE' }),
+      
+      // Template management
+      saveTemplate: (template) => {
+        dispatch({ type: 'SAVE_TEMPLATE', payload: template });
+        // Save to localStorage
+        try {
+          const templates = JSON.parse(localStorage.getItem('tts_templates') || '{}');
+          templates[template.id] = template;
+          localStorage.setItem('tts_templates', JSON.stringify(templates));
+        } catch (error) {
+          console.error('Error saving template:', error);
+        }
+      },
+      deleteTemplate: (templateId) => {
+        dispatch({ type: 'DELETE_TEMPLATE', payload: templateId });
+        // Remove from localStorage
+        try {
+          const templates = JSON.parse(localStorage.getItem('tts_templates') || '{}');
+          delete templates[templateId];
+          localStorage.setItem('tts_templates', JSON.stringify(templates));
+        } catch (error) {
+          console.error('Error deleting template:', error);
+        }
+      }
     }
   };
   

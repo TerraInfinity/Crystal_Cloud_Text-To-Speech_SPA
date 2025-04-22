@@ -6,6 +6,7 @@ import SectionsList from './SectionsList';
 import ToolsTab from './ToolsTab';
 import SettingsTab from './SettingsTab';
 import AudioFilesTab from './AudioFilesTab';
+import TemplatesTab from './TemplatesTab';
 import AudioPlayer from './AudioPlayer';
 
 export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
@@ -125,6 +126,9 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
 
       {/* Settings tab content */}
       {activeTab === 'settings' && <SettingsTab />}
+
+      {/* Templates tab content */}
+      {activeTab === 'templates' && <TemplatesTab />}
     </div>
   );
 };
