@@ -131,7 +131,7 @@ export const TTSProvider = ({ children }) => {
   // Initialize available voices when the component mounts
   useEffect(() => {
     const initVoices = async () => {
-      if (state.speechEngine === 'webSpeech') {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
         // Get Web Speech API voices
         const synth = window.speechSynthesis;
         
@@ -144,24 +144,31 @@ export const TTSProvider = ({ children }) => {
               payload: voices
             });
             
-            // Set default voice
-            if (!state.selectedVoice && voices.length > 0) {
-              dispatch({
-                type: 'SET_SELECTED_VOICE',
-                payload: voices[0]
-              });
-            }
+            // Always set a default voice on first load
+            // Find a good default voice (prefer English)
+            const defaultVoice = voices.find(v => v.lang === 'en-US') || voices[0];
+            dispatch({
+              type: 'SET_SELECTED_VOICE',
+              payload: defaultVoice
+            });
           } else {
             setTimeout(getVoices, 100);
           }
         };
         
-        getVoices();
+        // Check if voices are already loaded
+        if (synth.getVoices().length > 0) {
+          getVoices();
+        } else {
+          // Otherwise wait for voiceschanged event
+          synth.addEventListener('voiceschanged', getVoices, { once: true });
+        }
       }
     };
     
+    // Only initialize once
     initVoices();
-  }, [state.speechEngine]);
+  }, []);
   
   // Load demo content
   const loadDemoContent = async () => {
