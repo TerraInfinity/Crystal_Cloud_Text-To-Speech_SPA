@@ -4,7 +4,8 @@ import { useTTS } from '../context/TTSContext';
 const SectionCard = ({ 
   section, 
   index,
-  isDragging,
+  moveUp,
+  moveDown
 }) => {
   const { 
     availableVoices, 
@@ -137,24 +138,46 @@ const SectionCard = ({
   };
   
   return (
-    <div className={`section-card ${isDragging ? 'dragging' : ''}`}>
+    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
       <div className="flex justify-between items-center">
-        <div className="flex-1">
-          {isEditing ? (
-            <input
-              type="text"
-              value={editedTitle}
-              onChange={(e) => setEditedTitle(e.target.value)}
-              className="input-field"
-            />
-          ) : (
-            <h3 className="text-lg font-medium">
-              {index + 1}. {section.title}
-              <span className="ml-2 text-sm font-normal text-gray-500">
-                ({section.type === 'text-to-audio' ? 'Text to Speech' : 'Audio Only'})
-              </span>
-            </h3>
-          )}
+        <div className="flex items-center">
+          <div className="flex flex-col mr-2">
+            <button 
+              onClick={moveUp}
+              className="p-1 text-gray-500 hover:text-gray-700" 
+              title="Move Up"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <button 
+              onClick={moveDown}
+              className="p-1 text-gray-500 hover:text-gray-700" 
+              title="Move Down"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1">
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="input-field"
+              />
+            ) : (
+              <h3 className="text-lg font-medium">
+                {index + 1}. {section.title}
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  ({section.type === 'text-to-audio' ? 'Text to Speech' : 'Audio Only'})
+                </span>
+              </h3>
+            )}
+          </div>
         </div>
         
         <div className="flex space-x-2">
@@ -181,7 +204,7 @@ const SectionCard = ({
           >
             {section.type === 'text-to-audio' ? (
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071a1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243a1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828a1 1 0 010-1.415z" clipRule="evenodd" />
               </svg>
             ) : (
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
