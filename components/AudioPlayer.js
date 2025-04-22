@@ -27,6 +27,13 @@ const AudioPlayer = () => {
     }
 
     actions.setProcessing(true);
+    const timestamp = Date.now();
+    const historyEntry = {
+      id: `history-${timestamp}`,
+      date: new Date().toISOString(),
+      sections: JSON.parse(JSON.stringify(sections)),
+      template: currentTemplate
+    };
 
     try {
       // Check if Web Speech API is available

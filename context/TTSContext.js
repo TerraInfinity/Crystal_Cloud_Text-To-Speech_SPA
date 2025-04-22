@@ -2,6 +2,8 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
 // Initial state for the TTS application
 const initialState = {
+  // File History
+  fileHistory: [],
   // Templates
   templates: {},
 

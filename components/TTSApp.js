@@ -8,6 +8,8 @@ import SettingsTab from './SettingsTab';
 import AudioFilesTab from './AudioFilesTab';
 import TemplatesTab from './TemplatesTab';
 import AudioPlayer from './AudioPlayer';
+import FileHistory from './FileHistory'; // Import the new component
+
 
 export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
   const {
@@ -15,7 +17,8 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
     notification,
     errorMessage,
     isProcessing,
-    actions
+    actions,
+    fileHistory, // Access file history from context
   } = useTTS();
 
   // Set initial values if provided as props (only on first render)
@@ -43,7 +46,7 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
           <button className="float-right" onClick={() => actions.setNotification(null)}>×</button>
         </div>
       )}
-      
+
       {/* Error message */}
       {errorMessage && (
         <div className="p-4 mb-4 rounded-md bg-red-100 text-red-700">
@@ -78,6 +81,12 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
             Templates
           </button>
           <button
+            onClick={() => handleTabChange('fileHistory')}
+            className={`py-4 px-1 ${activeTab === 'fileHistory' ? 'tab-active' : 'tab-inactive'}`}
+          >
+            File History
+          </button> {/* Added File History tab */}
+          <button
             onClick={() => handleTabChange('audio')}
             className={`py-4 px-1 ${activeTab === 'audio' ? 'tab-active' : 'tab-inactive'}`}
           >
@@ -104,19 +113,19 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
           <div className="mb-6">
             <TemplateSelector />
           </div>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <h3 className="text-lg font-medium mb-3">Input Text</h3>
               <TextInput />
             </div>
-            
+
             <div>
               <h3 className="text-lg font-medium mb-3">Sections</h3>
               <SectionsList />
             </div>
           </div>
-          
+
           <div className="mt-8">
             <h3 className="text-lg font-medium mb-3">Preview and Download</h3>
             <AudioPlayer />
@@ -124,9 +133,12 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
         </div>
       )}
 
+      {/* File History tab content */}
+      {activeTab === 'fileHistory' && <FileHistory fileHistory={fileHistory} actions={actions}/>} {/* Render FileHistory */}
+
       {/* Audio Files tab content */}
       {activeTab === 'audio' && <AudioFilesTab />}
-      
+
       {/* Tools tab content */}
       {activeTab === 'tools' && <ToolsTab />}
 
