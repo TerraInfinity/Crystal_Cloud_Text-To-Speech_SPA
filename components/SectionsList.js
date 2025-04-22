@@ -67,15 +67,6 @@ const SectionsList = () => {
           </div>
         ))}
       </div>
-      
-      <div className="mt-4 flex justify-center">
-        <button
-          onClick={createNewSection}
-          className="btn btn-primary"
-        >
-          Add New Section
-        </button>
-      </div>
     </div>
   );
 };
