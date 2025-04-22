@@ -354,20 +354,45 @@ const SectionCard = ({
                 />
               </div>
               
-              {hasAudio ? (
-                <button
-                  onClick={playAudio}
-                  className="btn btn-secondary flex items-center"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                  </svg>
-                  Play
-                </button>
+              {hasLinkedAudio ? (
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Using audio from library: <span className="font-medium">{linkedAudio.name}</span>
+                  </p>
+                  <button
+                    onClick={playAudio}
+                    className="btn btn-secondary flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                    </svg>
+                    Play Audio
+                  </button>
+                </div>
+              ) : hasAudio ? (
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Using uploaded audio file
+                  </p>
+                  <button
+                    onClick={playAudio}
+                    className="btn btn-secondary flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                    </svg>
+                    Play
+                  </button>
+                </div>
               ) : (
-                <p className="text-yellow-600 text-sm">
-                  No audio file uploaded yet. Default audio will be used if available.
-                </p>
+                <div>
+                  <p className="text-yellow-600 text-sm mb-2">
+                    No audio file linked or uploaded yet.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    You can upload a file above or go to the Audio Files tab to select from your library.
+                  </p>
+                </div>
               )}
             </div>
           )}

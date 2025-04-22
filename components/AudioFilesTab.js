@@ -2,12 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
 
 const AudioFilesTab = () => {
-  const { savedAudios, actions, isProcessing } = useTTS();
+  const { savedAudios, sections, actions, isProcessing } = useTTS();
   const fileInputRef = useRef(null);
   const [audioName, setAudioName] = useState('');
   const [selectedAudio, setSelectedAudio] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioPlayerRef = useRef(null);
+  const [selectedSection, setSelectedSection] = useState('');
 
   // Handle audio file upload
   const handleAudioUpload = async (e) => {
@@ -91,13 +92,38 @@ const AudioFilesTab = () => {
     else return (bytes / 1048576).toFixed(1) + ' MB';
   };
   
-  // Add audio to section
+  // Add audio to a new section
   const addToSection = (audio) => {
     actions.addAudioToSection(audio);
     actions.setNotification({
       type: 'success',
-      message: `Added "${audio.name}" to sections`
+      message: `Created new section with "${audio.name}"`
     });
+  };
+  
+  // Link audio to an existing section
+  const linkToExistingSection = (audio, sectionId) => {
+    if (!sectionId) return;
+    
+    const section = sections.find(s => s.id === sectionId);
+    if (!section) return;
+    
+    // Update the section to use this audio
+    actions.updateSection({
+      ...section,
+      type: 'audio-only',
+      audioId: audio.id
+    });
+    
+    // Set the generated audio URL for this section too
+    actions.setGeneratedAudio(section.id, audio.url);
+    
+    actions.setNotification({
+      type: 'success',
+      message: `Linked "${audio.name}" to section "${section.title}"`
+    });
+    
+    setSelectedSection(''); // Reset selection
   };
   
   // Handle audio player events
@@ -206,47 +232,83 @@ const AudioFilesTab = () => {
             {Object.values(savedAudios).map((audio) => (
               <div 
                 key={audio.id} 
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100"
+                className="flex flex-col p-3 bg-gray-50 rounded-md hover:bg-gray-100"
               >
-                <div className="flex-1">
-                  <h4 className="font-medium">{audio.name}</h4>
-                  <p className="text-xs text-gray-500">
-                    {formatFileSize(audio.size)} • 
-                    {new Date(audio.date).toLocaleDateString()}
-                  </p>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium">{audio.name}</h4>
+                    <p className="text-xs text-gray-500">
+                      {formatFileSize(audio.size)} • 
+                      {new Date(audio.date).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => playAudio(audio)}
+                      className="p-2 text-indigo-600 hover:text-indigo-800 rounded-full hover:bg-indigo-100"
+                      title="Play"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    <button
+                      onClick={() => addToSection(audio)}
+                      className="p-2 text-green-600 hover:text-green-800 rounded-full hover:bg-green-100"
+                      title="Create New Section with this Audio"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    <button
+                      onClick={() => deleteAudio(audio.id)}
+                      className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-100"
+                      title="Delete"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => playAudio(audio)}
-                    className="p-2 text-indigo-600 hover:text-indigo-800 rounded-full hover:bg-indigo-100"
-                    title="Play"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  
-                  <button
-                    onClick={() => addToSection(audio)}
-                    className="p-2 text-green-600 hover:text-green-800 rounded-full hover:bg-green-100"
-                    title="Create Section with this Audio"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  
-                  <button
-                    onClick={() => deleteAudio(audio.id)}
-                    className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-100"
-                    title="Delete"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
+                {sections.length > 0 && (
+                  <div className="mt-2 flex items-end">
+                    <div className="flex-1 mr-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Link to existing section:
+                      </label>
+                      <select
+                        value={selectedSection}
+                        onChange={(e) => setSelectedSection(e.target.value)}
+                        className="block w-full text-sm rounded-md border border-gray-300 shadow-sm py-1.5 px-3"
+                      >
+                        <option value="">Select a section...</option>
+                        {sections.map((section) => (
+                          <option key={section.id} value={section.id}>
+                            {section.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <button
+                      onClick={() => linkToExistingSection(audio, selectedSection)}
+                      disabled={!selectedSection}
+                      className={`px-3 py-1.5 text-sm rounded-md font-medium ${
+                        selectedSection 
+                          ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      Link
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
