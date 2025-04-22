@@ -16,7 +16,7 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
     actions
   } = useTTS();
 
-  // Set initial values if provided as props
+  // Set initial values if provided as props (only on first render)
   useEffect(() => {
     if (initialText) {
       actions.setInputText(initialText);
@@ -24,7 +24,8 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
     if (initialTemplate) {
       actions.setTemplate(initialTemplate);
     }
-  }, [initialText, initialTemplate, actions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Tab switching
   const handleTabChange = (tab) => {

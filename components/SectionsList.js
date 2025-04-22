@@ -71,7 +71,7 @@ const SectionsList = () => {
       <div className="mt-4 flex justify-center">
         <button
           onClick={createNewSection}
-          className="btn btn-secondary"
+          className="btn btn-primary"
         >
           Add New Section
         </button>
