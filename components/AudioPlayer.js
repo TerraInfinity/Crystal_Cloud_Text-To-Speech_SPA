@@ -276,19 +276,14 @@ const AudioPlayer = () => {
     <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
       <div className="mb-4">
         <button
-          onClick={generateAllAudio}
-          className="btn btn-primary mr-2"
+          onClick={async () => {
+            await generateAllAudio();
+            await mergeAllAudio();
+          }}
+          className="btn btn-primary"
           disabled={isProcessing || sections.length === 0}
         >
-          Generate All Audio
-        </button>
-        
-        <button
-          onClick={mergeAllAudio}
-          className="btn btn-primary"
-          disabled={isProcessing || !allSectionsHaveAudio}
-        >
-          Merge Audio Files
+          Generate Speech
         </button>
       </div>
       
