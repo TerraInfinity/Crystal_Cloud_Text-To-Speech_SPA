@@ -4,7 +4,6 @@ import { parseTextFromHtml } from '../utils/textUtils';
 
 const TextInput = () => {
   const { inputText, sections, currentTemplate, actions, isProcessing } = useTTS();
-  const [selectedSection, setSelectedSection] = useState(null);
   const fileInputRef = useRef(null);
   const [urlInput, setUrlInput] = useState('');
   
@@ -76,36 +75,6 @@ const TextInput = () => {
       actions.setError(`Error importing URL: ${error.message}`);
     } finally {
       actions.setProcessing(false);
-    }
-  };
-  
-  // Add text to selected section
-  const addToSection = () => {
-    if (!selectedSection || !inputText.trim()) {
-      actions.setError('Please select a section and enter some text');
-      return;
-    }
-    
-    const section = sections.find(s => s.id === selectedSection);
-    if (section) {
-      // Only add to text-to-audio sections
-      if (section.type === 'text-to-audio') {
-        const updatedSection = {
-          ...section,
-          text: section.text ? `${section.text}\n\n${inputText}` : inputText
-        };
-        
-        actions.updateSection(updatedSection);
-        actions.setNotification({
-          type: 'success',
-          message: `Text added to "${section.title}" section`
-        });
-        
-        // Clear input text if needed
-        actions.setInputText('');
-      } else {
-        actions.setError('Cannot add text to audio-only sections');
-      }
     }
   };
   
@@ -188,36 +157,7 @@ const TextInput = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Add to section */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Add to existing section</label>
-          <div className="flex">
-            <select
-              value={selectedSection || ''}
-              onChange={(e) => setSelectedSection(e.target.value)}
-              className="select-field rounded-r-none"
-              disabled={isProcessing || sections.length === 0}
-            >
-              <option value="">Select a section</option>
-              {sections
-                .filter(section => section.type === 'text-to-audio')
-                .map(section => (
-                  <option key={section.id} value={section.id}>
-                    {section.title}
-                  </option>
-                ))}
-            </select>
-            <button
-              onClick={addToSection}
-              className="btn btn-primary rounded-l-none"
-              disabled={isProcessing || !selectedSection || !inputText.trim()}
-            >
-              Add
-            </button>
-          </div>
-        </div>
-        
+      <div>
         {/* Create new section */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Create new section</label>
