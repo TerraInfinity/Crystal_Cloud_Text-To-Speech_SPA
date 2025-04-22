@@ -8,6 +8,7 @@ const AudioPlayer = () => {
     generatedAudios, 
     mergedAudio, 
     isProcessing,
+    currentTemplate,
     actions 
   } = useTTS();
 
