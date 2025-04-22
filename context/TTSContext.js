@@ -130,21 +130,25 @@ export const TTSProvider = ({ children }) => {
   
   // Initialize available voices when the component mounts
   useEffect(() => {
-    const initVoices = async () => {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
+    let isMounted = true;
+    
+    const initVoices = () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis && isMounted) {
         // Get Web Speech API voices
         const synth = window.speechSynthesis;
         
         // Wait for voices to be loaded
         const getVoices = () => {
+          if (!isMounted) return;
+          
           const voices = synth.getVoices();
           if (voices.length > 0) {
+            // Only dispatch if component is still mounted
             dispatch({
               type: 'SET_AVAILABLE_VOICES',
               payload: voices
             });
             
-            // Always set a default voice on first load
             // Find a good default voice (prefer English)
             const defaultVoice = voices.find(v => v.lang === 'en-US') || voices[0];
             dispatch({
@@ -168,6 +172,11 @@ export const TTSProvider = ({ children }) => {
     
     // Only initialize once
     initVoices();
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, []);
   
   // Load demo content

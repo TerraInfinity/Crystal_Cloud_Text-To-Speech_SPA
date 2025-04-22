@@ -28,7 +28,7 @@ const TemplateSelector = () => {
       };
       
       // Set the sections
-      actions.setSections([newSection]);
+      actions.reorderSections([newSection]);
       actions.setProcessing(false);
       
     } else if (templateName === 'yogaKriya') {
@@ -82,7 +82,7 @@ const TemplateSelector = () => {
       ];
       
       // Set the sections
-      actions.setSections(yogaKriyaSections);
+      actions.reorderSections(yogaKriyaSections);
       
       actions.setNotification({
         type: 'success',
