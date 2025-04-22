@@ -131,6 +131,12 @@ function ttsReducer(state, action) {
         savedAudios: remainingAudios
       };
       
+    case 'LOAD_AUDIO_LIBRARY':
+      return {
+        ...state,
+        savedAudios: action.payload
+      };
+      
     case 'SET_SELECTED_AUDIO':
       return { ...state, selectedAudioId: action.payload };
       
@@ -155,50 +161,67 @@ const TTSContext = createContext();
 export const TTSProvider = ({ children }) => {
   const [state, dispatch] = useReducer(ttsReducer, initialState);
   
-  // Initialize available voices when the component mounts
+  // Initialize app data when the component mounts
   useEffect(() => {
     let isMounted = true;
     
-    const initVoices = () => {
-      if (typeof window !== 'undefined' && window.speechSynthesis && isMounted) {
-        // Get Web Speech API voices
-        const synth = window.speechSynthesis;
-        
-        // Wait for voices to be loaded
-        const getVoices = () => {
-          if (!isMounted) return;
+    const initApp = () => {
+      if (typeof window !== 'undefined' && isMounted) {
+        // Initialize voices if speech synthesis is available
+        if (window.speechSynthesis) {
+          // Get Web Speech API voices
+          const synth = window.speechSynthesis;
           
-          const voices = synth.getVoices();
-          if (voices.length > 0) {
-            // Only dispatch if component is still mounted
-            dispatch({
-              type: 'SET_AVAILABLE_VOICES',
-              payload: voices
-            });
+          // Wait for voices to be loaded
+          const getVoices = () => {
+            if (!isMounted) return;
             
-            // Find a good default voice (prefer English)
-            const defaultVoice = voices.find(v => v.lang === 'en-US') || voices[0];
-            dispatch({
-              type: 'SET_SELECTED_VOICE',
-              payload: defaultVoice
-            });
+            const voices = synth.getVoices();
+            if (voices.length > 0) {
+              // Only dispatch if component is still mounted
+              dispatch({
+                type: 'SET_AVAILABLE_VOICES',
+                payload: voices
+              });
+              
+              // Find a good default voice (prefer English)
+              const defaultVoice = voices.find(v => v.lang === 'en-US') || voices[0];
+              dispatch({
+                type: 'SET_SELECTED_VOICE',
+                payload: defaultVoice
+              });
+            } else {
+              setTimeout(getVoices, 100);
+            }
+          };
+          
+          // Check if voices are already loaded
+          if (synth.getVoices().length > 0) {
+            getVoices();
           } else {
-            setTimeout(getVoices, 100);
+            // Otherwise wait for voiceschanged event
+            synth.addEventListener('voiceschanged', getVoices, { once: true });
           }
-        };
+        }
         
-        // Check if voices are already loaded
-        if (synth.getVoices().length > 0) {
-          getVoices();
-        } else {
-          // Otherwise wait for voiceschanged event
-          synth.addEventListener('voiceschanged', getVoices, { once: true });
+        // Load saved audio library from localStorage
+        try {
+          const savedAudioLibrary = localStorage.getItem('tts_audio_library');
+          if (savedAudioLibrary) {
+            const audios = JSON.parse(savedAudioLibrary);
+            dispatch({
+              type: 'LOAD_AUDIO_LIBRARY',
+              payload: audios
+            });
+          }
+        } catch (error) {
+          console.error('Error loading audio library from localStorage:', error);
         }
       }
     };
     
     // Only initialize once
-    initVoices();
+    initApp();
     
     // Cleanup function
     return () => {

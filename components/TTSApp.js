@@ -5,6 +5,7 @@ import TemplateSelector from './TemplateSelector';
 import SectionsList from './SectionsList';
 import ToolsTab from './ToolsTab';
 import SettingsTab from './SettingsTab';
+import AudioFilesTab from './AudioFilesTab';
 import AudioPlayer from './AudioPlayer';
 
 export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
@@ -70,6 +71,12 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
             Main
           </button>
           <button
+            onClick={() => handleTabChange('audio')}
+            className={`py-4 px-1 ${activeTab === 'audio' ? 'tab-active' : 'tab-inactive'}`}
+          >
+            Audio Files
+          </button>
+          <button
             onClick={() => handleTabChange('tools')}
             className={`py-4 px-1 ${activeTab === 'tools' ? 'tab-active' : 'tab-inactive'}`}
           >
@@ -110,6 +117,9 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
         </div>
       )}
 
+      {/* Audio Files tab content */}
+      {activeTab === 'audio' && <AudioFilesTab />}
+      
       {/* Tools tab content */}
       {activeTab === 'tools' && <ToolsTab />}
 

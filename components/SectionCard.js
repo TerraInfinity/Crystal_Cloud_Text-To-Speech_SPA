@@ -11,6 +11,7 @@ const SectionCard = ({
     availableVoices, 
     speechEngine, 
     generatedAudios,
+    savedAudios,
     actions 
   } = useTTS();
   
@@ -129,10 +130,19 @@ const SectionCard = ({
   // Determine if this section has audio
   const hasAudio = section.id in generatedAudios;
   
+  // Determine if this section has a linked audio from the library
+  const hasLinkedAudio = section.audioId && section.audioId in savedAudios;
+  
+  // Get audio information if linked from library
+  const linkedAudio = hasLinkedAudio ? savedAudios[section.audioId] : null;
+  
   // Play audio for this section
   const playAudio = () => {
     if (hasAudio) {
       const audio = new Audio(generatedAudios[section.id]);
+      audio.play();
+    } else if (hasLinkedAudio) {
+      const audio = new Audio(linkedAudio.url);
       audio.play();
     }
   };
