@@ -1,3 +1,4 @@
+
 /**
  * Parse plain text from HTML content
  * @param {string} html - HTML content to parse
@@ -82,11 +83,12 @@ export function extractSections(text, sectionMarkers) {
  * @returns {Object} - Object with processed text and settings
  */
 export function processVoiceTags(text) {
+  let currentIndex = 0;
+  
   // Process sound effect tags
   const soundTagRegex = /\[sound:([^\]]+)\]/g;
   const soundEffects = [];
   let match;
-  let currentIndex = 0;
   
   // Find all sound effect tags and their positions
   while ((match = soundTagRegex.exec(text)) !== null) {
@@ -102,8 +104,6 @@ export function processVoiceTags(text) {
   // Process voice tags on the cleaned text
   const voiceTagRegex = /\[voice:([^\]]+)\]/g;
   const voiceSettings = [];
-  let currentIndex = 0;
-  let match;
   
   // Find all voice tags and their positions
   while ((match = voiceTagRegex.exec(text)) !== null) {
