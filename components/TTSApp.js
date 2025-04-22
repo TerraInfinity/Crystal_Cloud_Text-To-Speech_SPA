@@ -72,6 +72,12 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
             Main
           </button>
           <button
+            onClick={() => handleTabChange('templates')}
+            className={`py-4 px-1 ${activeTab === 'templates' ? 'tab-active' : 'tab-inactive'}`}
+          >
+            Templates
+          </button>
+          <button
             onClick={() => handleTabChange('audio')}
             className={`py-4 px-1 ${activeTab === 'audio' ? 'tab-active' : 'tab-inactive'}`}
           >
