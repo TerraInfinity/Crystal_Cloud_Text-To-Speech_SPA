@@ -12,9 +12,10 @@ const SectionCard = ({
     speechEngine, 
     generatedAudios,
     savedAudios,
-    actions 
+    actions,
+    isProcessing // Added isProcessing state
   } = useTTS();
-  
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(section.title);
@@ -26,17 +27,17 @@ const SectionCard = ({
     rate: section.voiceSettings?.rate || 1,
     pitch: section.voiceSettings?.pitch || 1
   });
-  
+
   // Toggle between text-to-audio and audio-only
   const toggleSectionType = () => {
     const newType = section.type === 'text-to-audio' ? 'audio-only' : 'text-to-audio';
-    
+
     actions.updateSection({
       ...section,
       type: newType,
     });
   };
-  
+
   // Save edited section
   const saveSection = () => {
     actions.updateSection({
@@ -46,14 +47,14 @@ const SectionCard = ({
       voice: editedVoice,
       voiceSettings: voiceSettings,
     });
-    
+
     setIsEditing(false);
     actions.setNotification({
       type: 'success',
       message: 'Section updated successfully'
     });
   };
-  
+
   // Delete section
   const deleteSection = () => {
     if (window.confirm(`Are you sure you want to delete "${section.title}"?`)) {
@@ -64,25 +65,25 @@ const SectionCard = ({
       });
     }
   };
-  
+
   // Handle audio file upload for audio-only sections
   const handleAudioUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     // Check if file is an audio file
     if (!file.type.startsWith('audio/')) {
       actions.setError('Please upload an audio file');
       return;
     }
-    
+
     try {
       // Create object URL for the audio file
       const audioUrl = URL.createObjectURL(file);
-      
+
       // Set the generated audio for this section
       actions.setGeneratedAudio(section.id, audioUrl);
-      
+
       actions.setNotification({
         type: 'success',
         message: `Audio file "${file.name}" uploaded successfully`
@@ -91,17 +92,17 @@ const SectionCard = ({
       actions.setError(`Error uploading audio: ${error.message}`);
     }
   };
-  
+
   // Generate speech for this section
   const generateSpeech = async () => {
     if (!section.text || section.text.trim() === '') {
       actions.setError('Section text is empty');
       return;
     }
-    
+
     try {
       actions.setProcessing(true);
-      
+
       // Make the API request to convert text to speech
       const response = await fetch('/api/textToSpeech', {
         method: 'POST',
@@ -112,17 +113,17 @@ const SectionCard = ({
           voice: section.voice || editedVoice,
         }),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to convert text to speech');
       }
-      
+
       const { audioUrl } = await response.json();
-      
+
       // Update the generated audio for this section
       actions.setGeneratedAudio(section.id, audioUrl);
-      
+
       actions.setNotification({
         type: 'success',
         message: 'Speech generated successfully'
@@ -133,16 +134,16 @@ const SectionCard = ({
       actions.setProcessing(false);
     }
   };
-  
+
   // Determine if this section has audio
   const hasAudio = section.id in generatedAudios;
-  
+
   // Determine if this section has a linked audio from the library
   const hasLinkedAudio = section.audioId && section.audioId in savedAudios;
-  
+
   // Get audio information if linked from library
   const linkedAudio = hasLinkedAudio ? savedAudios[section.audioId] : null;
-  
+
   // Play audio for this section
   const playAudio = () => {
     if (hasAudio) {
@@ -153,7 +154,7 @@ const SectionCard = ({
       audio.play();
     }
   };
-  
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
       <div className="flex justify-between items-center">
@@ -196,7 +197,7 @@ const SectionCard = ({
             )}
           </div>
         </div>
-        
+
         <div className="flex space-x-2">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -213,7 +214,7 @@ const SectionCard = ({
               </svg>
             )}
           </button>
-          
+
           <button
             onClick={toggleSectionType}
             className="p-1 text-indigo-500 hover:text-indigo-700"
@@ -229,7 +230,7 @@ const SectionCard = ({
               </svg>
             )}
           </button>
-          
+
           <button
             onClick={() => setIsEditing(!isEditing)}
             className="p-1 text-blue-500 hover:text-blue-700"
@@ -245,7 +246,7 @@ const SectionCard = ({
               </svg>
             )}
           </button>
-          
+
           <button
             onClick={deleteSection}
             className="p-1 text-red-500 hover:text-red-700"
@@ -257,7 +258,7 @@ const SectionCard = ({
           </button>
         </div>
       </div>
-      
+
       {isExpanded && (
         <div className="mt-4">
           {section.type === 'text-to-audio' ? (
@@ -272,7 +273,7 @@ const SectionCard = ({
                     className="input-field h-32 mb-4 font-mono text-sm"
                     placeholder="Enter text for this section..."
                   ></textarea>
-                  
+
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Voice (optional)</label>
                     <select
@@ -288,14 +289,14 @@ const SectionCard = ({
                       ))}
                     </select>
                   </div>
-                  
+
                   <button
                     onClick={saveSection}
                     className="btn btn-primary mr-2"
                   >
                     Save Changes
                   </button>
-                  
+
                   <button
                     onClick={() => setIsEditing(false)}
                     className="btn btn-secondary"
@@ -309,7 +310,7 @@ const SectionCard = ({
                   <p className="whitespace-pre-wrap mb-4 text-gray-700 text-sm">
                     {section.text || <span className="italic text-gray-400">No text content</span>}
                   </p>
-                  
+
                   <div className="mb-4">
                     <div className="flex items-center mb-2">
                       <select
@@ -334,7 +335,7 @@ const SectionCard = ({
                         </svg>
                       </button>
                     </div>
-                    
+
                     {showVoiceSettings && (
                       <div className="bg-gray-50 p-3 rounded-lg">
                         <div className="mb-3">
@@ -354,7 +355,7 @@ const SectionCard = ({
                             className="w-full"
                           />
                         </div>
-                        
+
                         <div className="mb-3">
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Rate
@@ -372,7 +373,7 @@ const SectionCard = ({
                             className="w-full"
                           />
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Pitch
@@ -400,10 +401,38 @@ const SectionCard = ({
             /* Audio-only section */
             <div>
               <p className="mb-4 text-gray-700">
-                This is an audio-only section. You can upload an audio file or use a default one if available.
+                This is an audio-only section. You can select an audio file from your library or upload a new one.
               </p>
-              
+
               <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Select Audio from Library</label>
+                <select
+                  value={section.audioId || ''}
+                  onChange={(e) => {
+                    const audioId = e.target.value;
+                    const audio = savedAudios[audioId];
+                    if (audio) {
+                      actions.updateSection({
+                        ...section,
+                        audioId: audioId
+                      });
+                      actions.setGeneratedAudio(section.id, audio.url);
+                    }
+                  }}
+                  className="select-field"
+                  disabled={isProcessing}
+                >
+                  <option value="">Select an audio file...</option>
+                  {Object.values(savedAudios).map((audio) => (
+                    <option key={audio.id} value={audio.id}>
+                      {audio.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Or Upload New Audio</label>
                 <input
                   type="file"
                   onChange={handleAudioUpload}
@@ -414,9 +443,10 @@ const SectionCard = ({
                             file:text-sm file:font-semibold
                             file:bg-indigo-50 file:text-indigo-700
                             hover:file:bg-indigo-100"
+                  disabled={isProcessing}
                 />
               </div>
-              
+
               {hasLinkedAudio ? (
                 <div>
                   <p className="text-sm text-gray-500 mb-2">
