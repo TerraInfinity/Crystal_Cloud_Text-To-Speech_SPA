@@ -77,29 +77,11 @@ export function extractSections(text, sectionMarkers) {
 }
 
 /**
- * Process text for special tags (voice and sound effects)
+ * Process text for special voice tags
  * @param {string} text - Input text to process
- * @returns {Object} - Object with processed text and settings
+ * @returns {Object} - Object with processed text and voice settings
  */
 export function processVoiceTags(text) {
-  // Process sound effect tags
-  const soundTagRegex = /\[sound:([^\]]+)\]/g;
-  const soundEffects = [];
-  let match;
-  let currentIndex = 0;
-  
-  // Find all sound effect tags and their positions
-  while ((match = soundTagRegex.exec(text)) !== null) {
-    soundEffects.push({
-      placeholder: match[1],
-      position: match.index
-    });
-  }
-  
-  // Remove sound tags from text
-  const textWithoutSounds = text.replace(soundTagRegex, '');
-  
-  // Process voice tags on the cleaned text
   const voiceTagRegex = /\[voice:([^\]]+)\]/g;
   const voiceSettings = [];
   let currentIndex = 0;
