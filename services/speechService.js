@@ -40,10 +40,54 @@ class SpeechService {
         if (options.volume) utterance.volume = options.volume;
         if (options.lang) utterance.lang = options.lang;
         
-        // Use a temporary audio element to capture the speech
+        // Create audio context and recorder
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const mediaStreamDestination = audioContext.createMediaStreamDestination();
-        const mediaRecorder = new MediaRecorder(mediaStreamDestination.stream);
+        const audioDestination = audioContext.createMediaStreamDestination();
+        const mediaRecorder = new MediaRecorder(audioDestination.stream, {
+          mimeType: 'audio/webm'
+        });
+        
+        const audioChunks = [];
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+        
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          resolve(audioUrl);
+        };
+        
+        mediaRecorder.start();
+        
+        // Create an oscillator node to capture the speech
+        const oscillator = audioContext.createOscillator();
+        oscillator.connect(audioDestination);
+        oscillator.start();
+        
+        // Speak the text
+        window.speechSynthesis.speak(utterance);
+        
+        utterance.onend = () => {
+          oscillator.stop();
+          mediaRecorder.stop();
+          window.speechSynthesis.cancel();
+        };
+        
+        utterance.onerror = (event) => {
+          oscillator.stop();
+          mediaRecorder.stop();
+          window.speechSynthesis.cancel();
+          reject(new Error(`Speech synthesis error: ${event.error}`));
+        };
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
         const audioChunks = [];
         
         mediaRecorder.ondataavailable = (event) => {

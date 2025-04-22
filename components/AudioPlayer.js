@@ -42,11 +42,9 @@ const AudioPlayer = () => {
         throw new Error('Web Speech API is not supported in this browser');
       }
 
-      const voices = window.speechSynthesis.getVoices();
-
-      // Generate audio for any sections that don't have it
+      // Generate audio for all sections sequentially
       for (const section of sections) {
-        if (!generatedAudios[section.id] && section.type === 'text-to-audio' && section.text) {
+        if (section.type === 'text-to-audio' && section.text) {
           try {
             const audioUrl = await speechService.webSpeechTTS(section.text, {
               voice: section.voice,
