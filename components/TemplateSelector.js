@@ -7,88 +7,45 @@ const TemplateSelector = () => {
   // Load template content
   const loadTemplate = async (templateName) => {
     actions.setTemplate(templateName);
+    actions.setProcessing(true);
     
-    if (templateName === 'general') {
-      // General template just has one empty section
-      actions.setNotification({
-        type: 'success',
-        message: 'General template loaded'
-      });
-      
-      // Clear existing sections if any
-      actions.setProcessing(true);
-      
-      // Create a default empty section
-      const newSection = {
-        id: `section-${Date.now()}`,
-        title: 'Main Section',
-        type: 'text-to-audio',
-        text: '',
-        voice: null,
-      };
-      
-      // Set the sections
-      actions.reorderSections([newSection]);
-      actions.setProcessing(false);
-      
-    } else if (templateName === 'yogaKriya') {
-      // Yoga Kriya template has predefined sections
-      actions.setProcessing(true);
-      
-      // Define the Yoga Kriya sections
-      const yogaKriyaSections = [
-        {
-          id: `section-tuning-${Date.now()}`,
-          title: 'Tuning In (Intro)',
-          type: 'audio-only',
-          text: '',
-          voice: null,
-        },
-        {
-          id: `section-warmup-${Date.now()}`,
-          title: 'Warm-Up',
+    try {
+      if (templateName === 'general') {
+        // General template just has one empty section
+        const newSection = {
+          id: `section-${Date.now()}`,
+          title: 'Main Section',
           type: 'text-to-audio',
           text: '',
           voice: null,
-        },
-        {
-          id: `section-kriya-${Date.now()}`,
-          title: 'Kriya Sequence',
-          type: 'text-to-audio',
-          text: '',
-          voice: null,
-        },
-        {
-          id: `section-relaxation-${Date.now()}`,
-          title: 'Relaxation',
-          type: 'text-to-audio',
-          text: '',
-          voice: null,
-        },
-        {
-          id: `section-meditation-${Date.now()}`,
-          title: 'Meditation',
-          type: 'text-to-audio',
-          text: '',
-          voice: null,
-        },
-        {
-          id: `section-closing-${Date.now()}`,
-          title: 'Closing',
-          type: 'audio-only',
-          text: '',
-          voice: null,
+        };
+        
+        actions.reorderSections([newSection]);
+        actions.setNotification({
+          type: 'success',
+          message: 'General template loaded'
+        });
+      } else {
+        // Load sections from the selected template
+        const selectedTemplate = templates[templateName];
+        if (selectedTemplate) {
+          // Create new sections with fresh IDs but keep other properties
+          const templateSections = selectedTemplate.sections.map(section => ({
+            ...section,
+            id: `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          }));
+          
+          actions.reorderSections(templateSections);
+          actions.setNotification({
+            type: 'success',
+            message: `${selectedTemplate.name} template loaded`
+          });
         }
-      ];
-      
-      // Set the sections
-      actions.reorderSections(yogaKriyaSections);
-      
-      actions.setNotification({
-        type: 'success',
-        message: 'Yoga Kriya template loaded'
-      });
-      
+      }
+    } catch (error) {
+      actions.setError('Error loading template');
+      console.error('Template loading error:', error);
+    } finally {
       actions.setProcessing(false);
     }
   };
