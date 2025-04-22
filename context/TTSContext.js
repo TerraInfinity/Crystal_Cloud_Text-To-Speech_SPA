@@ -4,6 +4,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 const initialState = {
   // Text input state
   inputText: '',
+  inputType: 'text', // 'text' or 'audio'
   
   // Template and sections
   currentTemplate: 'general',
@@ -32,6 +33,10 @@ const initialState = {
   mergedAudio: null,
   isPlaying: false,
   
+  // Audio library
+  savedAudios: {},
+  selectedAudioId: null,
+  
   // Mode
   mode: 'demo', // demo, production
 };
@@ -41,6 +46,9 @@ function ttsReducer(state, action) {
   switch (action.type) {
     case 'SET_INPUT_TEXT':
       return { ...state, inputText: action.payload };
+    
+    case 'SET_INPUT_TYPE':
+      return { ...state, inputType: action.payload };
       
     case 'SET_TEMPLATE':
       return { ...state, currentTemplate: action.payload };
@@ -106,6 +114,25 @@ function ttsReducer(state, action) {
       
     case 'SET_PLAYING':
       return { ...state, isPlaying: action.payload };
+      
+    case 'SAVE_AUDIO':
+      return {
+        ...state,
+        savedAudios: {
+          ...state.savedAudios,
+          [action.payload.id]: action.payload
+        }
+      };
+      
+    case 'DELETE_AUDIO':
+      const { [action.payload]: removedAudio, ...remainingAudios } = state.savedAudios;
+      return {
+        ...state,
+        savedAudios: remainingAudios
+      };
+      
+    case 'SET_SELECTED_AUDIO':
+      return { ...state, selectedAudioId: action.payload };
       
     case 'SET_MODE':
       return { ...state, mode: action.payload };
@@ -231,6 +258,7 @@ export const TTSProvider = ({ children }) => {
     dispatch,
     actions: {
       setInputText: (text) => dispatch({ type: 'SET_INPUT_TEXT', payload: text }),
+      setInputType: (type) => dispatch({ type: 'SET_INPUT_TYPE', payload: type }),
       setTemplate: (template) => dispatch({ type: 'SET_TEMPLATE', payload: template }),
       addSection: (section) => dispatch({ type: 'ADD_SECTION', payload: section }),
       updateSection: (section) => dispatch({ type: 'UPDATE_SECTION', payload: section }),
@@ -249,6 +277,31 @@ export const TTSProvider = ({ children }) => {
         dispatch({ type: 'SET_GENERATED_AUDIO', payload: { sectionId, audioUrl } }),
       setMergedAudio: (audioUrl) => dispatch({ type: 'SET_MERGED_AUDIO', payload: audioUrl }),
       setPlaying: (isPlaying) => dispatch({ type: 'SET_PLAYING', payload: isPlaying }),
+      
+      // Audio library actions
+      saveAudio: (audioData) => dispatch({ type: 'SAVE_AUDIO', payload: audioData }),
+      deleteAudio: (audioId) => dispatch({ type: 'DELETE_AUDIO', payload: audioId }),
+      setSelectedAudio: (audioId) => dispatch({ type: 'SET_SELECTED_AUDIO', payload: audioId }),
+      
+      // Add audio to a section
+      addAudioToSection: (audio) => {
+        // First, create a section from the audio
+        const newSection = {
+          id: `section-${Date.now()}`,
+          title: `Audio: ${audio.name}`,
+          type: 'audio-only',
+          audioId: audio.id
+        };
+        
+        dispatch({ type: 'ADD_SECTION', payload: newSection });
+        
+        // Then set the generated audio for this section
+        dispatch({ 
+          type: 'SET_GENERATED_AUDIO',
+          payload: { sectionId: newSection.id, audioUrl: audio.url }
+        });
+      },
+      
       resetState: () => dispatch({ type: 'RESET_STATE' })
     }
   };
