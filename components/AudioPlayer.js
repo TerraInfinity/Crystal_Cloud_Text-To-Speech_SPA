@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
+import speechService from '../services/speechService';
 
 const AudioPlayer = () => {
   const { 
