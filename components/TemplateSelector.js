@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { useTTS } from '../context/TTSContext';
 
 const TemplateSelector = () => {
-  const { currentTemplate, actions } = useTTS();
+  const { currentTemplate, templates, actions } = useTTS();
   
   // Load template content
   const loadTemplate = async (templateName) => {
