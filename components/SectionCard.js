@@ -20,6 +20,12 @@ const SectionCard = ({
   const [editedTitle, setEditedTitle] = useState(section.title);
   const [editedText, setEditedText] = useState(section.text || '');
   const [editedVoice, setEditedVoice] = useState(section.voice || null);
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [voiceSettings, setVoiceSettings] = useState({
+    volume: section.voiceSettings?.volume || 1,
+    rate: section.voiceSettings?.rate || 1,
+    pitch: section.voiceSettings?.pitch || 1
+  });
   
   // Toggle between text-to-audio and audio-only
   const toggleSectionType = () => {
@@ -38,6 +44,7 @@ const SectionCard = ({
       title: editedTitle,
       text: editedText,
       voice: editedVoice,
+      voiceSettings: voiceSettings,
     });
     
     setIsEditing(false);
@@ -303,31 +310,87 @@ const SectionCard = ({
                     {section.text || <span className="italic text-gray-400">No text content</span>}
                   </p>
                   
-                  {section.voice && (
-                    <p className="text-sm text-gray-500 mb-4">
-                      Voice: {section.voice}
-                    </p>
-                  )}
-                  
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={generateSpeech}
-                      className="btn btn-primary"
-                      disabled={!section.text}
-                    >
-                      Generate Speech
-                    </button>
-                    
-                    {hasAudio && (
-                      <button
-                        onClick={playAudio}
-                        className="btn btn-secondary flex items-center"
+                  <div className="mb-4">
+                    <div className="flex items-center mb-2">
+                      <select
+                        value={editedVoice || ''}
+                        onChange={(e) => setEditedVoice(e.target.value || null)}
+                        className="select-field flex-1 mr-2"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                        <option value="">Default Voice</option>
+                        {availableVoices.map((voice, idx) => (
+                          <option key={idx} value={voice.name || voice.id || idx}>
+                            {voice.name || voice.id || `Voice ${idx + 1}`}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+                        className="p-2 text-gray-500 hover:text-gray-700"
+                        title="Voice Settings"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
                         </svg>
-                        Play
                       </button>
+                    </div>
+                    
+                    {showVoiceSettings && (
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <div className="mb-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Volume
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            value={voiceSettings.volume}
+                            onChange={(e) => setVoiceSettings(prev => ({
+                              ...prev,
+                              volume: parseFloat(e.target.value)
+                            }))}
+                            className="w-full"
+                          />
+                        </div>
+                        
+                        <div className="mb-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Rate
+                          </label>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="2"
+                            step="0.1"
+                            value={voiceSettings.rate}
+                            onChange={(e) => setVoiceSettings(prev => ({
+                              ...prev,
+                              rate: parseFloat(e.target.value)
+                            }))}
+                            className="w-full"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Pitch
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="2"
+                            step="0.1"
+                            value={voiceSettings.pitch}
+                            onChange={(e) => setVoiceSettings(prev => ({
+                              ...prev,
+                              pitch: parseFloat(e.target.value)
+                            }))}
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

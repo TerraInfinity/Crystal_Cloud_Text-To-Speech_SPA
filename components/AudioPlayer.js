@@ -18,68 +18,87 @@ const AudioPlayer = () => {
   const allSectionsHaveAudio = sections.length > 0 && 
     sections.every(section => section.id in generatedAudios);
   
-  // Generate audio for all sections that don't have it
+  // Generate audio for all sections using Web Speech API
   const generateAllAudio = async () => {
-    const sectionsWithoutAudio = sections.filter(
-      section => section.type === 'text-to-audio' && !(section.id in generatedAudios)
-    );
-    
-    if (sectionsWithoutAudio.length === 0) {
-      actions.setNotification({
-        type: 'success',
-        message: 'All sections already have audio'
-      });
+    if (sections.length === 0) {
+      actions.setError('No sections to generate audio from');
       return;
     }
     
     actions.setProcessing(true);
-    actions.setNotification({
-      type: 'success',
-      message: `Generating audio for ${sectionsWithoutAudio.length} sections...`
-    });
     
     try {
+      // Check if Web Speech API is available
+      if (!window.speechSynthesis) {
+        throw new Error('Web Speech API is not supported in this browser');
+      }
+      
+      const voices = window.speechSynthesis.getVoices();
+      
       // Process each section sequentially
-      for (const section of sectionsWithoutAudio) {
-        if (!section.text || section.text.trim() === '') {
-          actions.setNotification({
-            type: 'success',
-            message: `Skipping empty section: ${section.title}`
-          });
+      for (const section of sections) {
+        if (section.type !== 'text-to-audio' || !section.text?.trim()) {
           continue;
         }
         
-        // Call the API to generate speech
-        const response = await fetch('/api/textToSpeech', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: section.text,
-            engine: 'webSpeech', // Always use Web Speech API for batch processing
-            voice: section.voice,
-          }),
-        });
+        const utterance = new SpeechSynthesisUtterance(section.text);
         
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(`Failed to generate audio for ${section.title}: ${error.message}`);
+        // Apply voice settings
+        if (section.voice) {
+          const selectedVoice = voices.find(v => v.name === section.voice);
+          if (selectedVoice) {
+            utterance.voice = selectedVoice;
+          }
         }
         
-        const { audioUrl } = await response.json();
-        actions.setGeneratedAudio(section.id, audioUrl);
+        if (section.voiceSettings) {
+          utterance.volume = section.voiceSettings.volume;
+          utterance.rate = section.voiceSettings.rate;
+          utterance.pitch = section.voiceSettings.pitch;
+        }
         
-        actions.setNotification({
-          type: 'success',
-          message: `Generated audio for ${section.title}`
+        // Convert speech to audio blob
+        const audioBlob = await new Promise((resolve, reject) => {
+          const audioChunks = [];
+          const mediaRecorder = new MediaRecorder(
+            new MediaStream([audioContext.createMediaStreamDestination().stream.getAudioTracks()[0]])
+          );
+          
+          mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+          };
+          
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            resolve(audioBlob);
+          };
+          
+          mediaRecorder.start();
+          window.speechSynthesis.speak(utterance);
+          
+          utterance.onend = () => {
+            mediaRecorder.stop();
+          };
+          
+          utterance.onerror = (error) => {
+            reject(error);
+          };
         });
+        
+        const audioUrl = URL.createObjectURL(audioBlob);
+        actions.setGeneratedAudio(section.id, audioUrl);
       }
       
       actions.setNotification({
         type: 'success',
-        message: 'All audio generated successfully'
+        message: 'Speech generated for all sections'
       });
+      
+      // Proceed to merge the audio files
+      await mergeAllAudio();
+      
     } catch (error) {
-      actions.setError(`Error generating audio: ${error.message}`);
+      actions.setError(`Error generating speech: ${error.message}`);
     } finally {
       actions.setProcessing(false);
     }
