@@ -3,5 +3,7 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
-  "/audio": "pages/audio.js"
+  "/audio": "pages/audio.js",
+  "/api/webSpeech": "pages/api/webSpeech.js",
+  "/api/textToSpeech": "pages/api/textToSpeech.js"
 }
