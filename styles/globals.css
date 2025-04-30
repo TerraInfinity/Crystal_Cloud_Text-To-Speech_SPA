@@ -1,55 +1,203 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import "./themes.css";
+
+/* Import theme variables, assuming themes.css exists */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+
+
+
+
+/* ---------------------------------------------------------------------------
+   Reset and Base Styles
+   ---------------------------------------------------------------------------
+   Applies base font, removes default padding/margin, and sets background color
+   using the --bg-color variable (with a fallback for light theme).
+---------------------------------------------------------------------------- */
 
 html,
+html[data-theme],
 body {
-  padding: 0;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+    padding: 0;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+    background-color: var(--bg-color, #f9fafb);
+    /* Fallback to light theme */
+    transition: background-color 0.5s, color 0.5s;
 }
+
+
+/* Body: Applies background and text color from theme variables */
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+
+/* Universal box-sizing for layout consistency */
 
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
+
+
+/* ---------------------------------------------------------------------------
+   Component Styles
+   ---------------------------------------------------------------------------
+   These classes apply the theme variables to specific HTML elements.
+---------------------------------------------------------------------------- */
+
+h1 {
+    color: var(--h1-color);
+    @apply text-3xl font-bold mb-4;
+}
+
+
+/* Section Card: Uses card background and border variables */
 
 .section-card {
-  @apply bg-white rounded-lg shadow-md p-4 mb-4 border border-gray-200;
+    background-color: var(--card-bg);
+    /* Uses --card-bg */
+    border-color: var(--card-border);
+    /* Uses --card-border */
+    @apply rounded-lg shadow-md p-4 mb-4 border;
 }
+
+
+/* Dragging state for cards: highlights border with primary button color */
 
 .section-card.dragging {
-  @apply opacity-50 border-dashed border-2 border-indigo-300;
+    @apply opacity-50 border-dashed border-2;
+    border-color: var(--primary-btn-bg);
+    /* Uses --primary-btn-bg */
 }
+
+
+/* Button Base: Shared button styles */
 
 .btn {
-  @apply px-4 py-2 rounded-md font-medium transition-colors;
+    @apply px-4 py-2 rounded-md font-medium transition-colors;
 }
+
+
+/* Primary Button: Uses primary button background and text variables */
 
 .btn-primary {
-  @apply bg-indigo-600 text-white hover:bg-indigo-700;
+    background-color: var(--primary-btn-bg);
+    /* Uses --primary-btn-bg */
+    color: var(--primary-btn-text);
+    /* Uses --primary-btn-text */
 }
+
+.btn-primary:hover {
+    filter: brightness(90%);
+}
+
+
+/* Secondary Button: Uses secondary button background and text variables */
 
 .btn-secondary {
-  @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+    background-color: var(--secondary-btn-bg);
+    /* Uses --secondary-btn-bg */
+    color: var(--secondary-btn-text);
+    /* Uses --secondary-btn-text */
 }
+
+.btn-secondary:hover {
+    filter: brightness(90%);
+}
+
+
+/* Danger Button: Uses Tailwind red for destructive actions */
 
 .btn-danger {
-  @apply bg-red-600 text-white hover:bg-red-700;
+    @apply bg-red-600 text-white;
 }
+
+.btn-danger:hover {
+    @apply bg-red-700;
+}
+
+
+/* Input Field: Uses card background and border, focus ring uses primary button color */
 
 .input-field {
-  @apply w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500;
-}
+    @apply w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2;
+    border-color: var(--card-border);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+  }
+  
+  .input-field:focus {
+    border-color: var(--primary-btn-bg);
+    --tw-ring-color: var(--primary-btn-bg);
+  }
+  
+  .select-field {
+    @apply w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2;
+    border-color: var(--card-border);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+  }
+  
+  .select-field:focus {
+    border-color: var(--primary-btn-bg);
+    --tw-ring-color: var(--primary-btn-bg);
+  }
 
-.select-field {
-  @apply w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500;
-}
+/* Tab Styles: Uses primary and text color variables */
 
 .tab-active {
-  @apply border-b-2 border-indigo-500 text-indigo-600;
+    @apply border-b-2;
+    border-color: var(--primary-btn-bg);
+    /* Uses --primary-btn-bg */
+    color: var(--primary-btn-bg);
+    /* Uses --primary-btn-bg */
 }
 
 .tab-inactive {
-  @apply border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300;
+    @apply border-b-2 border-transparent;
+    color: var(--text-color);
+    /* Uses --text-color */
+}
+
+.tab-inactive:hover {
+    color: var(--primary-btn-bg);
+    /* Uses --primary-btn-bg */
+    border-color: var(--card-border);
+    /* Uses --card-border */
+}
+
+
+/* File Input Styles */
+
+.theme-file-input {
+    color: var(--text-secondary);
+}
+
+.theme-file-input::file-selector-button {
+    background-color: var(--accent-bg);
+    color: var(--file-btn-text);
+    transition: background-color 0.2s ease;
+}
+
+.theme-file-input:hover::file-selector-button {
+    background-color: var(--accent-hover);
+}
+
+
+/* Button Gradient Class */
+
+.button-gradient {
+    background-image: linear-gradient(to right, var(--button-gradient-start), var(--button-gradient-end));
+    color: var(--primary-btn-text);
+}
+
+.button-gradient:hover {
+    background-image: linear-gradient(to right, var(--button-gradient-hover-start), var(--button-gradient-hover-end));
 }

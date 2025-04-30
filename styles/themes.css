@@ -1,0 +1,1029 @@
+/* ===========================================================================
+   Light Theme
+   ---------------------------------------------------------------------------
+   Clean, modern, and neutral. Uses soft grays and indigo for a classic light
+   UI look. Good for general use and high readability.
+============================================================================ */
+
+[data-theme="light"] {
+    --bg-color: #f9fafb;
+    /* Page background: very light gray */
+    --text-color: #374151;
+    /* Main text: dark gray for readability */
+    --text-hover: #111827;
+    /* Hovered text: almost black */
+    --active-bg: #ffffff;
+    /* Active elements: pure white */
+    --active-text-color: #111827;
+    /* Active text: dark gray for contrast */
+    --accent-color: #4f46e5;
+    /* Accent: indigo for links/buttons */
+    --card-bg: #ffffff;
+    /* Card backgrounds: white */
+    --card-border: #e5e7eb;
+    /* Card/input borders: light gray */
+    --primary-btn-bg: #6366f1;
+    /* Primary button: indigo */
+    --primary-btn-text: #ffffff;
+    /* Primary button text: white */
+    --secondary-btn-bg: #e5e7eb;
+    /* Secondary button: light gray */
+    --secondary-btn-text: #374151;
+    /* Secondary button text: dark gray */
+    --accent-bg: #e0e7ff;
+    /* Subtle accent background: light indigo */
+    --accent-hover: #c7d2fe;
+    /* Accent hover: slightly darker indigo */
+    --text-secondary: #6b7280;
+    /* Secondary text: medium gray */
+    --button-gradient-start: #3b82f6;
+    /* Button gradient: blue start */
+    --button-gradient-end: #4f46e5;
+    /* Button gradient: indigo end */
+    --button-gradient-hover-start: #2563eb;
+    /* Button hover: deeper blue */
+    --button-gradient-hover-end: #4338ca;
+    /* Button hover: deeper indigo */
+    --file-btn-text: #000000;
+    /* Black for light background */
+    --h1-color: #111827;
+    /* H1: Deep gray */
+}
+
+
+/* ===========================================================================
+   Dark Theme
+   ---------------------------------------------------------------------------
+   Modern dark mode. Uses deep grays and indigo for a comfortable, low-light
+   experience. Good for night use and reducing eye strain.
+============================================================================ */
+
+[data-theme="dark"] {
+    --bg-color: #111827;
+    /* Page background: deep gray */
+    --text-color: #d1d5db;
+    /* Main text: light gray */
+    --text-hover: #f9fafb;
+    /* Hovered text: near white */
+    --active-bg: #374151;
+    /* Active elements: dark gray */
+    --active-text-color: #f9fafb;
+    /* Active text: near white for contrast */
+    --accent-color: #818cf8;
+    /* Accent: light indigo */
+    --card-bg: #1f2937;
+    /* Card backgrounds: very dark gray */
+    --card-border: #374151;
+    /* Card/input borders: dark gray */
+    --primary-btn-bg: #818cf8;
+    /* Primary button: light indigo */
+    --primary-btn-text: #1f2937;
+    /* Primary button text: very dark gray */
+    --secondary-btn-bg: #374151;
+    /* Secondary button: dark gray */
+    --secondary-btn-text: #f9fafb;
+    /* Secondary button text: near white */
+    --accent-bg: #3730a3;
+    /* Subtle accent background: deep indigo */
+    --accent-hover: #4f46e5;
+    /* Accent hover: brighter indigo */
+    --text-secondary: #9ca3af;
+    /* Secondary text: medium-light gray */
+    --button-gradient-start: #818cf8;
+    /* Button gradient: light indigo start */
+    --button-gradient-end: #a5b4fc;
+    /* Button gradient: lighter indigo end */
+    --button-gradient-hover-start: #6366f1;
+    /* Button hover: deeper indigo */
+    --button-gradient-hover-end: #818cf8;
+    /* Button hover: light indigo */
+    --file-btn-text: #ffffff;
+    /* White for dark background */
+    --h1-color: #f9fafb;
+    /* H1: Near white */
+}
+
+
+/* ===========================================================================
+   Minimalist Monochrome Theme
+   ---------------------------------------------------------------------------
+   Ultra-clean, grayscale palette. Focuses on simplicity and clarity, with
+   minimal color and strong contrast for a modern, distraction-free look.
+============================================================================ */
+
+[data-theme="minimalist"] {
+    --bg-color: #f5f5f5;
+    /* Page background: very light gray */
+    --text-color: #222;
+    /* Main text: almost black */
+    --text-hover: #000;
+    /* Hovered text: pure black */
+    --active-bg: #fff;
+    /* Active elements: white */
+    --active-text-color: #000;
+    /* Active text: pure black for maximum contrast */
+    --accent-color: #888;
+    /* Accent: medium gray for subtle highlights */
+    --card-bg: #fff;
+    /* Card backgrounds: white */
+    --card-border: #e0e0e0;
+    /* Card/input borders: light gray */
+    --primary-btn-bg: #222;
+    /* Primary button: almost black */
+    --primary-btn-text: #fff;
+    /* Primary button text: white */
+    --secondary-btn-bg: #e0e0e0;
+    /* Secondary button: light gray */
+    --secondary-btn-text: #222;
+    /* Secondary button text: almost black */
+    --accent-bg: #f0f0f0;
+    /* Subtle accent background: very light gray */
+    --accent-hover: #e0e0e0;
+    /* Accent hover: light gray */
+    --text-secondary: #888;
+    /* Secondary text: medium gray */
+    --button-gradient-start: #bbb;
+    /* Button gradient: light gray start */
+    --button-gradient-end: #888;
+    /* Button gradient: medium gray end */
+    --button-gradient-hover-start: #888;
+    /* Button hover: medium gray */
+    --button-gradient-hover-end: #222;
+    /* Button hover: almost black */
+    --file-btn-text: #000000;
+    /* Black */
+    --h1-color: #000000;
+    /* H1: Pure black */
+}
+
+
+/* ===========================================================================
+   Retro/Vaporwave Theme
+   ---------------------------------------------------------------------------
+   Nostalgic 80s-90s vibes with pastel pinks, blues, and synthwave aesthetics.
+   Features neon accents and dreamy gradients for a playful, energetic look.
+============================================================================ */
+
+[data-theme="retro"] {
+    --bg-color: #2d1b4f;
+    /* Deep purple background */
+    --text-color: #ffe6fa;
+    /* Main text: soft pastel pink */
+    --text-hover: #ffb8ff;
+    /* Hovered text: bright pink */
+    --active-bg: #ffb8ff;
+    /* Active elements: bright pink */
+    --active-text-color: #2d1b4f;
+    /* Active text: deep purple for contrast */
+    --accent-color: #00f0ff;
+    /* Accent: neon blue */
+    --card-bg: #6d5acf;
+    /* Card backgrounds: pastel purple */
+    --card-border: #ffb8ff;
+    /* Card/input borders: bright pink */
+    --primary-btn-bg: #ff8ae2;
+    /* Primary button: pastel pink */
+    --primary-btn-text: #2d1b4f;
+    /* Primary button text: deep purple */
+    --secondary-btn-bg: #00f0ff;
+    /* Secondary button: neon blue */
+    --secondary-btn-text: #2d1b4f;
+    /* Secondary button text: deep purple */
+    --accent-bg: #ffb8ff;
+    /* Subtle accent background: bright pink */
+    --accent-hover: #ffe6fa;
+    /* Accent hover: soft pastel pink */
+    --text-secondary: #b8b8ff;
+    /* Secondary text: pastel blue */
+    --button-gradient-start: #ff8ae2;
+    /* Button gradient: pastel pink start */
+    --button-gradient-end: #00f0ff;
+    /* Button gradient: neon blue end */
+    --button-gradient-hover-start: #ffe6fa;
+    /* Button hover: soft pastel pink */
+    --button-gradient-hover-end: #ffb8ff;
+    /* Button hover: bright pink */
+    --file-btn-text: #000000;
+    /* Black */
+    --h1-color: #ffb8ff;
+    /* H1: Bright pink */
+}
+
+[data-theme="retro"] .section-card {
+    /* Optional: Add a grainy background for retro feel (requires /grain.png) */
+    background-image: url('/grain.png'), var(--card-bg);
+    background-blend-mode: overlay;
+}
+
+
+/* ===========================================================================
+   Cyberpunk Theme
+   ---------------------------------------------------------------------------
+   Dark, high-tech look with neon pink and blue accents. Inspired by sci-fi
+   dystopias, this theme is bold, energetic, and futuristic.
+============================================================================ */
+
+[data-theme="cyberpunk"] {
+    --bg-color: #18181b;
+    /* Page background: near-black */
+    --text-color: #00fff7;
+    /* Main text: neon blue */
+    --text-hover: #ff00ea;
+    /* Hovered text: neon pink */
+    --active-bg: #232136;
+    /* Active elements: dark blue-gray */
+    --active-text-color: #ff00ea;
+    /* Active text: neon pink for cyber feel */
+    --accent-color: #ff00ea;
+    /* Accent: neon pink */
+    --card-bg: #232136;
+    /* Card backgrounds: dark blue-gray */
+    --card-border: #00fff7;
+    /* Card/input borders: neon blue */
+    --primary-btn-bg: #ff00ea;
+    /* Primary button: neon pink */
+    --primary-btn-text: #18181b;
+    /* Primary button text: near-black */
+    --secondary-btn-bg: #00fff7;
+    /* Secondary button: neon blue */
+    --secondary-btn-text: #18181b;
+    /* Secondary button text: near-black */
+    --accent-bg: #232136;
+    /* Subtle accent background: dark blue-gray */
+    --accent-hover: #ff00ea;
+    /* Accent hover: neon pink */
+    --text-secondary: #ff00ea;
+    /* Secondary text: neon pink */
+    --button-gradient-start: #ff00ea;
+    /* Button gradient: neon pink start */
+    --button-gradient-end: #00fff7;
+    /* Button gradient: neon blue end */
+    --button-gradient-hover-start: #00fff7;
+    /* Button hover: neon blue */
+    --button-gradient-hover-end: #ff00ea;
+    /* Button hover: neon pink */
+    --file-btn-text: #ffffff;
+    /* White */
+    --h1-color: #ff00ea;
+    /* H1: Neon pink */
+}
+
+
+/* ===========================================================================
+   Nature-Inspired Theme
+   ---------------------------------------------------------------------------
+   Earthy tones, organic shapes, and textures. Uses greens and blues to evoke
+   forests, oceans, and natural tranquility.
+============================================================================ */
+
+[data-theme="nature"] {
+    --bg-color: #e6f4ea;
+    /* Page background: pale green */
+    --text-color: #234d20;
+    /* Main text: deep forest green */
+    --text-hover: #1e3921;
+    /* Hovered text: darker green */
+    --active-bg: #b2d8c5;
+    /* Active elements: light green */
+    --active-text-color: #1e3921;
+    /* Active text: deep forest green */
+    --accent-color: #3ca374;
+    /* Accent: medium green */
+    --card-bg: #d0e6df;
+    /* Card backgrounds: light blue-green */
+    --card-border: #3ca374;
+    /* Card/input borders: medium green */
+    --primary-btn-bg: #3ca374;
+    /* Primary button: medium green */
+    --primary-btn-text: #fff;
+    /* Primary button text: white */
+    --secondary-btn-bg: #b2d8c5;
+    /* Secondary button: light green */
+    --secondary-btn-text: #234d20;
+    /* Secondary button text: deep green */
+    --accent-bg: #b2d8c5;
+    /* Subtle accent background: light green */
+    --accent-hover: #3ca374;
+    /* Accent hover: medium green */
+    --text-secondary: #6b8e6e;
+    /* Secondary text: muted green */
+    --button-gradient-start: #3ca374;
+    /* Button gradient: medium green start */
+    --button-gradient-end: #b2d8c5;
+    /* Button gradient: light green end */
+    --button-gradient-hover-start: #234d20;
+    /* Button hover: deep green */
+    --button-gradient-hover-end: #3ca374;
+    /* Button hover: medium green */
+    --file-btn-text: #000000;
+    /* Black */
+    --h1-color: #1e3921;
+    /* H1: Deep forest green */
+}
+
+
+/* ===========================================================================
+   Art Deco Theme
+   ---------------------------------------------------------------------------
+   Elegant, geometric patterns with gold, black, and bold contrasts. Inspired
+   by 1920s luxury and architecture.
+============================================================================ */
+
+[data-theme="artdeco"] {
+    --bg-color: #1a1a1a;
+    /* Page background: deep black */
+    --text-color: #ffd700;
+    /* Main text: gold */
+    --text-hover: #fff;
+    /* Hovered text: white */
+    --active-bg: #222;
+    /* Active elements: dark gray */
+    --active-text-color: #ffd700;
+    /* Active text: gold for luxury */
+    --accent-color: #ffd700;
+    /* Accent: gold */
+    --card-bg: #222;
+    /* Card backgrounds: dark gray */
+    --card-border: #ffd700;
+    /* Card/input borders: gold */
+    --primary-btn-bg: #ffd700;
+    /* Primary button: gold */
+    --primary-btn-text: #1a1a1a;
+    /* Primary button text: black */
+    --secondary-btn-bg: #fff;
+    /* Secondary button: white */
+    --secondary-btn-text: #1a1a1a;
+    /* Secondary button text: black */
+    --accent-bg: #ffd700;
+    /* Subtle accent background: gold */
+    --accent-hover: #fff;
+    /* Accent hover: white */
+    --text-secondary: #bfa14a;
+    /* Secondary text: muted gold */
+    --button-gradient-start: #ffd700;
+    /* Button gradient: gold start */
+    --button-gradient-end: #fff;
+    /* Button gradient: white end */
+    --button-gradient-hover-start: #fff;
+    /* Button hover: white */
+    --button-gradient-hover-end: #ffd700;
+    /* Button hover: gold */
+    --file-btn-text: #1a1a1a;
+    /* Black for consistency */
+    --h1-color: #ffd700;
+    /* H1: Gold */
+}
+
+
+/* ===========================================================================
+   Pastel Dream Theme
+   ---------------------------------------------------------------------------
+   Soft, calming pastel shades like lavender, mint, and peach. Designed for a
+   gentle, dreamy, and relaxing interface.
+============================================================================ */
+
+[data-theme="pastel"] {
+    --bg-color: #f8f6ff;
+    /* Page background: very pale lavender */
+    --text-color: #a78bfa;
+    /* Main text: pastel purple */
+    --text-hover: #f472b6;
+    /* Hovered text: pastel pink */
+    --active-bg: #fbcfe8;
+    /* Active elements: pastel pink */
+    --active-text-color: #a78bfa;
+    /* Active text: pastel purple */
+    --accent-color: #a7f3d0;
+    /* Accent: pastel mint */
+    --card-bg: #f3e8ff;
+    /* Card backgrounds: pale lavender */
+    --card-border: #a7f3d0;
+    /* Card/input borders: pastel mint */
+    --primary-btn-bg: #f472b6;
+    /* Primary button: pastel pink */
+    --primary-btn-text: #fff;
+    /* Primary button text: white */
+    --secondary-btn-bg: #a7f3d0;
+    /* Secondary button: pastel mint */
+    --secondary-btn-text: #a78bfa;
+    /* Secondary button text: pastel purple */
+    --accent-bg: #fbcfe8;
+    /* Subtle accent background: pastel pink */
+    --accent-hover: #a7f3d0;
+    /* Accent hover: pastel mint */
+    --text-secondary: #f472b6;
+    /* Secondary text: pastel pink */
+    --button-gradient-start: #a7f3d0;
+    /* Button gradient: pastel mint start */
+    --button-gradient-end: #f472b6;
+    /* Button gradient: pastel pink end */
+    --button-gradient-hover-start: #f472b6;
+    /* Button hover: pastel pink */
+    --button-gradient-hover-end: #a7f3d0;
+    /* Button hover: pastel mint */
+    --file-btn-text: #000000;
+    /* Black */
+    --h1-color: #a78bfa;
+    /* H1: Pastel purple */
+}
+
+
+/* ===========================================================================
+   Holographic Theme
+   ---------------------------------------------------------------------------
+   Iridescent, shimmering colors with futuristic gradients. Mimics the look of
+   holographic foil and shifting colors.
+============================================================================ */
+
+[data-theme="holographic"] {
+    --bg-color: #e0e7ff;
+    /* Page background: pale blue */
+    --text-color: #7f9cf5;
+    /* Main text: holographic blue */
+    --text-hover: #f472b6;
+    /* Hovered text: holographic pink */
+    --active-bg: #f0abfc;
+    /* Active elements: holographic pink */
+    --active-text-color: #7f9cf5;
+    /* Active text: holographic blue */
+    --accent-color: #a7f3d0;
+    /* Accent: holographic mint */
+    --card-bg: linear-gradient(135deg, #e0e7ff 0%, #f0abfc 100%);
+    /* Card: iridescent gradient */
+    --card-border: #f0abfc;
+    /* Card/input borders: holographic pink */
+    --primary-btn-bg: #f0abfc;
+    /* Primary button: holographic pink */
+    --primary-btn-text: #7f9cf5;
+    /* Primary button text: holographic blue */
+    --secondary-btn-bg: #a7f3d0;
+    /* Secondary button: holographic mint */
+    --secondary-btn-text: #7f9cf5;
+    /* Secondary button text: holographic blue */
+    --accent-bg: #f0abfc;
+    /* Subtle accent background: holographic pink */
+    --accent-hover: #a7f3d0;
+    /* Accent hover: holographic mint */
+    --text-secondary: #f472b6;
+    /* Secondary text: holographic pink */
+    --button-gradient-start: #e0e7ff;
+    /* Button gradient: pale blue start */
+    --button-gradient-end: #f0abfc;
+    /* Button gradient: holographic pink end */
+    --button-gradient-hover-start: #f0abfc;
+    /* Button hover: holographic pink */
+    --button-gradient-hover-end: #e0e7ff;
+    /* Button hover: pale blue */
+    --file-btn-text: #000000;
+    /* Black */
+    --h1-color: #7f9cf5;
+    /* H1: Holographic blue */
+}
+
+
+/* ===========================================================================
+   Steampunk Theme
+   ---------------------------------------------------------------------------
+   Victorian-inspired with brass, copper, and mechanical elements. Warm, rich
+   browns and metallics for a vintage, industrial feel.
+============================================================================ */
+
+[data-theme="steampunk"] {
+    --bg-color: #2c1d0b;
+    /* Page background: dark brown */
+    --text-color: #e0c097;
+    /* Main text: brass */
+    --text-hover: #b87333;
+    /* Hovered text: copper */
+    --active-bg: #b87333;
+    /* Active elements: copper */
+    --active-text-color: #000000;
+    /* Active text: black for contrast */
+    --accent-color: #b87333;
+    /* Accent: copper */
+    --card-bg: #3e2723;
+    /* Card backgrounds: deep brown */
+    --card-border: #b87333;
+    /* Card/input borders: copper */
+    --primary-btn-bg: #b87333;
+    /* Primary button: copper */
+    --primary-btn-text: #fff;
+    /* Primary button text: white */
+    --secondary-btn-bg: #e0c097;
+    /* Secondary button: brass */
+    --secondary-btn-text: #3e2723;
+    /* Secondary button text: deep brown */
+    --accent-bg: #e0c097;
+    /* Subtle accent background: brass */
+    --accent-hover: #b87333;
+    /* Accent hover: copper */
+    --text-secondary: #e0c097;
+    /* Secondary text: brass */
+    --button-gradient-start: #b87333;
+    /* Button gradient: copper start */
+    --button-gradient-end: #e0c097;
+    /* Button gradient: brass end */
+    --button-gradient-hover-start: #e0c097;
+    /* Button hover: brass */
+    --button-gradient-hover-end: #b87333;
+    /* Button hover: copper */
+    --file-btn-text: #000000;
+    /* Black */
+    --h1-color: #e0c097;
+    /* H1: Brass */
+}
+
+
+/* ===========================================================================
+   Glitch Art Theme
+   ---------------------------------------------------------------------------
+   Distorted, pixelated effects with vibrant, chaotic colors. Mimics digital
+   errors and RGB color shifts for a bold, experimental look.
+============================================================================ */
+
+[data-theme="glitch"] {
+    --bg-color: #000;
+    /* Page background: black */
+    --text-color: #fff;
+    /* Main text: white */
+    --text-hover: #ff00c8;
+    /* Hovered text: magenta */
+    --active-bg: #00fff7;
+    /* Active elements: cyan */
+    --active-text-color: #000505;
+    /* Active text: near black */
+    --accent-color: #ff00c8;
+    /* Accent: magenta */
+    --card-bg: #111;
+    /* Card backgrounds: very dark gray */
+    --card-border: #00fff7;
+    /* Card/input borders: cyan */
+    --primary-btn-bg: #ff00c8;
+    /* Primary button: magenta */
+    --primary-btn-text: #000000;
+    /* Primary button text: black */
+    --secondary-btn-bg: #00fff7;
+    /* Secondary button: cyan */
+    --secondary-btn-text: #000;
+    /* Secondary button text: black */
+    --accent-bg: #ff00c8;
+    /* Subtle accent background: magenta */
+    --accent-hover: #00fff7;
+    /* Accent hover: cyan */
+    --text-secondary: #00fff7;
+    /* Secondary text: cyan */
+    --button-gradient-start: #ff00c8;
+    /* Button gradient: magenta start */
+    --button-gradient-end: #00fff7;
+    /* Button gradient: cyan end */
+    --button-gradient-hover-start: #00fff7;
+    /* Button hover: cyan */
+    --button-gradient-hover-end: #ff00c8;
+    /* Button hover: magenta */
+    --file-btn-text: #000000;
+    /* Black */
+    --h1-color: #ff00c8;
+    /* H1: Magenta */
+}
+
+[data-theme="glitch"] .section-card {
+    border-style: dashed;
+    position: relative;
+    animation: glitch-border 7s infinite, glitch-skew 8s infinite;
+}
+
+[data-theme="glitch"] h1,
+[data-theme="glitch"] h2,
+[data-theme="glitch"] h3 {
+    position: relative;
+    display: inline-block;
+    /* Ensures pseudo-elements align properly */
+    animation: glitch-text 6s infinite;
+}
+
+[data-theme="glitch"] h1::before,
+[data-theme="glitch"] h2::before,
+[data-theme="glitch"] h3::before,
+[data-theme="glitch"] h1::after,
+[data-theme="glitch"] h2::after,
+[data-theme="glitch"] h3::after {
+    content: attr(data-text);
+    /* Copies the text content */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+[data-theme="glitch"] h1::before,
+[data-theme="glitch"] h2::before,
+[data-theme="glitch"] h3::before {
+    color: #00fff7;
+    /* Cyan */
+    animation: glitch-layer-cyan 5.5s infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+    /* Partial text */
+}
+
+[data-theme="glitch"] h1::after,
+[data-theme="glitch"] h2::after,
+[data-theme="glitch"] h3::after {
+    color: #ff00c8;
+    /* Magenta */
+    animation: glitch-layer-magenta 6.5s infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+    /* Different part */
+}
+
+
+/* ===========================================================================
+   Bauhaus Theme
+   ---------------------------------------------------------------------------
+   Bold primary colors, geometric shapes, and functional design. Inspired by
+   the Bauhaus art movement, this theme is playful and modernist.
+============================================================================ */
+
+[data-theme="bauhaus"] {
+    --bg-color: #fff;
+    /* Page background: white */
+    --text-color: #222;
+    /* Main text: almost black */
+    --text-hover: #e63946;
+    /* Hovered text: bold red */
+    --active-bg: #f1faee;
+    /* Active elements: pale green */
+    --active-text-color: #e63946;
+    /* Active text: bold red */
+    --accent-color: #457b9d;
+    /* Accent: blue */
+    --card-bg: #f1faee;
+    /* Card backgrounds: pale green */
+    --card-border: #222;
+    /* Card/input borders: almost black */
+    --primary-btn-bg: #e63946;
+    /* Primary button: bold red */
+    --primary-btn-text: #fff;
+    /* Primary button text: white */
+    --secondary-btn-bg: #f1faee;
+    /* Secondary button: pale green */
+    --secondary-btn-text: #222;
+    /* Secondary button text: almost black */
+    --accent-bg: #a8dadc;
+    /* Subtle accent background: light blue */
+    --accent-hover: #457b9d;
+    /* Accent hover: blue */
+    --text-secondary: #457b9d;
+    /* Secondary text: blue */
+    --button-gradient-start: #e63946;
+    /* Button gradient: red start */
+    --button-gradient-end: #457b9d;
+    /* Button gradient: blue end */
+    --button-gradient-hover-start: #457b9d;
+    /* Button hover: blue */
+    --button-gradient-hover-end: #e63946;
+    /* Button hover: red */
+    --file-btn-text: #000000;
+    /* Black */
+    --h1-color: #e63946;
+    /* H1: Bold red */
+}
+
+
+/* ===========================================================================
+   Neon Theme
+   ---------------------------------------------------------------------------
+   Vibrant, electric energy with black backgrounds and neon green, magenta,
+   and cyan accents. Inspired by nightclubs and digital art.
+============================================================================ */
+
+[data-theme="neon"] {
+    --bg-color: #000000;
+    /* Page background: black */
+    --text-color: #39ff14;
+    /* Main text: neon green */
+    --text-hover: #ccff00;
+    /* Hovered text: neon yellow */
+    --active-bg: #222222;
+    /* Active elements: dark gray */
+    --active-text-color: #39ff14;
+    /* Active text: neon green */
+    --accent-color: #39ff14;
+    /* Accent: neon green */
+    --card-bg: #111111;
+    /* Card backgrounds: very dark gray */
+    --card-border: #39ff14;
+    /* Card/input borders: neon green */
+    --primary-btn-bg: #ff00ff;
+    /* Primary button: magenta */
+    --primary-btn-text: #ffffff;
+    /* Primary button text: white */
+    --secondary-btn-bg: #00ffff;
+    /* Secondary button: cyan */
+    --secondary-btn-text: #000000;
+    /* Secondary button text: black */
+    --accent-bg: #1a3c34;
+    /* Subtle accent background: deep teal */
+    --accent-hover: #00ffaa;
+    /* Accent hover: neon cyan */
+    --text-secondary: #00ffaa;
+    /* Secondary text: neon cyan */
+    --button-gradient-start: #39ff14;
+    /* Button gradient: neon green start */
+    --button-gradient-end: #00ffff;
+    /* Button gradient: cyan end */
+    --button-gradient-hover-start: #ccff00;
+    /* Button hover: neon yellow */
+    --button-gradient-hover-end: #39ff14;
+    /* Button hover: neon green */
+    --file-btn-text: #ffffff;
+    /* White */
+    --h1-color: #39ff14;
+    /* H1: Neon green */
+}
+
+[data-theme="neon"] .section-card {
+    /* Neon glow using text color */
+    box-shadow: 0 0 10px var(--text-color);
+}
+
+[data-theme="neon"] .btn-primary,
+[data-theme="neon"] .btn-secondary {
+    /* Neon button glow */
+    box-shadow: 0 0 5px var(--primary-btn-bg);
+}
+
+
+/* ===========================================================================
+   Cosmic Theme
+   ---------------------------------------------------------------------------
+   Deep cosmic blues and purples, with white and indigo accents. Inspired by
+   space, stars, and the night sky.
+============================================================================ */
+
+[data-theme="cosmic"] {
+    --bg-color: #0f0c29;
+    /* Page background: deep cosmic blue */
+    --text-color: #ffffff;
+    /* Main text: white */
+    --text-hover: #e5e7eb;
+    /* Hovered text: light gray */
+    --active-bg: #302b63;
+    /* Active elements: dark blue */
+    --active-text-color: #a5b4fc;
+    /* Active text: indigo */
+    --accent-color: #a5b4fc;
+    /* Accent: indigo */
+    --card-bg: #24243e;
+    /* Card backgrounds: cosmic card bg */
+    --card-border: #302b63;
+    /* Card/input borders: cosmic border */
+    --primary-btn-bg: #6b46c1;
+    /* Primary button: cosmic purple */
+    --primary-btn-text: #ffffff;
+    /* Primary button text: white */
+    --secondary-btn-bg: #302b63;
+    /* Secondary button: cosmic secondary */
+    --secondary-btn-text: #d1d5db;
+    /* Secondary button text: light gray */
+    --accent-bg: #3730a3;
+    /* Subtle accent background: deep indigo */
+    --accent-hover: #4f46e5;
+    /* Accent hover: indigo */
+    --text-secondary: #a5b4fc;
+    /* Secondary text: indigo */
+    --button-gradient-start: #6b46c1;
+    /* Button gradient: purple start */
+    --button-gradient-end: #a5b4fc;
+    /* Button gradient: indigo end */
+    --button-gradient-hover-start: #553c9a;
+    /* Button hover: deeper purple */
+    --button-gradient-hover-end: #818cf8;
+    /* Button hover: lighter indigo */
+    --file-btn-text: #ffffff;
+    /* White */
+    --h1-color: #a5b4fc;
+    /* H1: Indigo */
+}
+
+[data-theme="cosmic"] .section-card {
+    /* Cosmic gradient card background */
+    background: linear-gradient(145deg, var(--card-bg), #1a1a2e);
+}
+
+[data-theme="cosmic"] .btn-primary {
+    /* Cosmic gradient button background */
+    background: linear-gradient(145deg, var(--primary-btn-bg), #553c9a);
+}
+
+
+/* ---------------------------------------------------------------------------
+   Glitch Animations
+   ---------------------------------------------------------------------------
+   Keyframes for glitch theme effects.
+---------------------------------------------------------------------------- */
+
+@keyframes glitch-border {
+    0%,
+    20%,
+    40%,
+    60%,
+    80%,
+    95% {
+        border-color: #ff00c8;
+        /* Magenta */
+    }
+    21%,
+    22% {
+        border-color: #00fff7;
+        /* Fast cyan flash */
+    }
+    41% {
+        border-color: transparent;
+        /* Flicker off */
+    }
+    42%,
+    43% {
+        border-color: #00fff7;
+        /* Quick cyan */
+    }
+    61%,
+    62%,
+    63% {
+        border-color: #ff00c8;
+        /* Stuttered magenta */
+    }
+    81% {
+        border-color: #00fff7;
+        /* Slow cyan */
+    }
+    82%,
+    83% {
+        border-color: transparent;
+        /* Flicker */
+    }
+    100% {
+        border-color: #ff00c8;
+    }
+}
+
+@keyframes glitch-skew {
+    0%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: skew(0);
+        opacity: 1;
+    }
+    31% {
+        transform: skew(3deg);
+        opacity: 0.8;
+        /* Fast flicker */
+    }
+    32% {
+        transform: skew(-2deg);
+    }
+    51%,
+    52% {
+        transform: skew(1deg);
+        opacity: 0.7;
+        /* Quick stutter */
+    }
+    71% {
+        transform: skew(-3deg);
+        opacity: 0.9;
+        /* Slower skew */
+    }
+    72%,
+    73% {
+        transform: skew(2deg);
+    }
+    100% {
+        transform: skew(0);
+        opacity: 1;
+    }
+}
+
+@keyframes glitch-text {
+    0%,
+    25%,
+    50%,
+    75%,
+    90% {
+        transform: translate(0, 0);
+        text-shadow: none;
+        opacity: 1;
+    }
+    26% {
+        transform: translate(3px, -2px);
+        text-shadow: 2px 2px 0 #ff00c8;
+        /* Fast magenta glitch */
+        opacity: 0.8;
+    }
+    27% {
+        transform: translate(-4px, 1px);
+        text-shadow: -2px -2px 0 #00fff7;
+        /* Quick cyan */
+    }
+    51% {
+        transform: translate(2px, 3px);
+        text-shadow: 1px 1px 0 #ff00c8;
+        /* Slower magenta */
+        opacity: 0.9;
+    }
+    52%,
+    53% {
+        transform: translate(-3px, -2px);
+        text-shadow: -1px -1px 0 #00fff7;
+        /* Stuttered cyan */
+    }
+    76% {
+        transform: translate(4px, -3px);
+        text-shadow: 2px 2px 0 #ff00c8;
+        /* Slow magenta */
+        opacity: 0.7;
+    }
+    77% {
+        transform: translate(-2px, 2px);
+        text-shadow: -2px -2px 0 #00fff7;
+    }
+    100% {
+        transform: translate(0, 0);
+        text-shadow: none;
+        opacity: 1;
+    }
+}
+
+@keyframes glitch-layer-cyan {
+    0%,
+    20%,
+    40%,
+    60%,
+    85% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+    21% {
+        transform: translate(5px, -3px);
+        /* Fast shift */
+        opacity: 0.6;
+    }
+    22% {
+        transform: translate(-4px, 2px);
+    }
+    41%,
+    42% {
+        transform: translate(3px, -4px);
+        /* Quick stutter */
+        opacity: 0.8;
+    }
+    61% {
+        transform: translate(-5px, 3px);
+        /* Slower shift */
+        opacity: 0.7;
+    }
+    62% {
+        transform: translate(2px, -2px);
+    }
+    100% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+}
+
+@keyframes glitch-layer-magenta {
+    0%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+    31% {
+        transform: translate(-4px, 3px);
+        /* Fast shift */
+        opacity: 0.7;
+    }
+    32%,
+    33% {
+        transform: translate(5px, -2px);
+        /* Stutter */
+    }
+    51% {
+        transform: translate(-3px, 4px);
+        /* Slower shift */
+        opacity: 0.8;
+    }
+    71%,
+    72% {
+        transform: translate(4px, -3px);
+        /* Quick burst */
+        opacity: 0.6;
+    }
+    100% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+}

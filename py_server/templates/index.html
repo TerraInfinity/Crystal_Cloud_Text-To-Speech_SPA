@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>gTTS Demo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+            background-color: #f9f9f9;
+        }
+        
+        h1,
+        h2 {
+            color: #333;
+        }
+        
+        .specs,
+        .audio-controls {
+            margin-top: 1em;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .file-details {
+            margin-left: 20px;
+            display: none;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-left: 2px solid #007bff;
+        }
+        
+        .file-entry {
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+            background-color: #fff;
+            margin-bottom: 5px;
+            border-radius: 5px;
+        }
+        
+        .toggle-btn {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+        
+        .search-bar,
+        .category-filter {
+            margin-bottom: 1em;
+        }
+        
+        .search-bar input,
+        .category-filter select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        .search-bar input {
+            width: 300px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            margin-right: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>gTTS Demo</h1>
+    <button id="generateBtn">Generate Audio ("Demo, testing!")</button>
+    <div class="audio-controls" id="audioControls" style="display:none;">
+        <audio id="audioPlayer" controls></audio>
+        <br>
+        <a id="downloadLink" href="#" download="demo.wav">Download Audio</a>
+    </div>
+    <div class="specs" id="specs"></div>
+    <h2>Stored Files</h2>
+    <div class="category-filter">
+        <label for="category">Filter by category: </label>
+        <select id="category">
+            <option value="all">All</option>
+            <option value="sound_effect">Sound Effects</option>
+            <option value="voice">Voice</option>
+            <option value="song">Song</option>
+            <option value="text">Text</option>
+            <option value="json">JSON</option>
+            <option value="other">Other</option>
+        </select>
+    </div>
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search files...">
+    </div>
+    <button id="uploadBtn">Upload Files</button>
+    <button id="refreshBtn">Refresh List</button>
+    <button id="purgeBtn">Purge All Files</button>
+    <input type="file" id="fileInput" style="display:none;" accept="audio/*" multiple>
+    <div id="fileList"></div>
+
+    <script>
+        let allFiles = [];
+
+        document.getElementById('generateBtn').onclick = async function() {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = "Generating...";
+            document.getElementById('audioControls').style.display = "none";
+            document.getElementById('specs').textContent = "";
+            try {
+                const resp = await fetch('/gtts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: "Demo, testing!"
+                    })
+                });
+                const data = await resp.json();
+                if (!data.audioBase64) throw new Error(data.message || "No audio returned");
+                const byteCharacters = atob(data.audioBase64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], {
+                    type: 'audio/wav'
+                });
+                const url = URL.createObjectURL(blob);
+                document.getElementById('audioPlayer').src = url;
+                document.getElementById('downloadLink').href = url;
+                document.getElementById('audioControls').style.display = "";
+                const audio = document.getElementById('audioPlayer');
+                audio.onloadedmetadata = function() {
+                    const duration = audio.duration.toFixed(2);
+                    let sampleRate = "Unknown";
+                    try {
+                        const ctx = new(window.AudioContext || window.webkitAudioContext)();
+                        fetch(url).then(r => r.arrayBuffer()).then(buf => {
+                            const sampleRate = getWavSampleRate(buf);
+                            showSpecs(duration, sampleRate, blob.size);
+                        });
+                    } catch (e) {
+                        showSpecs(duration, sampleRate, blob.size);
+                    }
+                };
+
+                function showSpecs(duration, sampleRate, size) {
+                    document.getElementById('specs').innerHTML =
+                        `<b>Specs:</b><br>File type: audio/wav<br>Sample rate: ${sampleRate} Hz<br>Duration: ${duration} seconds<br>File size: ${size} bytes`;
+                }
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+            btn.disabled = false;
+            btn.textContent = 'Generate Audio ("Demo, testing!")';
+        };
+
+        function getWavSampleRate(arrayBuffer) {
+            const view = new DataView(arrayBuffer);
+            return view.getUint32(24, true);
+        }
+
+        function renderFileList(files) {
+            const fileListDiv = document.getElementById('fileList');
+            fileListDiv.innerHTML = '';
+            if (files.length === 0) {
+                fileListDiv.innerHTML = '<p>No files found.</p>';
+                return;
+            }
+            files.forEach(file => {
+                        const fileDiv = document.createElement('div');
+                        fileDiv.className = 'file-entry';
+                        fileDiv.innerHTML = `
+                    <p><strong>File: ${file.name}</strong> <span class="toggle-btn">[Toggle Details]</span></p>
+                    <audio controls src="${file.url}"></audio>
+                    <div class="file-details">
+                        <p><b>ID:</b> ${file.id}</p>
+                        <p><b>Type:</b> ${file.type}</p>
+                        <p><b>Size:</b> ${file.size} bytes</p>
+                        <p><b>Category:</b> ${file.category}</p>
+                        <p><b>Source Type:</b> ${file.source.type}</p>
+                        ${file.source.type === 'local' ? `
+                            <p><b>Source Metadata:</b></p>
+                            <ul>
+                                <li>Name: ${file.source.metadata.name}</li>
+                                <li>Type: ${file.source.metadata.type}</li>
+                                <li>Size: ${file.source.metadata.size} bytes</li>
+                            </ul>
+                        ` : `<p><b>Source URL:</b> ${file.source.url || 'Unknown'}</p>`}
+                        <p><b>Date:</b> ${file.date}</p>
+                        <p><b>Volume:</b> ${file.volume}</p>
+                        <p><b>Placeholder:</b> ${file.placeholder}</p>
+                    </div>
+                `;
+                const toggleBtn = fileDiv.querySelector('.toggle-btn');
+                const detailsDiv = fileDiv.querySelector('.file-details');
+                toggleBtn.addEventListener('click', () => {
+                    detailsDiv.style.display = detailsDiv.style.display === 'none' ? 'block' : 'none';
+                });
+                fileListDiv.appendChild(fileDiv);
+            });
+        }
+
+        function updateFileList() {
+            fetch('/audio/list')
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch file list');
+                    return response.json();
+                })
+                .then(data => {
+                    allFiles = data;
+                    filterFiles();
+                })
+                .catch(error => {
+                    console.error('Error fetching file list:', error);
+                    document.getElementById('fileList').innerHTML = '<p>Error loading file list.</p>';
+                });
+        }
+
+        function filterFiles() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('category').value;
+            let filteredFiles = allFiles.filter(file => {
+                const matchesSearch = file.name.toLowerCase().includes(searchTerm);
+                const matchesCategory = category === 'all' || file.category === category;
+                return matchesSearch && matchesCategory;
+            });
+            renderFileList(filteredFiles);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', filterFiles);
+        document.getElementById('category').addEventListener('change', filterFiles);
+
+        document.getElementById('purgeBtn').onclick = function() {
+            if (confirm("Are you sure you want to delete all files? This action cannot be undone.")) {
+                fetch('/purge', { method: 'POST' })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Purge failed');
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log(data.message);
+                        updateFileList();
+                    })
+                    .catch(error => {
+                        console.error('Error purging files:', error);
+                        alert('Error purging files');
+                    });
+            }
+        };
+
+        document.getElementById('uploadBtn').onclick = function() {
+            document.getElementById('fileInput').click();
+        };
+
+        document.getElementById('fileInput').onchange = function() {
+            const files = this.files;
+            if (files.length > 0) uploadFiles(files);
+        };
+
+        function uploadFiles(files) {
+            const formData = new FormData();
+            Array.from(files).forEach(file => {
+                formData.append('files', file);
+            });
+            const selectedCategory = document.getElementById('category').value;
+            const category = selectedCategory === 'all' ? 'other' : selectedCategory;
+            formData.append('category', category);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.error || 'Upload failed'); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Upload successful:', data);
+                    updateFileList();
+                })
+                .catch(error => {
+                    console.error('Error uploading files:', error);
+                    alert(`Error uploading files: ${error.message}`);
+                });
+        }
+
+        updateFileList();
+        document.getElementById('refreshBtn').onclick = updateFileList;
+    </script>
+</body>
+
+</html>

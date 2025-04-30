@@ -38,12 +38,12 @@ const ToolsTab = () => {
   // Handle HTML/URL parsing
   const parseHtmlOrUrl = async () => {
     if (!htmlInput.trim()) {
-      actions.setError('Please enter HTML or a URL');
+      sessionActions.setError('Please enter HTML or a URL');
       return;
     }
     
     try {
-      actions.setProcessing(true);
+      sessionActions.setProcessing(true);
       
       // Check if input is a URL
       const isUrl = htmlInput.trim().startsWith('http');
@@ -69,23 +69,23 @@ const ToolsTab = () => {
         setParseResult(plainText);
       }
       
-      actions.setNotification({
+      sessionActions.setNotification({
         type: 'success',
         message: 'Text extracted successfully'
       });
     } catch (error) {
-      actions.setError(`Error parsing content: ${error.message}`);
+      sessionActions.setError(`Error parsing content: ${error.message}`);
     } finally {
-      actions.setProcessing(false);
+      sessionActions.setProcessing(false);
     }
   };
   
   // Apply parsed result to main input
   const applyParsedResult = () => {
     if (parseResult) {
-      actions.setInputText(parseResult);
-      actions.setActiveTab('main');
-      actions.setNotification({
+      sessionActions.setInputText(parseResult);
+      sessionActions.setActiveTab('main');
+      sessionActions.setNotification({
         type: 'success',
         message: 'Text applied to input area'
       });
@@ -110,17 +110,17 @@ const ToolsTab = () => {
   // Process text with AI
   const processWithAI = async () => {
     if (!aiInput.trim()) {
-      actions.setError('Please enter text to process');
+      sessionActions.setError('Please enter text to process');
       return;
     }
     
     if (!aiPrompt.trim()) {
-      actions.setError('Please enter a prompt or select a preset');
+      sessionActions.setError('Please enter a prompt or select a preset');
       return;
     }
     
     try {
-      actions.setProcessing(true);
+      sessionActions.setProcessing(true);
       
       // Call AI processing API
       const response = await fetch('/api/aiTransform', {
@@ -141,23 +141,23 @@ const ToolsTab = () => {
       const data = await response.json();
       setAiResult(data.result);
       
-      actions.setNotification({
+      sessionActions.setNotification({
         type: 'success',
         message: 'AI processing completed'
       });
     } catch (error) {
-      actions.setError(`Error processing with AI: ${error.message}`);
+      sessionActions.setError(`Error processing with AI: ${error.message}`);
     } finally {
-      actions.setProcessing(false);
+      sessionsessionActions(false);
     }
   };
   
   // Apply AI result to main input
   const applyAiResult = () => {
     if (aiResult) {
-      actions.setInputText(aiResult);
-      actions.setActiveTab('main');
-      actions.setNotification({
+      sessionActions.setInputText(aiResult);
+      sessionActions.setActiveTab('main');
+      sessionActions.setNotification({
         type: 'success',
         message: 'AI processed text applied to input area'
       });
@@ -167,7 +167,14 @@ const ToolsTab = () => {
   return (
     <div className="space-y-8">
       {/* HTML/URL Parsing Tool */}
-      <div className="bg-white p-4 rounded-lg border border-gray-200">
+      <div
+        className="p-4 rounded-lg"
+        style={{
+          backgroundColor: 'var(--card-bg)',
+          borderColor: 'var(--card-border)',
+          borderWidth: '1px',
+        }}
+      >
         <h3 className="text-lg font-medium mb-4">HTML/URL Parsing</h3>
         
         <div className="mb-4">
@@ -221,7 +228,14 @@ const ToolsTab = () => {
       </div>
       
       {/* AI Transformation Tool */}
-      <div className="bg-white p-4 rounded-lg border border-gray-200">
+      <div
+        className="p-4 rounded-lg"
+        style={{
+          backgroundColor: 'var(--card-bg)',
+          borderColor: 'var(--card-border)',
+          borderWidth: '1px',
+        }}
+      >
         <h3 className="text-lg font-medium mb-4">AI Transformation</h3>
         
         <div className="mb-4">

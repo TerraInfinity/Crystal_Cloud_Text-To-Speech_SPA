@@ -1,0 +1,187 @@
+import storageService from './storageService';
+
+class AudioProcessingService {
+    /**
+     * Orchestrates merging audio files from S3: downloads, combines,
+     * converts to stereo if needed, and uploads the merged file back to S3.
+     * Handles sorting files based on sequence numbers and ensures compatibility.
+     *
+     * @param {string} bucket - Source S3 bucket name
+     * @param {string[]} keys - Array of S3 object keys to merge (must be non-empty)
+     * @param {string} [outputBucket] - Destination S3 bucket (defaults to source bucket)
+     * @param {string} [outputKey] - Destination key for merged file (defaults to merged_<timestamp>.wav)
+     * @returns {Promise<string>} - URL of the merged audio file on S3, or throws an error if keys are invalid
+     */
+    async merge_audio_files_from_s3(bucket, keys, outputBucket, outputKey) {
+        // 1. Sort the keys by their sequence numbers
+        const sortedKeys = [...keys].sort(
+            (a, b) =>
+            this.get_sequence_number_from_filename(a) -
+            this.get_sequence_number_from_filename(b)
+        );
+
+        // 2. Download each part as a Blob
+        const blobs = await storageService.download_audio_files_from_s3(bucket, sortedKeys);
+
+        // 3. Combine into one audio Blob
+        const mergedBlob = await this.combine_audio_files(blobs);
+
+        // 4. Upload merged Blob back to S3
+        const targetBucket = outputBucket || bucket;
+        const targetKey = outputKey || `merged_${Date.now()}.wav`;
+        const url = await storageService.upload_file_to_s3(mergedBlob, targetBucket, targetKey);
+
+        return url;
+    }
+
+    /**
+     * Combines multiple audio Blobs into a single WAV Blob, ensuring all inputs have the same sample rate.
+     * Decodes audio, merges buffers, and converts to stereo if necessary.
+     *
+     * @param {Blob[]} blobs - Array of audio Blobs to combine (assumes all are valid audio files)
+     * @returns {Promise<Blob>} - The combined WAV Blob
+     */
+    async combine_audio_files(blobs) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+
+        // Decode each part
+        const buffers = await Promise.all(
+            blobs.map((blob) =>
+                blob
+                .arrayBuffer()
+                .then((buf) => ctx.decodeAudioData(buf))
+            )
+        );
+
+        // Compute total length & channel count
+        const sampleRate = buffers[0].sampleRate;
+        const channelCount = Math.max(...buffers.map((b) => b.numberOfChannels));
+        const totalLength = buffers.reduce((sum, b) => sum + b.length, 0);
+
+        // Create output buffer
+        const output = ctx.createBuffer(channelCount, totalLength, sampleRate);
+
+        // Copy parts in sequence
+        let offset = 0;
+        for (const b of buffers) {
+            for (let ch = 0; ch < channelCount; ch++) {
+                const outData = output.getChannelData(ch);
+                const inData = b.getChannelData(ch < b.numberOfChannels ? ch : 0);
+                outData.set(inData, offset);
+            }
+            offset += b.length;
+        }
+
+        // If mono, duplicate to stereo
+        const finalBuffer =
+            output.numberOfChannels === 1 ?
+            this.convert_mono_to_stereo_audio(output) :
+            output;
+
+        // Encode to WAV
+        const wavBlob = this._encodeWav(finalBuffer);
+        return wavBlob;
+    }
+
+    /**
+     * Converts a mono AudioBuffer into a stereo (2-channel) AudioBuffer by duplicating the single channel.
+     * Useful for ensuring compatibility with stereo playback systems.
+     *
+     * @param {AudioBuffer} buffer - The mono AudioBuffer to convert
+     * @returns {AudioBuffer} - A new stereo AudioBuffer
+     */
+    convert_mono_to_stereo_audio(buffer) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const stereo = ctx.createBuffer(2, buffer.length, buffer.sampleRate);
+        const monoData = buffer.getChannelData(0);
+        stereo.copyToChannel(monoData, 0);
+        stereo.copyToChannel(monoData, 1);
+        return stereo;
+    }
+
+    /**
+     * Extracts the leading numeric sequence from a filename, used for sorting audio parts.
+     * For example, "001_part.wav" returns 1; if no number is found, returns 0.
+     *
+     * @param {string} filename - The filename to parse
+     * @returns {number} - The parsed sequence number or 0 if none is present
+     */
+    get_sequence_number_from_filename(filename) {
+        const m = filename.match(/^(\d+)/);
+        return m ? parseInt(m[1], 10) : 0;
+    }
+
+    /**
+     * Encodes an AudioBuffer into a WAV Blob using PCM 16-bit format.
+     * This is a private helper method for internal use only.
+     *
+     * @private
+     * @param {AudioBuffer} buffer - The AudioBuffer to encode
+     * @returns {Blob} - The encoded WAV Blob
+     */
+    _encodeWav(buffer) {
+        const numCh = buffer.numberOfChannels;
+        const sampleRate = buffer.sampleRate;
+        const bitsPerSample = 16;
+
+        // Interleave channels
+        const len = buffer.length * numCh * (bitsPerSample / 8);
+        const wav = new ArrayBuffer(44 + len);
+        const view = new DataView(wav);
+
+        // RIFF header
+        function writeString(offset, str) {
+            for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+        }
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + len, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true); // Subchunk1Size
+        view.setUint16(20, 1, true); // PCM
+        view.setUint16(22, numCh, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * numCh * (bitsPerSample / 8), true);
+        view.setUint16(32, numCh * (bitsPerSample / 8), true);
+        view.setUint16(34, bitsPerSample, true);
+        writeString(36, 'data');
+        view.setUint32(40, len, true);
+
+        // Write interleaved PCM samples
+        let offset = 44;
+        for (let i = 0; i < buffer.length; i++) {
+            for (let ch = 0; ch < numCh; ch++) {
+                let sample = buffer.getChannelData(ch)[i];
+                // clamp
+                sample = Math.max(-1, Math.min(1, sample));
+                view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                offset += 2;
+            }
+        }
+
+        return new Blob([view], { type: 'audio/wav' });
+    }
+
+    /**
+     * Creates a silent audio Blob of the specified duration (in ms), sample rate, and channels.
+     * Useful for generating pauses between audio segments.
+     *
+     * @param {number} durationMs - Duration of silence in milliseconds
+     * @param {number} [sampleRate=44100] - Sample rate in Hz
+     * @param {number} [channels=2] - Number of channels (1=mono, 2=stereo)
+     * @returns {Blob} - The silent WAV Blob
+     */
+    create_silent_audio(durationMs, sampleRate = 44100, channels = 2) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const frameCount = Math.floor((durationMs / 1000) * sampleRate);
+        const buffer = ctx.createBuffer(channels, frameCount, sampleRate);
+        // No need to fill, as buffers are zeroed (silence)
+        return this._encodeWav(buffer);
+    }
+}
+
+// Export singleton
+export default new AudioProcessingService();

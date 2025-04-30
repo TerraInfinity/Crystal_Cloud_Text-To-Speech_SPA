@@ -2,7 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
 
 const AudioFilesTab = () => {
-  const { savedAudios, actions, isProcessing } = useTTS();
+  // Destructure state, actions, and isProcessing from useTTS
+  const { state, actions, isProcessing } = useTTS();
+  // Safely access savedAudios with a fallback to an empty object
+  const savedAudios = state?.savedAudios || {};
+
   const fileInputRef = useRef(null);
   const [audioName, setAudioName] = useState('');
   const [selectedAudio, setSelectedAudio] = useState(null);
@@ -14,14 +18,14 @@ const AudioFilesTab = () => {
   const handleAudioUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith('audio/')) {
-      actions.setError('Please upload an audio file');
+      sessionActions.setError('Please upload an audio file');
       return;
     }
 
     try {
-      actions.setProcessing(true);
+      sessionActions.setProcessing(true);
       const audioUrl = URL.createObjectURL(file);
-      const name = audioName.trim() || file.name.replace(/\.[^/.]+$/, "");
+      const name = audioName.trim() || file.name.replace(/\.[^/.]+$/, '');
       const audioId = `audio-${Date.now()}`;
 
       actions.saveAudio({
@@ -32,7 +36,7 @@ const AudioFilesTab = () => {
         size: file.size,
         date: new Date().toISOString(),
         placeholder: placeholderText || name.toLowerCase().replace(/\s+/g, '_'),
-        volume: volume
+        volume: volume,
       });
 
       setAudioName('');
@@ -40,9 +44,9 @@ const AudioFilesTab = () => {
       setVolume(1);
       fileInputRef.current.value = '';
     } catch (error) {
-      actions.setError(`Error uploading audio: ${error.message}`);
+      sessionActions.setError(`Error uploading audio: ${error.message}`);
     } finally {
-      actions.setProcessing(false);
+      sessionActions.setProcessing(false);
     }
   };
 
@@ -59,7 +63,7 @@ const AudioFilesTab = () => {
   const updateAudioVolume = (audioId, newVolume) => {
     actions.updateAudio(audioId, {
       ...savedAudios[audioId],
-      volume: newVolume
+      volume: newVolume,
     });
   };
 
@@ -92,7 +96,6 @@ const AudioFilesTab = () => {
   return (
     <div>
       <h2 className="text-xl font-medium mb-4">Audio Files</h2>
-
       <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
         <h3 className="text-lg font-medium mb-3">Upload New Audio</h3>
 
@@ -159,7 +162,6 @@ const AudioFilesTab = () => {
           Supported file types: MP3, WAV, OGG, and other browser-supported audio formats
         </p>
       </div>
-
       {selectedAudio && (
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
           <h3 className="text-lg font-medium mb-2">Now Playing: {selectedAudio.name}</h3>
@@ -173,7 +175,6 @@ const AudioFilesTab = () => {
           />
         </div>
       )}
-
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <h3 className="text-lg font-medium mb-3">Your Audio Files</h3>
 
@@ -182,8 +183,8 @@ const AudioFilesTab = () => {
         ) : (
           <div className="space-y-3">
             {Object.values(savedAudios).map((audio) => (
-              <div 
-                key={audio.id} 
+              <div
+                key={audio.id}
                 className="p-3 bg-gray-50 rounded-md hover:bg-gray-100"
               >
                 <div className="flex items-center justify-between mb-2">
@@ -200,8 +201,17 @@ const AudioFilesTab = () => {
                       className="p-2 text-indigo-600 hover:text-indigo-800 rounded-full hover:bg-indigo-100"
                       title="Play"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </button>
 
@@ -210,8 +220,17 @@ const AudioFilesTab = () => {
                       className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-100"
                       title="Delete"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -223,18 +242,21 @@ const AudioFilesTab = () => {
                     <input
                       type="text"
                       value={audio.placeholder || ''}
-                      onChange={(e) => actions.updateAudio(audio.id, {
-                        ...audio,
-                        placeholder: e.target.value
-                      })}
+                      onChange={(e) =>
+                        actions.updateAudio(audio.id, {
+                          ...audio,
+                          placeholder: e.target.value,
+                        })
+                      }
                       className="input-field"
                       placeholder="e.g., beep, laugh"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Used in text as: [sound:{audio.placeholder || audio.name.toLowerCase().replace(/\s+/g, '_')}]
+                      Used in text as: [sound:
+                      {audio.placeholder || audio.name.toLowerCase().replace(/\s+/g, '_')}]
                     </p>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">Volume</label>
                     <input
@@ -243,10 +265,12 @@ const AudioFilesTab = () => {
                       max="1"
                       step="0.1"
                       value={audio.volume || 1}
-                      onChange={(e) => actions.updateAudio(audio.id, {
-                        ...audio,
-                        volume: parseFloat(e.target.value)
-                      })}
+                      onChange={(e) =>
+                        actions.updateAudio(audio.id, {
+                          ...audio,
+                          volume: parseFloat(e.target.value),
+                        })
+                      }
                       className="w-full"
                     />
                   </div>

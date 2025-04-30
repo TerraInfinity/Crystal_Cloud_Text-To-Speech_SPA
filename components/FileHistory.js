@@ -1,13 +1,13 @@
-
 import React from 'react';
 import { useTTS } from '../context/TTSContext';
 
 const FileHistory = () => {
-  const { fileHistory, actions, isProcessing } = useTTS();
+  const { state, actions, isProcessing } = useTTS(); // Destructure state instead of fileHistory directly
+  const fileHistory = state?.fileHistory || []; // Safely access fileHistory with a fallback
 
   const handleLoadConfig = (historyEntry) => {
     actions.loadHistoryEntry(historyEntry);
-    actions.setActiveTab('main');
+    sessionActions.setActiveTab('main');
   };
 
   const handleDelete = (historyId) => {

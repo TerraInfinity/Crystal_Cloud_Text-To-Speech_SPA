@@ -1,48 +1,47 @@
 {
-  "title": "Demo Kundalini Yoga Kriya",
-  "description": "A sample yoga kriya practice with all sections for demonstration purposes.",
-  "sections": [
-    {
-      "id": "section-tuning-in",
-      "title": "Tuning In (Intro)",
-      "type": "audio-only",
-      "text": "",
-      "voice": null
-    },
-    {
-      "id": "section-warmup",
-      "title": "Warm-Up",
-      "type": "text-to-audio",
-      "text": "Let's begin with a gentle warm-up to prepare the body for the kriya practice.\n\nFind a comfortable seated position on your mat. Sit cross-legged with your spine straight and shoulders relaxed.\n\n1. Begin with neck rolls. Gently drop your chin to your chest and slowly roll your head in a circle to the right 3 times, then to the left 3 times. Keep your shoulders relaxed.\n\n2. Shoulder shrugs. Inhale as you lift your shoulders up toward your ears, exhale as you drop them down. Repeat 8 times.\n\n3. Spinal flex. Place your hands on your knees. As you inhale, arch your spine forward, chest forward, shoulders back. As you exhale, round your spine, pulling your navel toward your spine. Continue for 1-2 minutes with deep breaths.\n\n4. Twist. Place your hands on your shoulders with fingers in front and thumbs in back. Inhale center, exhale twist to the left. Inhale center, exhale twist to the right. Continue for 1 minute.\n\nAllow your breath to flow naturally with each movement. Feel the energy beginning to circulate throughout your body.",
-      "voice": null
-    },
-    {
-      "id": "section-kriya",
-      "title": "Kriya Sequence",
-      "type": "text-to-audio",
-      "text": "Now we'll move into the main kriya sequence. This practice will balance your energy and stimulate your nervous system.\n\nExercise 1: Alternate Nostril Breathing\n- Sit in easy pose with a straight spine\n- Use your right thumb to close your right nostril\n- Inhale deeply through your left nostril\n- Close your left nostril with your right ring finger, release your thumb\n- Exhale through your right nostril\n- Inhale through your right nostril\n- Close your right nostril, release your ring finger\n- Exhale through your left nostril\n- This completes one cycle. Continue for 3 minutes.\n\nExercise 2: Arm Pumping\n- Sit on your heels in rock pose\n- Extend your arms straight up with palms facing forward, fingers together\n- Begin powerfully pumping your arms up and down, keeping them straight\n- Coordinate with breath of fire - rapid, equal inhales and exhales through the nose\n- Continue for 2 minutes, then inhale, hold briefly, and relax\n\nExercise 3: Frog Pose\n- Squat down with your heels off the ground, feet flat on the floor\n- Place your fingertips on the ground between your knees\n- Inhale as you straighten your legs and lift your hips up, keeping fingertips on the ground\n- Exhale as you return to the squat position\n- Continue at a moderate pace for 26 repetitions\n\nExercise 4: Spinal Flex on Heels\n- Sit on your heels with your hands on your thighs\n- Inhale as you flex your spine forward, lifting your chest\n- Exhale as you flex your spine backward\n- Continue for 2 minutes with deep breaths\n\nTake a moment to observe the sensations in your body after completing the kriya sequence. Feel the energy circulating throughout your entire being.",
-      "voice": null
-    },
-    {
-      "id": "section-relaxation",
-      "title": "Relaxation",
-      "type": "text-to-audio",
-      "text": "Now we'll move into a deep relaxation to allow the effects of the kriya to integrate.\n\nLie down on your back in corpse pose, with your arms at your sides, palms facing up, and legs slightly apart.\n\nClose your eyes and bring your attention to your breath. Allow your breath to become soft and natural.\n\nRelax your body completely, letting go of any tension or holding. Feel your body becoming heavy and sinking into the floor.\n\nBegin a systematic relaxation by bringing awareness to each part of your body:\n\nRelax your feet and ankles, letting go of any tension.\nRelax your calves and knees, allowing them to soften.\nRelax your thighs and hips, feeling them become heavy.\nRelax your lower back and abdomen, allowing your breath to deepen.\nRelax your upper back and chest, feeling your breath expand in all directions.\nRelax your shoulders, allowing them to drop away from your ears.\nRelax your arms and hands, feeling energy tingling in your fingertips.\nRelax your neck and throat, creating space and ease.\nRelax your jaw, tongue, and the muscles of your face.\nRelax your eyes, letting them rest deeply in their sockets.\nRelax your forehead and scalp, allowing your entire head to be supported.\n\nFeel your whole body completely relaxed and at ease. With each breath, sink deeper into this state of relaxation.\n\nRemain here for 5-7 minutes, allowing the energy to integrate throughout your entire system.",
-      "voice": null
-    },
-    {
-      "id": "section-meditation",
-      "title": "Meditation",
-      "type": "text-to-audio",
-      "text": "Now we'll transition into our meditation practice. Slowly come up to a comfortable seated position with your spine straight and shoulders relaxed.\n\nPlace your hands in Gyan Mudra, with the tips of your thumbs and index fingers touching, resting on your knees with palms facing upward.\n\nClose your eyes gently, focusing at your third eye point - the space between your eyebrows.\n\nBegin to focus on your breath. Breathe long, deep, and slow through your nose. Allow each breath to become fuller and more complete than the one before.\n\nAs you inhale, mentally recite the mantra 'Sat' (meaning truth).\nAs you exhale, mentally recite the mantra 'Nam' (meaning identity).\n\nSat Nam is a bij or seed mantra that affirms your true identity.\n\nContinue this breath and mantra meditation, allowing your mind to become still and focused. If thoughts arise, simply notice them without judgment and return your attention to your breath and the mantra.\n\nFeel the space and stillness growing within you with each breath.\n\nWe will meditate in silence for 5-7 minutes.\n\n[Silence for meditation]\n\nSlowly begin to deepen your breath. Gently move your fingers and toes. When you're ready, open your eyes.",
-      "voice": null
-    },
-    {
-      "id": "section-closing",
-      "title": "Closing",
-      "type": "audio-only",
-      "text": "",
-      "voice": null
-    }
-  ]
+    "title": "Demo Kundalini Yoga Kriya",
+    "description": "A sample yoga kriya practice with all sections for demonstration purposes.",
+    "sections": [{
+            "id": "0",
+            "title": "Tuning In (Intro)",
+            "type": "audio-only",
+            "text": "",
+            "voice": null
+        },
+        {
+            "id": "1",
+            "title": "Warm-Up",
+            "type": "text-to-audio",
+            "text": "Let's begin with a gentle warm-up to prepare the body for the kriya practice.\n\nFind a comfortable seated position on your mat. Sit cross-legged with your spine straight and shoulders relaxed.\n\n1. Begin with neck rolls. Gently drop your chin to your chest and slowly roll your head in a circle to the right 3 times, then to the left 3 times. Keep your shoulders relaxed.\n\n2. Shoulder shrugs. Inhale as you lift your shoulders up toward your ears, exhale as you drop them down. Repeat 8 times.\n\n3. Spinal flex. Place your hands on your knees. As you inhale, arch your spine forward, chest forward, shoulders back. As you exhale, round your spine, pulling your navel toward your spine. Continue for 1-2 minutes with deep breaths.\n\n4. Twist. Place your hands on your shoulders with fingers in front and thumbs in back. Inhale center, exhale twist to the left. Inhale center, exhale twist to the right. Continue for 1 minute.\n\nAllow your breath to flow naturally with each movement. Feel the energy beginning to circulate throughout your body.",
+            "voice": null
+        },
+        {
+            "id": "2",
+            "title": "Kriya Sequence",
+            "type": "text-to-audio",
+            "text": "Now we'll move into the main kriya sequence. This practice will balance your energy and stimulate your nervous system.\n\nExercise 1: Alternate Nostril Breathing\n- Sit in easy pose with a straight spine\n- Use your right thumb to close your right nostril\n- Inhale deeply through your left nostril\n- Close your left nostril with your right ring finger, release your thumb\n- Exhale through your right nostril\n- Inhale through your right nostril\n- Close your right nostril, release your ring finger\n- Exhale through your left nostril\n- This completes one cycle. Continue for 3 minutes.\n\nExercise 2: Arm Pumping\n- Sit on your heels in rock pose\n- Extend your arms straight up with palms facing forward, fingers together\n- Begin powerfully pumping your arms up and down, keeping them straight\n- Coordinate with breath of fire - rapid, equal inhales and exhales through the nose\n- Continue for 2 minutes, then inhale, hold briefly, and relax\n\nExercise 3: Frog Pose\n- Squat down with your heels off the ground, feet flat on the floor\n- Place your fingertips on the ground between your knees\n- Inhale as you straighten your legs and lift your hips up, keeping fingertips on the ground\n- Exhale as you return to the squat position\n- Continue at a moderate pace for 26 repetitions\n\nExercise 4: Spinal Flex on Heels\n- Sit on your heels with your hands on your thighs\n- Inhale as you flex your spine forward, lifting your chest\n- Exhale as you flex your spine backward\n- Continue for 2 minutes with deep breaths\n\nTake a moment to observe the sensations in your body after completing the kriya sequence. Feel the energy circulating throughout your entire being.",
+            "voice": null
+        },
+        {
+            "id": "3",
+            "title": "Relaxation",
+            "type": "text-to-audio",
+            "text": "Now we'll move into a deep relaxation to allow the effects of the kriya to integrate.\n\nLie down on your back in corpse pose, with your arms at your sides, palms facing up, and legs slightly apart.\n\nClose your eyes and bring your attention to your breath. Allow your breath to become soft and natural.\n\nRelax your body completely, letting go of any tension or holding. Feel your body becoming heavy and sinking into the floor.\n\nBegin a systematic relaxation by bringing awareness to each part of your body:\n\nRelax your feet and ankles, letting go of any tension.\nRelax your calves and knees, allowing them to soften.\nRelax your thighs and hips, feeling them become heavy.\nRelax your lower back and abdomen, allowing your breath to deepen.\nRelax your upper back and chest, feeling your breath expand in all directions.\nRelax your shoulders, allowing them to drop away from your ears.\nRelax your arms and hands, feeling energy tingling in your fingertips.\nRelax your neck and throat, creating space and ease.\nRelax your jaw, tongue, and the muscles of your face.\nRelax your eyes, letting them rest deeply in their sockets.\nRelax your forehead and scalp, allowing your entire head to be supported.\n\nFeel your whole body completely relaxed and at ease. With each breath, sink deeper into this state of relaxation.\n\nRemain here for 5-7 minutes, allowing the energy to integrate throughout your entire system.",
+            "voice": null
+        },
+        {
+            "id": "4",
+            "title": "Meditation",
+            "type": "text-to-audio",
+            "text": "Now we'll transition into our meditation practice. Slowly come up to a comfortable seated position with your spine straight and shoulders relaxed.\n\nPlace your hands in Gyan Mudra, with the tips of your thumbs and index fingers touching, resting on your knees with palms facing upward.\n\nClose your eyes gently, focusing at your third eye point - the space between your eyebrows.\n\nBegin to focus on your breath. Breathe long, deep, and slow through your nose. Allow each breath to become fuller and more complete than the one before.\n\nAs you inhale, mentally recite the mantra 'Sat' (meaning truth).\nAs you exhale, mentally recite the mantra 'Nam' (meaning identity).\n\nSat Nam is a bij or seed mantra that affirms your true identity.\n\nContinue this breath and mantra meditation, allowing your mind to become still and focused. If thoughts arise, simply notice them without judgment and return your attention to your breath and the mantra.\n\nFeel the space and stillness growing within you with each breath.\n\nWe will meditate in silence for 5-7 minutes.\n\n[Silence for meditation]\n\nSlowly begin to deepen your breath. Gently move your fingers and toes. When you're ready, open your eyes.",
+            "voice": null
+        },
+        {
+            "id": "5",
+            "title": "Closing",
+            "type": "audio-only",
+            "text": "",
+            "voice": null
+        }
+    ]
 }
