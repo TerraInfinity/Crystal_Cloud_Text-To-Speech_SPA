@@ -38,8 +38,8 @@ const generateAllAudio = async ({
     devLog('Valid sections:', validSections);
   
     if (validSections.length === 0) {
-      devLog('No valid text-to-audio sections with text');
-      sessionActions.setError('No valid text-to-audio sections with text');
+      devLog('No valid text-to-speech sections with text');
+      sessionActions.setError('No valid text-to-speech sections with text');
       return;
     }
   

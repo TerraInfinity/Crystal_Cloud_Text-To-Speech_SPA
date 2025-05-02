@@ -24,7 +24,7 @@ const AudioPlayer = () => {
   const [isAudioDownloaded, setIsAudioDownloaded] = useState(false);
 
   const validSections = sections.filter(
-    (section) => section.type === 'text-to-audio' && section.text?.trim()
+    (section) => section.type === 'text-to-speech' && section.text?.trim()
   );
   const allSectionsHaveAudio =
     validSections.length > 0 &&
@@ -73,6 +73,7 @@ const AudioPlayer = () => {
 
   return (
     <div
+      id="audio-player-container"
       className="rounded-lg p-6 font-sans"
       style={{
         backgroundColor: 'var(--card-bg)',
@@ -81,10 +82,11 @@ const AudioPlayer = () => {
         borderStyle: 'solid',
       }}
     >
-      <h2 className="text-lg font-semibold mb-4">Preview and Download</h2>
-      <div className="flex items-center justify-center space-x-4">
+      <h2 id="audio-player-title" className="text-lg font-semibold mb-4">Preview and Download</h2>
+      <div id="audio-controls" className="flex items-center justify-center space-x-4">
         <div className="relative">
           <button
+            id="generate-audio-btn"
             onClick={() =>
               generateAllAudio({
                 validSections,
@@ -104,7 +106,7 @@ const AudioPlayer = () => {
           >
             Generate Audio
           </button>
-          <div className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+          <div id="generate-audio-status" className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
             {isGenerating ? (
               <div className="h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center animate-spin">
                 <svg
@@ -168,6 +170,7 @@ const AudioPlayer = () => {
 
         <div className="relative">
           <button
+            id="merge-audio-btn"
             onClick={() =>
               mergeAllAudio({
                 validSections,
@@ -186,7 +189,7 @@ const AudioPlayer = () => {
           >
             Merge Audio
           </button>
-          <div className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+          <div id="merge-audio-status" className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
             {isMerging ? (
               <div className="h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center animate-spin">
                 <svg
@@ -250,6 +253,7 @@ const AudioPlayer = () => {
 
         <div className="relative">
           <button
+            id="download-audio-btn"
             onClick={() => downloadAudio({ mergedAudio, setIsDownloading, setIsAudioDownloaded })}
             className={`button-gradient px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center ${
               isProcessing || !mergedAudio ? 'opacity-50 cursor-not-allowed' : ''
@@ -257,6 +261,7 @@ const AudioPlayer = () => {
             disabled={isProcessing || !mergedAudio}
           >
             <svg
+              id="download-icon"
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5 mr-2"
               viewBox="0 0 20 20"
@@ -270,7 +275,7 @@ const AudioPlayer = () => {
             </svg>
             Download Audio
           </button>
-          <div className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+          <div id="download-audio-status" className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
             {isDownloading ? (
               <div className="h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center animate-spin">
                 <svg
@@ -317,17 +322,19 @@ const AudioPlayer = () => {
       </div>
 
       {mergedAudio && (
-        <div className="mt-6">
+        <div id="audio-preview" className="mt-6">
           <div className="flex items-center mb-2">
             <button
+              id="play-pause-btn"
               onClick={playAudio}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-300"
               disabled={isProcessing}
             >
               {isPlaying ? 'Pause' : 'Play'}
             </button>
-            <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden ml-4">
+            <div id="audio-progress-container" className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden ml-4">
               <div
+                id="audio-progress-bar"
                 className="bg-indigo-600 h-2 transition-all duration-300"
                 style={{ width: `${audioProgress}%` }}
               ></div>
@@ -337,9 +344,9 @@ const AudioPlayer = () => {
       )}
 
       {!mergedAudio && (
-        <p className="text-gray-600 text-center mt-4">
+        <p id="audio-status-message" className="text-gray-600 text-center mt-4">
           {validSections.length === 0
-            ? 'Create text-to-audio sections with text to generate audio'
+            ? 'Create text-to-speech sections with text to generate audio'
             : allSectionsHaveAudio
             ? 'All sections have audio. Click "Merge Audio" to merge them.'
             : 'Generate audio for your sections to proceed.'}

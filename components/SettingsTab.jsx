@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTTS } from '../context/TTSContext';
 import { useTTSSession } from '../context/TTSSessionContext';
+import { devLog } from '../utils/logUtils';
 
 const SettingsTab = () => {
   const {
@@ -255,6 +256,9 @@ const SettingsTab = () => {
         });
         return;
       }
+      // Create voice object with engine information
+      // Note: tld may be undefined for non-gtts engines or when not explicitly set in the voice configuration
+      // This is expected behavior and doesn't affect functionality
       const voiceWithEngine = {
         id: selectedVoice.id,
         name: selectedVoice.name,
@@ -262,7 +266,7 @@ const SettingsTab = () => {
         tld: selectedVoice.tld,
         engine: speechEngine
       };
-      console.log('Adding active voice:', voiceWithEngine); // Debug
+      devLog('Adding active voice:', voiceWithEngine);
       persistentActions.addActiveVoice(speechEngine, voiceWithEngine);
       sessionActions.setNotification({
         type: 'success',
@@ -321,6 +325,7 @@ const SettingsTab = () => {
             </p>
           </div>
           <button
+            id="mode-toggle-button"
             onClick={toggleMode}
             className={`btn ${mode === 'demo' ? 'btn-primary' : 'btn-secondary'}`}
           >
@@ -386,10 +391,11 @@ const SettingsTab = () => {
 
         {/* Speech Engine Dropdown */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="speech-engine-select">
             Speech Engine
           </label>
           <select
+            id="speech-engine-select"
             value={speechEngine}
             onChange={(e) => handleSpeechEngineChange(e.target.value)}
             className="select-field w-full p-2 border rounded"
@@ -423,10 +429,11 @@ const SettingsTab = () => {
           ) : (
             <>
               <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="language-select">
                   Language
                 </label>
                 <select
+                  id="language-select"
                   value={currentLanguage}
                   onChange={(e) => setCurrentLanguage(e.target.value)}
                   className="select-field w-full p-2 border rounded"
@@ -439,11 +446,12 @@ const SettingsTab = () => {
                 </select>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="voice-select">
                   Voice
                 </label>
                 <div className="flex items-center space-x-2">
                   <select
+                    id="voice-select"
                     value={currentVoiceId}
                     onChange={(e) => {
                       const voice = voicesForLanguage.find(v => v.id === e.target.value);
@@ -458,6 +466,7 @@ const SettingsTab = () => {
                     ))}
                   </select>
                   <button
+                    id="add-voice-button"
                     onClick={handleAddActiveVoice}
                     className="bg-green-500 text-white rounded-full p-2 hover:bg-green-600"
                     title="Add to active voices"
@@ -486,6 +495,7 @@ const SettingsTab = () => {
         {/* Custom Voice Management (Expandable) */}
         <div className="mt-4">
           <button
+            id="custom-voice-toggle"
             onClick={() => setIsCustomVoiceExpanded(!isCustomVoiceExpanded)}
             className="text-sm font-medium text-blue-600 hover:text-blue-800"
           >
@@ -501,6 +511,7 @@ const SettingsTab = () => {
               </p>
               <div className="flex space-x-2">
                 <input
+                  id="voice-name-input"
                   type="text"
                   placeholder="Name"
                   value={newVoiceName}
@@ -508,6 +519,7 @@ const SettingsTab = () => {
                   className="input-field flex-1"
                 />
                 <input
+                  id="voice-id-input"
                   type="text"
                   placeholder={speechEngine === 'gtts' ? 'TLD (e.g., com)' : 'ID'}
                   value={newVoiceId}
@@ -515,13 +527,20 @@ const SettingsTab = () => {
                   className="input-field flex-1"
                 />
                 <input
+                  id="voice-language-input"
                   type="text"
                   placeholder="Language (e.g., en)"
                   value={newVoiceLanguage}
                   onChange={(e) => setNewVoiceLanguage(e.target.value)}
                   className="input-field flex-1"
                 />
-                <button onClick={addCustomVoice} className="btn btn-primary">Add</button>
+                <button 
+                  id="add-custom-voice-button"
+                  onClick={addCustomVoice} 
+                  className="btn btn-primary"
+                >
+                  Add
+                </button>
               </div>
               <div className="mt-2">
                 <h5 className="text-sm font-medium mb-1">Custom Voices for {speechEngine}</h5>
@@ -567,6 +586,8 @@ const SettingsTab = () => {
             </div>
             <div className="flex">
               <input
+                id="elevenlabs-key-input"
+                data-testid="elevenlabs-key-input"
                 type="password"
                 value={newElevenLabsKey}
                 onChange={(e) => setNewElevenLabsKey(e.target.value)}
@@ -574,6 +595,8 @@ const SettingsTab = () => {
                 placeholder="Enter new ElevenLabs API key"
               />
               <button
+                id="add-elevenlabs-key-button"
+                data-testid="add-elevenlabs-key-button"
                 onClick={addElevenLabsApiKey}
                 className="btn btn-primary rounded-l-none"
               >
@@ -605,6 +628,8 @@ const SettingsTab = () => {
             </div>
             <div className="space-y-2">
               <input
+                id="aws-access-key-input"
+                data-testid="aws-access-key-input"
                 type="text"
                 value={newAwsAccessKey}
                 onChange={(e) => setNewAwsAccessKey(e.target.value)}
@@ -612,6 +637,8 @@ const SettingsTab = () => {
                 placeholder="Enter AWS Access Key"
               />
               <input
+                id="aws-secret-key-input"
+                data-testid="aws-secret-key-input"
                 type="password"
                 value={newAwsSecretKey}
                 onChange={(e) => setNewAwsSecretKey(e.target.value)}
@@ -619,6 +646,8 @@ const SettingsTab = () => {
                 placeholder="Enter AWS Secret Key"
               />
               <button
+                id="add-aws-credentials-button"
+                data-testid="add-aws-credentials-button"
                 onClick={addAwsPollyCredential}
                 className="btn btn-primary w-full"
               >
@@ -650,6 +679,7 @@ const SettingsTab = () => {
             </div>
             <div className="flex">
               <input
+                id="google-cloud-key-input"
                 type="password"
                 value={newGoogleCloudKey}
                 onChange={(e) => setNewGoogleCloudKey(e.target.value)}
@@ -657,6 +687,7 @@ const SettingsTab = () => {
                 placeholder="Enter new Google Cloud API key"
               />
               <button
+                id="add-google-cloud-key-button"
                 onClick={addGoogleCloudKey}
                 className="btn btn-primary rounded-l-none"
               >
@@ -688,6 +719,7 @@ const SettingsTab = () => {
             </div>
             <div className="flex">
               <input
+                id="azure-key-input"
                 type="password"
                 value={newAzureKey}
                 onChange={(e) => setNewAzureKey(e.target.value)}
@@ -695,6 +727,7 @@ const SettingsTab = () => {
                 placeholder="Enter new Azure TTS API key"
               />
               <button
+                id="add-azure-key-button"
                 onClick={addAzureTTSKey}
                 className="btn btn-primary rounded-l-none"
               >
@@ -726,6 +759,7 @@ const SettingsTab = () => {
             </div>
             <div className="flex">
               <input
+                id="ibm-watson-key-input"
                 type="password"
                 value={newIbmWatsonKey}
                 onChange={(e) => setNewIbmWatsonKey(e.target.value)}
@@ -733,6 +767,7 @@ const SettingsTab = () => {
                 placeholder="Enter new IBM Watson API key"
               />
               <button
+                id="add-ibm-watson-key-button"
                 onClick={addIbmWatsonKey}
                 className="btn btn-primary rounded-l-none"
               >
@@ -759,6 +794,7 @@ const SettingsTab = () => {
           </label>
           <div className="flex">
             <input
+              id="openai-key-input"
               type="password"
               value={openaiApiKey || ''}
               onChange={(e) => persistentActions.setApiKey('openaiApiKey', e.target.value)}
@@ -766,6 +802,8 @@ const SettingsTab = () => {
               placeholder="Enter your OpenAI API key"
             />
             <button
+              id="save-openai-key-button"
+              data-testid="save-openai-key-button"
               onClick={() => saveApiKey('openaiApiKey', openaiApiKey)}
               className="btn btn-primary rounded-l-none"
             >
@@ -779,6 +817,7 @@ const SettingsTab = () => {
           </label>
           <div className="flex">
             <input
+              id="anthropic-key-input"
               type="password"
               value={anthropicApiKey || ''}
               onChange={(e) => persistentActions.setApiKey('anthropicApiKey', e.target.value)}
@@ -786,6 +825,8 @@ const SettingsTab = () => {
               placeholder="Enter your Anthropic API key"
             />
             <button
+              id="save-anthropic-key-button"
+              data-testid="save-anthropic-key-button"
               onClick={() => saveApiKey('anthropicApiKey', anthropicApiKey)}
               className="btn btn-primary rounded-l-none"
             >
@@ -798,6 +839,7 @@ const SettingsTab = () => {
       {/* Reset Settings */}
       <div className="flex justify-end">
         <button
+          id="reset-settings-button"
           onClick={() => {
             if (window.confirm('Are you sure you want to reset all settings?')) {
               persistentActions.resetState();

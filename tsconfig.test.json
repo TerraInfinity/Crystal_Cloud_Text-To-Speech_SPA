@@ -1,0 +1,23 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+      "jsx": "react-jsx", // Transform JSX for Jest
+      "noEmit": true, // Prevent TypeScript from emitting output files
+      "module": "esnext", // Consistent with main tsconfig
+      "target": "ES2017", // Consistent with main tsconfig
+      "lib": ["dom", "dom.iterable", "esnext"], // Ensure DOM types for HTMLAudioElement
+      "strict": false // Consistent with main tsconfig
+    },
+    "include": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/*.spec.ts",
+      "**/*.spec.tsx"
+    ],
+    "exclude": [
+      "node_modules",
+      ".next"
+    ]
+  }

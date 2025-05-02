@@ -323,7 +323,7 @@ export const TTSProvider = ({ children }) => {
 
   // Render loading state
   if (isLoading) {
-    return <div>Loading persistent state...</div>;
+    return <div id="tts-loading-state">Loading persistent state...</div>;
   }
 
   // Context value

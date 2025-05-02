@@ -31,7 +31,7 @@ export function createTtsActions(dispatch) {
         const updatedAudioData = { ...audioData, url };
         dispatch({ type: 'SAVE_AUDIO', payload: updatedAudioData });
       } catch (error) {
-        console.error('Error uploading audio:', error);
+        devLog('Error uploading audio:', error);
         throw error;
       }
     },
@@ -42,7 +42,7 @@ export function createTtsActions(dispatch) {
         await removeFromStorage(filename, 'fileStorage');
         dispatch({ type: 'DELETE_AUDIO', payload: audioId });
       } catch (error) {
-        console.error('Error deleting audio:', error);
+        devLog('Error deleting audio:', error);
         throw error;
       }
     },
@@ -52,7 +52,7 @@ export function createTtsActions(dispatch) {
       try {
         return await listFromStorage(storageType);
       } catch (error) {
-        console.error('Error listing from storage:', error);
+        devLog('Error listing from storage:', error);
         throw error;
       }
     },
@@ -60,7 +60,7 @@ export function createTtsActions(dispatch) {
     // Action to update audio metadata (e.g., placeholder, volume)
     updateAudio: async (audioId, updatedAudioData) => {
       try {
-        console.log('Updating audio with ID:', audioId, 'Data:', updatedAudioData);
+        devLog('Updating audio with ID:', audioId, 'Data:', updatedAudioData);
         // Update metadata on server using audioId (UUID)
         const updatedMetadata = await updateFileMetadata(audioId, {
           name: updatedAudioData.name || '',
@@ -71,7 +71,7 @@ export function createTtsActions(dispatch) {
         // Update local state with server response
         dispatch({ type: 'SAVE_AUDIO', payload: { ...updatedAudioData, ...updatedMetadata } });
       } catch (error) {
-        console.error('Error updating audio metadata:', error);
+        devLog('Error updating audio metadata:', error);
         throw error;
       }
     },
@@ -96,7 +96,7 @@ export function createTtsActions(dispatch) {
         templates[template.id] = template;
         await saveToStorage('tts_templates', templates, 'localStorage');
       } catch (error) {
-        console.error('Error saving template:', error);
+        devLog('Error saving template:', error);
         throw error;
       }
     },
@@ -108,7 +108,7 @@ export function createTtsActions(dispatch) {
         delete templates[templateId];
         await saveToStorage('tts_templates', templates, 'localStorage');
       } catch (error) {
-        console.error('Error deleting template:', error);
+        devLog('Error deleting template:', error);
         throw error;
       }
     },
@@ -120,7 +120,7 @@ export function createTtsActions(dispatch) {
           dispatch({ type: 'LOAD_TEMPLATES', payload: templates });
         }
       } catch (error) {
-        console.error('Error loading templates:', error);
+        devLog('Error loading templates:', error);
         throw error;
       }
     },

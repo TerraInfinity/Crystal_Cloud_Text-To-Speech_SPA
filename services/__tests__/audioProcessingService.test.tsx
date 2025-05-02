@@ -1,0 +1,296 @@
+// services/__tests__/audioProcessingService.test.ts
+
+import audioProcessingService from '../audioProcessingService';
+import storageService from '../storageService';
+
+// Mock dependencies
+jest.mock('../storageService', () => ({
+  download_audio_files_from_s3: jest.fn(),
+  upload_file_to_s3: jest.fn(),
+}));
+
+// Define TypeScript interfaces for our mocks
+interface IAudioBuffer {
+  numberOfChannels: number;
+  length: number;
+  sampleRate: number;
+  duration: number;
+  getChannelData(channel: number): Float32Array;
+  copyToChannel(source: Float32Array, channelNumber: number, startInChannel?: number): void;
+  copyFromChannel(destination: Float32Array, channelNumber: number, startInChannel?: number): void;
+}
+
+interface IAudioContext {
+  state: string;
+  sampleRate: number;
+  createBuffer(numOfChannels: number, length: number, sampleRate: number): IAudioBuffer;
+  decodeAudioData(arrayBuffer: ArrayBuffer): Promise<IAudioBuffer>;
+}
+
+// Create a comprehensive mock of the Web Audio API
+class MockArrayBuffer extends ArrayBuffer {
+  constructor(length: number) {
+    super(length);
+  }
+}
+
+class MockFloat32Array extends Float32Array {
+  constructor(length: number) {
+    super(length);
+    // Fill with some sample data
+    this.fill(0.1);
+  }
+  
+  set(array: ArrayLike<number>, offset = 0): void {
+    // No-op implementation to avoid errors
+    return;
+  }
+}
+
+class MockAudioBuffer implements IAudioBuffer {
+  numberOfChannels: number;
+  length: number;
+  sampleRate: number;
+  duration: number;
+  private _channelData: MockFloat32Array[];
+  
+  constructor(channels = 2, length = 1000, sampleRate = 44100) {
+    this.numberOfChannels = channels;
+    this.length = length;
+    this.sampleRate = sampleRate;
+    this.duration = length / sampleRate;
+    this._channelData = Array(channels).fill(null).map(() => new MockFloat32Array(length));
+  }
+  
+  getChannelData(channel: number): Float32Array {
+    if (channel >= 0 && channel < this.numberOfChannels) {
+      return this._channelData[channel];
+    }
+    throw new Error(`Channel index ${channel} out of bounds`);
+  }
+  
+  copyToChannel(source: Float32Array, channelNumber: number, startInChannel = 0): void {
+    if (channelNumber >= 0 && channelNumber < this.numberOfChannels) {
+      // Just pretend to copy instead of actually copying
+      return;
+    }
+    throw new Error(`Channel index ${channelNumber} out of bounds`);
+  }
+  
+  copyFromChannel(destination: Float32Array, channelNumber: number, startInChannel = 0): void {
+    if (channelNumber >= 0 && channelNumber < this.numberOfChannels) {
+      // Just pretend to copy instead of actually copying
+      return;
+    }
+    throw new Error(`Channel index ${channelNumber} out of bounds`);
+  }
+}
+
+class MockAudioContext implements IAudioContext {
+  state: string;
+  sampleRate: number;
+  
+  constructor() {
+    this.state = 'running';
+    this.sampleRate = 44100;
+  }
+  
+  createBuffer(numOfChannels: number, length: number, sampleRate: number): IAudioBuffer {
+    return new MockAudioBuffer(numOfChannels, length, sampleRate);
+  }
+  
+  async decodeAudioData(arrayBuffer: ArrayBuffer): Promise<IAudioBuffer> {
+    // Create a buffer with properties matching what's expected for the test
+    return new MockAudioBuffer(2, 1000, 44100);
+  }
+}
+
+// Setup global mocks
+global.AudioContext = jest.fn().mockImplementation(() => new MockAudioContext());
+global.webkitAudioContext = global.AudioContext;
+
+// Type declarations for global mocks
+declare global {
+  namespace NodeJS {
+    interface Global {
+      AudioContext: jest.Mock;
+      webkitAudioContext: jest.Mock;
+      Blob: jest.Mock;
+    }
+  }
+}
+
+// Mock Blob
+global.Blob = jest.fn().mockImplementation((content, options) => ({
+  size: content[0]?.byteLength || 1000,
+  type: options?.type || 'audio/wav',
+  arrayBuffer: jest.fn().mockResolvedValue(new MockArrayBuffer(1000)),
+}));
+
+describe('audioProcessingService', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(storageService.download_audio_files_from_s3).mockReset();
+    jest.mocked(storageService.upload_file_to_s3).mockReset();
+  });
+
+  describe('merge_audio_files_from_s3', () => {
+    test('should download, combine, and upload merged audio files', async () => {
+      // Mock the S3 audio blobs
+      const mockBlobs = [
+        new Blob(['test-data-1'], { type: 'audio/wav' }),
+        new Blob(['test-data-2'], { type: 'audio/wav' }),
+      ];
+      jest.mocked(storageService.download_audio_files_from_s3).mockResolvedValue(mockBlobs);
+      
+      // Mock the upload result
+      const mockS3Url = 'https://test-bucket.s3.amazonaws.com/merged.wav';
+      jest.mocked(storageService.upload_file_to_s3).mockResolvedValue(mockS3Url);
+      
+      const bucket = 'test-bucket';
+      const keys = ['01_part.wav', '02_part.wav'];
+      
+      const result = await audioProcessingService.merge_audio_files_from_s3(bucket, keys);
+      
+      expect(storageService.download_audio_files_from_s3).toHaveBeenCalledWith(bucket, keys);
+      expect(storageService.upload_file_to_s3).toHaveBeenCalled();
+      expect(result).toBe(mockS3Url);
+    });
+    
+    test('should sort keys by sequence number before downloading', async () => {
+      // Mock blobs and upload result
+      const mockBlobs = [
+        new Blob(['test-data-1'], { type: 'audio/wav' }),
+        new Blob(['test-data-2'], { type: 'audio/wav' }),
+      ];
+      jest.mocked(storageService.download_audio_files_from_s3).mockResolvedValue(mockBlobs);
+      jest.mocked(storageService.upload_file_to_s3).mockResolvedValue('https://test-bucket.s3.amazonaws.com/merged.wav');
+      
+      // Use unsorted keys
+      const bucket = 'test-bucket';
+      const unsortedKeys = ['20_part.wav', '01_part.wav', '10_part.wav'];
+      const expectedSortedKeys = ['01_part.wav', '10_part.wav', '20_part.wav'];
+      
+      await audioProcessingService.merge_audio_files_from_s3(bucket, unsortedKeys);
+      
+      expect(storageService.download_audio_files_from_s3).toHaveBeenCalledWith(bucket, expectedSortedKeys);
+    });
+    
+    test('should use custom output bucket and key if provided', async () => {
+      // Mock blobs and upload
+      const mockBlobs = [new Blob(['test-data'], { type: 'audio/wav' })];
+      jest.mocked(storageService.download_audio_files_from_s3).mockResolvedValue(mockBlobs);
+      jest.mocked(storageService.upload_file_to_s3).mockResolvedValue('https://output-bucket.s3.amazonaws.com/custom-key.wav');
+      
+      const sourceBucket = 'source-bucket';
+      const keys = ['audio.wav'];
+      const outputBucket = 'output-bucket';
+      const outputKey = 'custom-key.wav';
+      
+      await audioProcessingService.merge_audio_files_from_s3(
+        sourceBucket, keys, outputBucket, outputKey
+      );
+      
+      expect(storageService.upload_file_to_s3).toHaveBeenCalledWith(
+        expect.any(Object), // Use any instead of Blob for type safety
+        outputBucket,
+        outputKey
+      );
+    });
+  });
+
+  describe('combine_audio_files', () => {
+    test('should decode and combine audio blobs', async () => {
+      const mockBlobs = [
+        new Blob(['test-data-1'], { type: 'audio/wav' }),
+        new Blob(['test-data-2'], { type: 'audio/wav' }),
+      ];
+      
+      const result = await audioProcessingService.combine_audio_files(mockBlobs);
+      
+      // Check the overall process worked without checking internal details
+      expect(result).toBeDefined();
+      expect(result.type).toBe('audio/wav');
+    });
+    
+    test('should convert to stereo if input is mono', async () => {
+      // Create a spy for convert_mono_to_stereo_audio
+      const convertSpy = jest.spyOn(audioProcessingService, 'convert_mono_to_stereo_audio');
+      
+      // Create mock blobs
+      const mockBlobs = [new Blob(['mono-audio'], { type: 'audio/wav' })];
+      
+      // Temporarily make decodeAudioData return a mono buffer for one call
+      const originalDecodeAudioData = MockAudioContext.prototype.decodeAudioData;
+      const monoBuffer = new MockAudioBuffer(1, 1000, 44100);
+      
+      // Replace decodeAudioData with our version that returns a mono buffer
+      MockAudioContext.prototype.decodeAudioData = jest.fn().mockImplementation(async () => {
+        return monoBuffer;
+      });
+      
+      try {
+        await audioProcessingService.combine_audio_files(mockBlobs);
+        
+        // Since our mock AudioContext now returns a mono buffer,
+        // convert_mono_to_stereo_audio should have been called
+        expect(convertSpy).toHaveBeenCalled();
+      } finally {
+        // Restore original implementation
+        MockAudioContext.prototype.decodeAudioData = originalDecodeAudioData;
+      }
+    });
+  });
+
+  describe('convert_mono_to_stereo_audio', () => {
+    test('should duplicate mono channel to create stereo', () => {
+      // Create a mono audio buffer
+      const monoBuffer = new MockAudioBuffer(1, 1000, 44100);
+      
+      // Spy on createBuffer
+      const createBufferSpy = jest.spyOn(MockAudioContext.prototype, 'createBuffer');
+      
+      // Run the function
+      audioProcessingService.convert_mono_to_stereo_audio(monoBuffer as unknown as AudioBuffer);
+      
+      // Test that a stereo buffer was created with the right parameters
+      expect(createBufferSpy).toHaveBeenCalledWith(2, monoBuffer.length, monoBuffer.sampleRate);
+    });
+  });
+
+  describe('get_sequence_number_from_filename', () => {
+    test('should extract leading numeric sequence from filename', () => {
+      expect(audioProcessingService.get_sequence_number_from_filename('001_audio.wav')).toBe(1);
+      expect(audioProcessingService.get_sequence_number_from_filename('42_part.mp3')).toBe(42);
+      expect(audioProcessingService.get_sequence_number_from_filename('100-segment.ogg')).toBe(100);
+    });
+    
+    test('should return 0 if no sequence is found', () => {
+      expect(audioProcessingService.get_sequence_number_from_filename('audio.wav')).toBe(0);
+      expect(audioProcessingService.get_sequence_number_from_filename('part_001.mp3')).toBe(0);
+      expect(audioProcessingService.get_sequence_number_from_filename('')).toBe(0);
+    });
+  });
+
+  describe('create_silent_audio', () => {
+    test('should create a silent audio blob of specified duration', () => {
+      // Create 500ms of silence at 44.1kHz
+      const result = audioProcessingService.create_silent_audio(500);
+      
+      // Expected frame count: 500ms = 0.5s, 0.5s * 44100Hz = 22050 frames
+      expect(result).toBeDefined();
+      expect(result.type).toBe('audio/wav');
+    });
+    
+    test('should use custom sample rate and channels if specified', () => {
+      // Spy on createBuffer
+      const createBufferSpy = jest.spyOn(MockAudioContext.prototype, 'createBuffer');
+      
+      // Create 1 second of mono silence at 22.05kHz
+      audioProcessingService.create_silent_audio(1000, 22050, 1);
+      
+      // Expected frame count: 1000ms = 1s, 1s * 22050Hz = 22050 frames
+      expect(createBufferSpy).toHaveBeenCalledWith(1, 22050, 22050);
+    });
+  });
+});

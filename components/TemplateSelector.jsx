@@ -36,7 +36,7 @@ const TemplateSelector = () => {
         const newSection = {
           id: `section-${Date.now()}`,
           title: 'Main Section',
-          type: 'text-to-audio',
+          type: 'text-to-speech',
           text: '',
           voice: defaultVoice,
           voiceSettings: defaultVoiceSettings,
@@ -51,22 +51,37 @@ const TemplateSelector = () => {
       } else {
         const selectedTemplate = templates[templateName];
         if (selectedTemplate) {
+          devLog('Original template sections:', selectedTemplate.sections);
+          
           const templateSections = selectedTemplate.sections.map((section) => {
+            // Make sure we explicitly preserve the section type
+            const sectionType = section.type || 'text-to-speech';
+            
             const normalizedSection = {
               ...section,
               id: `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              // Explicitly set the type to ensure it's preserved
+              type: sectionType
             };
-            if (section.type === 'text-to-audio') {
+            
+            // Handle each section type appropriately
+            if (sectionType === 'text-to-speech') {
               normalizedSection.voice = section.voice || defaultVoice;
               normalizedSection.voiceSettings = section.voiceSettings || defaultVoiceSettings;
-            } else {
+            } else if (sectionType === 'audio-only') {
+              // For audio-only, make sure to explicitly remove voice-related properties
               normalizedSection.voice = undefined;
               normalizedSection.voiceSettings = undefined;
+              // Preserve audio properties
+              normalizedSection.audioId = section.audioId;
+              normalizedSection.audioSource = section.audioSource || 'library';
             }
+            
+            devLog('Processed template section:', normalizedSection);
             return normalizedSection;
           });
   
-          devLog('Loading template sections:', templateSections);
+          devLog('Loading template sections with types:', templateSections.map(s => s.type));
           sessionActions.reorderSections(templateSections);
   
           // Initialize generatedTTSAudios for audio-only sections
@@ -107,6 +122,7 @@ const TemplateSelector = () => {
 
   return (
     <div
+      id="template-selector-container"
       className="mb-6 p-4 rounded-lg"
       style={{
         backgroundColor: 'var(--card-bg)',
@@ -114,14 +130,19 @@ const TemplateSelector = () => {
         borderWidth: '1px',
       }}
     >
-      <h3 className="text-lg font-medium mb-3">Template Selection</h3>
+      <h3 id="template-selector-title" className="text-lg font-medium mb-3">Template Selection</h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+      <div id="template-selector-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div id="template-selector-dropdown-container">
+          <label 
+            id="template-selector-label"
+            htmlFor="template-selector-dropdown"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Choose a template
           </label>
           <select
+            id="template-selector-dropdown"
             value={currentTemplate}
             onChange={(e) => loadTemplate(e.target.value)}
             className="select-field"
@@ -138,8 +159,9 @@ const TemplateSelector = () => {
           </select>
         </div>
 
-        <div className="flex items-end">
+        <div id="demo-content-container" className="flex items-end">
           <button
+            id="load-demo-content-button"
             onClick={loadDemoContent}
             className="btn btn-secondary w-full"
           >
@@ -148,13 +170,13 @@ const TemplateSelector = () => {
         </div>
       </div>
 
-      <div className="mt-4 text-sm text-gray-600">
+      <div id="template-description" className="mt-4 text-sm text-gray-600">
         {currentTemplate === 'general' ? (
-          <p>
+          <p id="general-template-description">
             <strong>General Template:</strong> A flexible template with one section where you can add your content.
           </p>
         ) : (
-          <p>
+          <p id="custom-template-description">
             <strong>
               {templates[currentTemplate]?.name || 'Custom Template'}:
             </strong>{' '}

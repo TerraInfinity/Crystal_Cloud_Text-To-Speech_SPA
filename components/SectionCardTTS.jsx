@@ -22,7 +22,7 @@ const SectionCardTTS = ({
 
   // Initialize and sync editedVoice with sessionState.sections
   useEffect(() => {
-    if (section.type !== 'text-to-audio') return;
+    if (section.type !== 'text-to-speech') return;
 
     const sectionData = sessionState.sections.find((s) => s.id === section.id);
     const defaultVoice = state.settings.defaultVoice || {
@@ -44,7 +44,7 @@ const SectionCardTTS = ({
 
   // Initialize voiceSettings in session state if missing
   useEffect(() => {
-    if (section.type !== 'text-to-audio') return;
+    if (section.type !== 'text-to-speech') return;
 
     const sectionData = sessionState.sections.find((s) => s.id === section.id);
     if (!sectionData?.voiceSettings && actions.setVoiceSettings) {
@@ -55,7 +55,7 @@ const SectionCardTTS = ({
 
   // Save voiceSettings to session state on change
   useEffect(() => {
-    if (section.type !== 'text-to-audio') return;
+    if (section.type !== 'text-to-speech') return;
 
     if (actions.setVoiceSettings) {
       devLog('Saving voiceSettings:', voiceSettings);
@@ -124,8 +124,15 @@ const SectionCardTTS = ({
       return () => {
         if (audioRef.current) {
           audioRef.current.pause();
-          audioRef.current.removeEventListener('ended', () => setIsPlaying(false));
-          audioRef.current.removeEventListener('error', () => {});
+          // Use a more robust cleanup that doesn't depend on removeEventListener
+          try {
+            if (typeof audioRef.current.removeEventListener === 'function') {
+              audioRef.current.removeEventListener('ended', () => setIsPlaying(false));
+              audioRef.current.removeEventListener('error', () => {});
+            }
+          } catch (e) {
+            console.warn('Could not remove event listeners from audio element', e);
+          }
           audioRef.current = null;
         }
       };
@@ -147,8 +154,10 @@ const SectionCardTTS = ({
   return (
     <div>
       {isEditing ? (
-        <div>
+        <div id={`section-${section.id}-edit-container`}>
           <textarea
+            id={`section-${section.id}-text-input`}
+            data-testid={`section-${section.id}-text-input`}
             value={editedText}
             onChange={(e) => setEditedText(e.target.value)}
             className="input-field h-32 mb-4 font-mono text-sm"
@@ -156,12 +165,15 @@ const SectionCardTTS = ({
           ></textarea>
           <div className="mb-4">
             <label
+              id={`section-${section.id}-voice-label`}
               className="block text-sm font-medium mb-1"
               style={{ color: 'var(--text-color)' }}
             >
               Voice (optional)
             </label>
             <select
+              id={`section-${section.id}-voice-select`}
+              data-testid={`section-${section.id}-voice-select`}
               value={editedVoice ? `${editedVoice.engine}::${editedVoice.id}` : ''}
               onChange={(e) => {
                 const selectedValue = e.target.value;
@@ -198,8 +210,9 @@ const SectionCardTTS = ({
           </div>
         </div>
       ) : (
-        <div>
+        <div id={`section-${section.id}-view-container`}>
           <p
+            id={`section-${section.id}-text-content`}
             className="whitespace-pre-wrap mb-4 text-sm"
             style={{ color: 'var(--text-color)' }}
           >
@@ -208,6 +221,8 @@ const SectionCardTTS = ({
           <div className="mb-4">
             <div className="flex items-center mb-2">
               <select
+                id={`section-${section.id}-voice-select-view`}
+                data-testid={`section-${section.id}-voice-select-view`}
                 value={editedVoice ? `${editedVoice.engine}::${editedVoice.id}` : ''}
                 onChange={(e) => {
                   const selectedValue = e.target.value;
@@ -242,6 +257,8 @@ const SectionCardTTS = ({
                 ))}
               </select>
               <button
+                id={`section-${section.id}-voice-settings-toggle`}
+                data-testid={`section-${section.id}-voice-settings-toggle`}
                 onClick={() => setShowVoiceSettings(!showVoiceSettings)}
                 className="p-2"
                 style={{ color: 'var(--text-secondary)' }}
@@ -262,15 +279,19 @@ const SectionCardTTS = ({
               </button>
             </div>
             {showVoiceSettings && (
-              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--card-bg)' }}>
+              <div id={`section-${section.id}-voice-settings`} className="p-3 rounded-lg" style={{ backgroundColor: 'var(--card-bg)' }}>
                 <div className="mb-3">
                   <label
+                    id={`section-${section.id}-volume-label`}
+                    htmlFor={`section-${section.id}-volume-slider`}
                     className="block text-sm font-medium mb-1"
                     style={{ color: 'var(--text-color)' }}
                   >
                     Volume
                   </label>
                   <input
+                    id={`section-${section.id}-volume-slider`}
+                    data-testid={`section-${section.id}-volume-slider`}
                     type="range"
                     min="0"
                     max="1"
@@ -287,12 +308,16 @@ const SectionCardTTS = ({
                 </div>
                 <div className="mb-3">
                   <label
+                    id={`section-${section.id}-rate-label`}
+                    htmlFor={`section-${section.id}-rate-slider`}
                     className="block text-sm font-medium mb-1"
                     style={{ color: 'var(--text-color)' }}
                   >
                     Rate
                   </label>
                   <input
+                    id={`section-${section.id}-rate-slider`}
+                    data-testid={`section-${section.id}-rate-slider`}
                     type="range"
                     min="0.1"
                     max="2"
@@ -309,12 +334,16 @@ const SectionCardTTS = ({
                 </div>
                 <div>
                   <label
+                    id={`section-${section.id}-pitch-label`}
+                    htmlFor={`section-${section.id}-pitch-slider`}
                     className="block text-sm font-medium mb-1"
                     style={{ color: 'var(--text-color)' }}
                   >
                     Pitch
                   </label>
                   <input
+                    id={`section-${section.id}-pitch-slider`}
+                    data-testid={`section-${section.id}-pitch-slider`}
                     type="range"
                     min="0"
                     max="2"
@@ -334,6 +363,8 @@ const SectionCardTTS = ({
             {hasAudio && (
               <div className="flex items-center space-x-2 mt-2">
                 <button
+                  id={`section-${section.id}-play-button`}
+                  data-testid={`section-${section.id}-play-button`}
                   onClick={togglePlay}
                   className="p-2"
                   style={{ color: 'var(--text-secondary)' }}
@@ -366,6 +397,8 @@ const SectionCardTTS = ({
                   )}
                 </button>
                 <a
+                  id={`section-${section.id}-download-link`}
+                  data-testid={`section-${section.id}-download-link`}
                   href={audioData.url}
                   download={`section-${section.id}.wav`}
                   className="p-2"

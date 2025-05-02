@@ -2,9 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
 
 const AudioFilesTab = () => {
-  // Destructure state, actions, and isProcessing from useTTS
-  const { state, actions, isProcessing } = useTTS();
-  // Safely access savedAudios with a fallback to an empty object
+  const { state, actions, isProcessing, sessionActions } = useTTS();
   const savedAudios = state?.savedAudios || {};
 
   const fileInputRef = useRef(null);
@@ -60,13 +58,6 @@ const AudioFilesTab = () => {
     }
   };
 
-  const updateAudioVolume = (audioId, newVolume) => {
-    actions.updateAudio(audioId, {
-      ...savedAudios[audioId],
-      volume: newVolume,
-    });
-  };
-
   const deleteAudio = (audioId) => {
     if (window.confirm('Are you sure you want to delete this audio?')) {
       actions.deleteAudio(audioId);
@@ -83,15 +74,13 @@ const AudioFilesTab = () => {
   useEffect(() => {
     const player = audioPlayerRef.current;
     const handleEnded = () => setIsPlaying(false);
-    if (player) {
+    if (player && selectedAudio) {
       player.addEventListener('ended', handleEnded);
-    }
-    return () => {
-      if (player) {
+      return () => {
         player.removeEventListener('ended', handleEnded);
-      }
-    };
-  }, []);
+      };
+    }
+  }, [selectedAudio]);
 
   return (
     <div>
@@ -100,8 +89,9 @@ const AudioFilesTab = () => {
         <h3 className="text-lg font-medium mb-3">Upload New Audio</h3>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Audio Name</label>
+          <label htmlFor="audio-name" className="block text-sm font-medium text-gray-700 mb-1">Audio Name</label>
           <input
+            id="audio-name"
             type="text"
             value={audioName}
             onChange={(e) => setAudioName(e.target.value)}
@@ -112,8 +102,9 @@ const AudioFilesTab = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Placeholder Text</label>
+          <label htmlFor="placeholder-text" className="block text-sm font-medium text-gray-700 mb-1">Placeholder Text</label>
           <input
+            id="placeholder-text"
             type="text"
             value={placeholderText}
             onChange={(e) => setPlaceholderText(e.target.value)}
@@ -127,8 +118,9 @@ const AudioFilesTab = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Default Volume</label>
+          <label htmlFor="default-volume" className="block text-sm font-medium text-gray-700 mb-1">Default Volume</label>
           <input
+            id="default-volume"
             type="range"
             min="0"
             max="1"
@@ -143,8 +135,9 @@ const AudioFilesTab = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Audio File</label>
+          <label htmlFor="audio-file" className="block text-sm font-medium text-gray-700 mb-1">Audio File</label>
           <input
+            id="audio-file"
             type="file"
             ref={fileInputRef}
             onChange={handleAudioUpload}
@@ -167,6 +160,7 @@ const AudioFilesTab = () => {
           <h3 className="text-lg font-medium mb-2">Now Playing: {selectedAudio.name}</h3>
           <audio
             ref={audioPlayerRef}
+            id="audio-player"
             controls
             className="w-full"
             src={selectedAudio.url}
@@ -238,8 +232,9 @@ const AudioFilesTab = () => {
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Placeholder Text</label>
+                    <label htmlFor={`placeholder-${audio.id}`} className="block text-sm text-gray-600 mb-1">Placeholder Text</label>
                     <input
+                      id={`placeholder-${audio.id}`}
                       type="text"
                       value={audio.placeholder || ''}
                       onChange={(e) =>
@@ -252,14 +247,14 @@ const AudioFilesTab = () => {
                       placeholder="e.g., beep, laugh"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Used in text as: [sound:
-                      {audio.placeholder || audio.name.toLowerCase().replace(/\s+/g, '_')}]
+                      Used in text as: [sound:{audio.placeholder || audio.name.toLowerCase().replace(/\s+/g, '_')}]
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Volume</label>
+                    <label htmlFor={`volume-${audio.id}`} className="block text-sm text-gray-600 mb-1">Volume</label>
                     <input
+                      id={`volume-${audio.id}`}
                       type="range"
                       min="0"
                       max="1"

@@ -14,10 +14,10 @@ const normalizeSection = (section) => {
   const normalizedSection = {
     ...section,
     id: section.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    type: section.type || 'text-to-audio',
+    type: section.type || 'text-to-speech',
   };
 
-  if (section.type === 'text-to-audio') {
+  if (section.type === 'text-to-speech') {
     normalizedSection.voice = section.voice || defaultVoice;
     normalizedSection.voiceSettings = section.voiceSettings || defaultVoiceSettings;
   } else {

@@ -12,10 +12,10 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
   const [editedTitle, setEditedTitle] = useState(section.title);
   const [editedText, setEditedText] = useState(section.text || '');
   const [editedVoice, setEditedVoice] = useState(
-    section.type === 'text-to-audio' ? section.voice || null : null
+    section.type === 'text-to-speech' ? section.voice || null : null
   );
   const [voiceSettings, setVoiceSettings] = useState(
-    section.type === 'text-to-audio'
+    section.type === 'text-to-speech'
       ? {
           volume: section.voiceSettings?.volume || 1,
           rate: section.voiceSettings?.rate || 1,
@@ -29,6 +29,10 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
     const sectionData = sessionState.sections.find((s) => s.id === section.id);
     if (!sectionData) return;
 
+    // Debug section data type
+    devLog(`Section ${section.id} type from sessionState:`, sectionData.type);
+    devLog(`Section ${section.id} local type:`, section.type);
+
     const defaultVoice = {
       engine: 'gtts',
       id: 'en-US-Standard-A',
@@ -37,9 +41,17 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
     };
     const defaultVoiceSettings = { volume: 1, rate: 1, pitch: 1 };
 
-    if (sectionData.type === 'text-to-audio') {
-      // For text-to-audio, sync voice and voiceSettings
-      if (sectionData?.voice && sectionData.voice !== editedVoice) {
+    // Make sure the local section type matches the session state
+    if (sectionData.type !== section.type) {
+      devLog(`Section type mismatch! Session: ${sectionData.type}, Local: ${section.type}`);
+      // Update the local state if there's a mismatch
+      // Note: This is just for debugging as the local section object should be updated
+      // through props when the parent component re-renders
+    }
+
+    if (sectionData.type === 'text-to-speech') {
+      // For text-to-speech, sync voice and voiceSettings
+      if (sectionData?.voice && JSON.stringify(sectionData.voice) !== JSON.stringify(editedVoice)) {
         devLog('Syncing editedVoice with session state:', sectionData.voice);
         setEditedVoice(sectionData.voice);
       } else if (!editedVoice) {
@@ -48,7 +60,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
         sessionActions.setSectionVoice(section.id, defaultVoice);
       }
 
-      if (sectionData?.voiceSettings && sectionData.voiceSettings !== voiceSettings) {
+      if (sectionData?.voiceSettings && JSON.stringify(sectionData.voiceSettings) !== JSON.stringify(voiceSettings)) {
         devLog('Syncing voiceSettings with session state:', sectionData.voiceSettings);
         setVoiceSettings(sectionData.voiceSettings);
       } else if (!voiceSettings) {
@@ -67,10 +79,10 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
         setVoiceSettings(null);
       }
     }
-  }, [sessionState.sections, section.id, editedVoice, voiceSettings, sessionActions]);
+  }, [sessionState.sections, section.id, section.type, editedVoice, voiceSettings, sessionActions]);
 
   const toggleSectionType = () => {
-    const newType = section.type === 'text-to-audio' ? 'audio-only' : 'text-to-audio';
+    const newType = section.type === 'text-to-speech' ? 'audio-only' : 'text-to-speech';
     const defaultVoice = {
       engine: 'gtts',
       id: 'en-US-Standard-A',
@@ -80,8 +92,8 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
     const defaultVoiceSettings = { volume: 1, rate: 1, pitch: 1 };
 
     let updatedSection;
-    if (newType === 'text-to-audio') {
-      // Switching to text-to-audio: Add voice and voiceSettings
+    if (newType === 'text-to-speech') {
+      // Switching to text-to-speech: Add voice and voiceSettings
       updatedSection = {
         ...section,
         type: newType,
@@ -90,7 +102,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
       };
       setEditedVoice(editedVoice || defaultVoice);
       setVoiceSettings(voiceSettings || defaultVoiceSettings);
-      devLog('Switching to text-to-audio, setting voice and voiceSettings:', updatedSection);
+      devLog('Switching to text-to-speech, setting voice and voiceSettings:', updatedSection);
     } else {
       // Switching to audio-only: Remove voice and voiceSettings
       updatedSection = {
@@ -109,13 +121,13 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
 
   const saveSection = () => {
     // Debug: Log the state before saving
-    console.log('Current editedVoice before save:', editedVoice);
-    console.log('Saving section:', {
+    devLog('Current editedVoice before save:', editedVoice);
+    devLog('Saving section:', {
       id: section.id,
       title: editedTitle,
       text: editedText,
-      voice: section.type === 'text-to-audio' ? editedVoice : undefined,
-      voiceSettings: section.type === 'text-to-audio' ? voiceSettings : undefined,
+      voice: section.type === 'text-to-speech' ? editedVoice : undefined,
+      voiceSettings: section.type === 'text-to-speech' ? voiceSettings : undefined,
     });
 
     const updatedSection = {
@@ -124,7 +136,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
       text: editedText,
     };
 
-    if (section.type === 'text-to-audio') {
+    if (section.type === 'text-to-speech') {
       updatedSection.voice = editedVoice;
       updatedSection.voiceSettings = voiceSettings;
     } else {
@@ -142,7 +154,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
     // Debug: Log the stored sections after saving
     setTimeout(() => {
       const storedState = JSON.parse(sessionStorage.getItem('tts_session_state') || '{}');
-      console.log('Stored tts_session_state:', storedState);
+      devLog('Stored tts_session_state:', storedState);
     }, 100); // Delay to ensure storage is updated
   };
 
@@ -158,6 +170,8 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
 
   return (
     <div
+      id={`section-card-${section.id}`}
+      data-testid={`section-card-${section.id}`}
       className="rounded-lg p-4 mb-4"
       style={{
         backgroundColor: 'var(--card-bg)',
@@ -170,6 +184,8 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
         <div className="flex items-center">
           <div className="flex flex-col mr-2">
             <button
+              id={`move-up-${section.id}`}
+              data-testid={`move-up-${section.id}`}
               onClick={moveUp}
               className="p-1"
               style={{ color: 'var(--text-secondary)' }}
@@ -189,6 +205,8 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
               </svg>
             </button>
             <button
+              id={`move-down-${section.id}`}
+              data-testid={`move-down-${section.id}`}
               onClick={moveDown}
               className="p-1"
               style={{ color: 'var(--text-secondary)' }}
@@ -212,15 +230,24 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
             {isEditing ? (
               <div className="flex items-center">
                 <input
+                  id={`section-title-input-${section.id}`}
                   type="text"
                   value={editedTitle}
                   onChange={(e) => setEditedTitle(e.target.value)}
                   className="input-field mr-2"
                 />
-                <button onClick={saveSection} className="btn btn-primary mr-2">
+                <button 
+                  id={`save-section-${section.id}`}
+                  onClick={saveSection} 
+                  className="btn btn-primary mr-2"
+                >
                   Save
                 </button>
-                <button onClick={() => setIsEditing(false)} className="btn btn-secondary">
+                <button 
+                  id={`cancel-edit-${section.id}`}
+                  onClick={() => setIsEditing(false)} 
+                  className="btn btn-secondary"
+                >
                   Cancel
                 </button>
               </div>
@@ -231,7 +258,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
                   className="ml-2 text-sm font-normal"
                   style={{ color: 'var(--text-secondary)' }}
                 >
-                  ({section.type === 'text-to-audio' ? 'Text to Speech' : 'Audio Only'})
+                  ({section.type === 'text-to-speech' ? 'Text to Speech' : 'Audio Only'})
                 </span>
               </h3>
             )}
@@ -239,6 +266,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
         </div>
         <div className="flex space-x-2">
           <button
+            id={`toggle-expand-${section.id}`}
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-1"
             style={{ color: 'var(--text-secondary)' }}
@@ -273,12 +301,13 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
             )}
           </button>
           <button
+            id={`toggle-section-type-${section.id}`}
             onClick={toggleSectionType}
             className="p-1"
             style={{ color: 'var(--accent-color)' }}
             title="Toggle Section Type"
           >
-            {section.type === 'text-to-audio' ? (
+            {section.type === 'text-to-speech' ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -304,6 +333,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
             )}
           </button>
           <button
+            id={`toggle-edit-${section.id}`}
             onClick={() => setIsEditing(!isEditing)}
             className="p-1"
             style={{ color: 'var(--accent-color)' }}
@@ -334,6 +364,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
             )}
           </button>
           <button
+            id={`delete-section-${section.id}`}
             onClick={deleteSection}
             className="p-1"
             style={{ color: 'var(--danger-color)' }}
@@ -356,7 +387,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
       </div>
       {isExpanded && (
         <div className="mt-4">
-          {section.type === 'text-to-audio' ? (
+          {section.type === 'text-to-speech' ? (
             <TTSSection
               section={section}
               isEditing={isEditing}

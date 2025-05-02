@@ -2,6 +2,7 @@ import React from 'react';
 import { useTTS } from '../context/TTSContext';
 import SectionCard from './SectionCard';
 import { useTTSSession } from '../context/TTSSessionContext';
+import { devLog } from '../utils/logUtils';
 
 const SectionsList = () => {
   const { state, actions } = useTTS(); 
@@ -24,11 +25,11 @@ const SectionsList = () => {
     const newSection = {
       id: `section-${Date.now()}`,
       title: `Section ${sections.length + 1}`,
-      type: 'text-to-audio', // Default to text-to-audio
+      type: 'text-to-speech', // Default to text-to-speech
       text: '',
     };
   
-    if (newSection.type === 'text-to-audio') {
+    if (newSection.type === 'text-to-speech') {
       newSection.voice = defaultVoice;
       newSection.voiceSettings = defaultVoiceSettings;
     }
@@ -61,6 +62,7 @@ const SectionsList = () => {
   if (sections.length === 0) {
     return (
       <div
+        id="empty-sections-container"
         className="rounded-lg p-6 text-center"
         style={{
           backgroundColor: 'var(--card-bg)',
@@ -69,8 +71,9 @@ const SectionsList = () => {
           borderStyle: 'solid', // Ensure border is visible
         }}
       >
-        <p className="text-gray-600 mb-4">No sections created yet.</p>
+        <p id="no-sections-message" className="text-gray-600 mb-4">No sections created yet.</p>
         <button
+          id="create-section-button"
           onClick={createNewSection}
           className="btn btn-primary"
         >
@@ -81,10 +84,10 @@ const SectionsList = () => {
   }
 
   return (
-    <div>
-      <div className="mb-4">
+    <div id="sections-list-container">
+      <div id="sections-wrapper" className="mb-4">
         {sections.map((section, index) => (
-          <div key={section.id} className="mb-4">
+          <div key={section.id} id={`section-${section.id}`} className="mb-4">
             <SectionCard 
               section={section}
               index={index}

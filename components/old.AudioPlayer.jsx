@@ -26,7 +26,7 @@ const AudioPlayer = () => {
   const [isAudioDownloaded, setIsAudioDownloaded] = useState(false);
 
   const validSections = sections.filter(
-    (section) => section.type === 'text-to-audio' && section.text?.trim()
+    (section) => section.type === 'text-to-speech' && section.text?.trim()
   );
   const allSectionsHaveAudio =
     validSections.length > 0 &&
@@ -68,8 +68,8 @@ const AudioPlayer = () => {
     devLog('Valid sections:', validSections);
 
     if (validSections.length === 0) {
-      devLog('No valid text-to-audio sections with text');
-      sessionActions.setError('No valid text-to-audio sections with text');
+      devLog('No valid text-to-speech sections with text');
+      sessionActions.setError('No valid text-to-speech sections with text');
       return;
     }
 
@@ -527,7 +527,7 @@ const AudioPlayer = () => {
       {!mergedAudio && (
         <p className="text-gray-600 text-center mt-4">
           {validSections.length === 0
-            ? 'Create text-to-audio sections with text to generate audio'
+            ? 'Create text-to-speech sections with text to generate audio'
             : allSectionsHaveAudio
             ? 'All sections have audio. Click "Merge Audio" to merge them.'
             : 'Generate audio for your sections to proceed.'}

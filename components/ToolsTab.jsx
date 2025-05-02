@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useTTS } from '../context/TTSContext';
+import { useTTSSession } from '../context/TTSSessionContext';
 import { parseTextFromHtml } from '../utils/textUtils';
 
 const ToolsTab = () => {
   const { actions, isProcessing } = useTTS();
+  const { actions: sessionActions } = useTTSSession();
   
   // State for HTML/URL parsing
   const [htmlInput, setHtmlInput] = useState('');
@@ -148,7 +150,7 @@ const ToolsTab = () => {
     } catch (error) {
       sessionActions.setError(`Error processing with AI: ${error.message}`);
     } finally {
-      sessionsessionActions(false);
+      sessionActions.setProcessing(false);
     }
   };
   
@@ -178,10 +180,14 @@ const ToolsTab = () => {
         <h3 className="text-lg font-medium mb-4">HTML/URL Parsing</h3>
         
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label 
+            className="block text-sm font-medium text-gray-700 mb-1"
+            htmlFor="html-input"
+          >
             Enter a URL or paste HTML
           </label>
           <textarea
+            id="html-input"
             value={htmlInput}
             onChange={(e) => setHtmlInput(e.target.value)}
             className="input-field h-32"
@@ -192,6 +198,7 @@ const ToolsTab = () => {
         
         <div className="mb-4">
           <button
+            id="extract-text-btn"
             onClick={parseHtmlOrUrl}
             className="btn btn-primary w-full"
             disabled={isProcessing || !htmlInput.trim()}
@@ -203,10 +210,14 @@ const ToolsTab = () => {
         {parseResult && (
           <div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label 
+                className="block text-sm font-medium text-gray-700 mb-1"
+                htmlFor="parse-result"
+              >
                 Extracted Text
               </label>
               <textarea
+                id="parse-result"
                 value={parseResult}
                 onChange={(e) => setParseResult(e.target.value)}
                 className="input-field h-32"
@@ -216,6 +227,7 @@ const ToolsTab = () => {
             
             <div className="flex justify-end">
               <button
+                id="use-parsed-text-btn"
                 onClick={applyParsedResult}
                 className="btn btn-secondary"
                 disabled={isProcessing}
@@ -239,10 +251,14 @@ const ToolsTab = () => {
         <h3 className="text-lg font-medium mb-4">AI Transformation</h3>
         
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label 
+            className="block text-sm font-medium text-gray-700 mb-1"
+            htmlFor="ai-input"
+          >
             Text to Process
           </label>
           <textarea
+            id="ai-input"
             value={aiInput}
             onChange={(e) => setAiInput(e.target.value)}
             className="input-field h-32"
@@ -253,10 +269,14 @@ const ToolsTab = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label 
+              className="block text-sm font-medium text-gray-700 mb-1"
+              htmlFor="preset-prompts-select"
+            >
               Preset Prompts
             </label>
             <select
+              id="preset-prompts-select"
               value={selectedPresetPrompt}
               onChange={handlePresetPromptChange}
               className="select-field"
@@ -272,10 +292,14 @@ const ToolsTab = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label 
+              className="block text-sm font-medium text-gray-700 mb-1"
+              htmlFor="ai-provider-select"
+            >
               AI Provider
             </label>
             <select
+              id="ai-provider-select"
               value={aiProvider}
               onChange={(e) => setAiProvider(e.target.value)}
               className="select-field"
@@ -288,10 +312,14 @@ const ToolsTab = () => {
         </div>
         
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label 
+            className="block text-sm font-medium text-gray-700 mb-1"
+            htmlFor="ai-prompt"
+          >
             Prompt
           </label>
           <textarea
+            id="ai-prompt"
             value={aiPrompt}
             onChange={(e) => setAiPrompt(e.target.value)}
             className="input-field h-24"
@@ -302,6 +330,7 @@ const ToolsTab = () => {
         
         <div className="mb-4">
           <button
+            id="process-ai-btn"
             onClick={processWithAI}
             className="btn btn-primary w-full"
             disabled={isProcessing || !aiInput.trim() || !aiPrompt.trim()}
@@ -313,10 +342,14 @@ const ToolsTab = () => {
         {aiResult && (
           <div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label 
+                className="block text-sm font-medium text-gray-700 mb-1"
+                htmlFor="ai-result"
+              >
                 AI Result
               </label>
               <textarea
+                id="ai-result"
                 value={aiResult}
                 onChange={(e) => setAiResult(e.target.value)}
                 className="input-field h-32"
@@ -326,6 +359,7 @@ const ToolsTab = () => {
             
             <div className="flex justify-end">
               <button
+                id="use-ai-result-btn"
                 onClick={applyAiResult}
                 className="btn btn-secondary"
                 disabled={isProcessing}

@@ -1,5 +1,19 @@
 import axios from 'axios';
 
+// Logging utility that can be disabled in test environment
+const logUtil = {
+  error: (message, ...args) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error(message, ...args);
+    }
+  },
+  log: (message, ...args) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(message, ...args);
+    }
+  }
+};
+
 // Global storage configuration
 let globalStorageConfig = {
   type: 'local',
@@ -111,11 +125,11 @@ const replaceFile = async (key, file, serverUrl) => {
  */
 export const updateFileMetadata = async (audioId, metadata, serverUrl = globalStorageConfig.serverUrl) => {
     try {
-      console.log('Sending PATCH request to:', `${serverUrl}/audio/${audioId}`, 'with metadata:', metadata);
+      logUtil.log('Sending PATCH request to:', `${serverUrl}/audio/${audioId}`, 'with metadata:', metadata);
       const response = await axios.patch(`${serverUrl}/audio/${audioId}`, metadata);
       return response.data;
     } catch (error) {
-      console.error('Failed to update file metadata:', {
+      logUtil.error('Failed to update file metadata:', {
         audioId,
         metadata,
         serverUrl,
@@ -151,14 +165,16 @@ export const saveToStorage = async (key, value, storageType = 'localStorage', me
             const serialized = JSON.stringify(value);
             storage.setItem(key, serialized);
           } catch (error) {
-            console.error(`Failed to serialize value for ${key} in ${storageType}:`, value, error);
+            logUtil.error(`Failed to serialize value for ${key} in ${storageType}:`, error);
             throw error;
           }
         }
         break;
       case 'fileStorage':
         if (!(value instanceof File)) {
-          throw new Error('Value must be a File for fileStorage');
+          const errorMsg = 'Value must be a File for fileStorage';
+          logUtil.error(errorMsg);
+          throw new Error(errorMsg);
         }
         switch (globalStorageConfig.type) {
           case 'local':
@@ -173,7 +189,7 @@ export const saveToStorage = async (key, value, storageType = 'localStorage', me
         throw new Error(`Unsupported storage type: ${storageType}`);
     }
   } catch (error) {
-    console.error(`Failed to save ${key} to ${storageType}:`, error);
+    logUtil.error(`Failed to save ${key} to ${storageType}:`, error);
     throw error;
   }
 };
@@ -202,7 +218,7 @@ export const loadFromStorage = async (key, isString = false, storageType = 'loca
           const parsed = JSON.parse(value);
           return parsed;
         } catch (error) {
-          console.error(`Failed to parse JSON for ${key} in ${storageType}:`, value, error);
+          logUtil.error(`Failed to parse JSON for ${key} in ${storageType}: ${error.message}`);
           return null;
         }
       case 'fileStorage':
@@ -219,7 +235,7 @@ export const loadFromStorage = async (key, isString = false, storageType = 'loca
         throw new Error(`Unsupported storage type: ${storageType}`);
     }
   } catch (error) {
-    console.error(`Failed to load ${key} from ${storageType}:`, error);
+    logUtil.error(`Failed to load ${key} from ${storageType}: ${error.message}`);
     throw error;
   }
 };
@@ -254,7 +270,7 @@ export const removeFromStorage = async (key, storageType = 'localStorage') => {
         throw new Error(`Unsupported storage type: ${storageType}`);
     }
   } catch (error) {
-    console.error(`Failed to remove ${key} from ${storageType}:`, error);
+    logUtil.error(`Failed to remove ${key} from ${storageType}: ${error.message}`);
     throw error;
   }
 };
@@ -294,7 +310,7 @@ export const listFromStorage = async (storageType = 'localStorage') => {
         throw new Error(`Unsupported storage type: ${storageType}`);
     }
   } catch (error) {
-    console.error(`Failed to list from ${storageType}:`, error);
+    logUtil.error(`Failed to list from ${storageType}: ${error.message}`);
     throw error;
   }
 };
@@ -320,7 +336,9 @@ export const replaceInStorage = async (key, value, storageType = 'localStorage')
         break;
       case 'fileStorage':
         if (!(value instanceof File)) {
-          throw new Error('Value must be a File for fileStorage');
+          const errorMsg = 'Value must be a File for fileStorage';
+          logUtil.error(errorMsg);
+          throw new Error(errorMsg);
         }
         switch (globalStorageConfig.type) {
           case 'local':
@@ -341,7 +359,7 @@ export const replaceInStorage = async (key, value, storageType = 'localStorage')
         throw new Error(`Unsupported storage type: ${storageType}`);
     }
   } catch (error) {
-    console.error(`Failed to replace ${key} in ${storageType}:`, error);
+    logUtil.error(`Failed to replace ${key} in ${storageType}: ${error.message}`);
     throw error;
   }
 };

@@ -186,7 +186,7 @@ const TextInput = () => {
     const newSection = {
       id: `section-${Date.now()}`,
       title: `Section ${sections.length + 1}`,
-      type: 'text-to-audio',
+      type: 'text-to-speech',
       text: inputText,
       voice: selectedVoice,
     };
@@ -261,6 +261,7 @@ const TextInput = () => {
     <div className="mb-6">
       <div className="mb-4 flex rounded-lg p-1" style={{ backgroundColor: 'var(--card-bg)' }}>
         <button
+          id="text-input-tab"
           onClick={() => handleInputTypeChange('text')}
           className={`flex-1 py-2 px-4 rounded-md shadow-sm transition-colors duration-150 ${
             inputType === 'text' ? '' : 'hover:[color:var(--text-hover)]'
@@ -273,6 +274,7 @@ const TextInput = () => {
           Text Input
         </button>
         <button
+          id="audio-input-tab"
           onClick={() => handleInputTypeChange('audio')}
           className={`flex-1 py-2 px-4 rounded-md shadow-sm transition-colors duration-150 ${
             inputType === 'audio' ? '' : 'hover:[color:var(--text-hover)]'
@@ -289,6 +291,7 @@ const TextInput = () => {
         <>
           <div className="mb-4">
             <textarea
+              id="text-input-area"
               className="input-field h-64 font-mono text-sm"
               value={inputText}
               onChange={handleTextChange}
@@ -297,10 +300,11 @@ const TextInput = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="voice-select">
               Select Voice
             </label>
             <select
+              id="voice-select"
               value={sessionState.selectedInputVoice ? `${sessionState.selectedInputVoice.engine}-${sessionState.selectedInputVoice.id}` : ''}
               onChange={handleVoiceChange}
               className="select-field"
@@ -327,24 +331,30 @@ const TextInput = () => {
               <label
                 className="block text-sm font-medium mb-1"
                 style={{ color: 'var(--text-color)' }}
+                htmlFor="file-upload-input"
               >
                 Import from file
               </label>
               <input
+                id="file-upload-input"
                 type="file"
                 ref={fileInputRef}
-                onChange={handleFileUpload}
                 accept=".txt"
                 className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold theme-file-input"
                 disabled={isProcessing}
+                onChange={handleFileUpload}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                className="block text-sm font-medium text-gray-700 mb-1"
+                htmlFor="url-input"
+              >
                 Import from URL
               </label>
               <div className="flex">
                 <input
+                  id="url-input"
                   type="url"
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
@@ -353,6 +363,7 @@ const TextInput = () => {
                   disabled={isProcessing}
                 />
                 <button
+                  id="url-import-button"
                   onClick={handleUrlImport}
                   className="btn btn-primary rounded-l-none"
                   disabled={isProcessing || !urlInput}
@@ -363,10 +374,14 @@ const TextInput = () => {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              className="block text-sm font-medium text-gray-700 mb-1"
+              htmlFor="create-section-button"
+            >
               Create new section
             </label>
             <button
+              id="create-section-button"
               onClick={createNewSection}
               className="btn btn-primary w-full"
               disabled={isProcessing || !inputText.trim()}
@@ -404,6 +419,7 @@ const TextInput = () => {
                 <div className="mb-4">
                   <label className="mr-4">
                     <input
+                      id="library-radio"
                       type="radio"
                       name="audioSource"
                       value="library"
@@ -419,6 +435,7 @@ const TextInput = () => {
                   </label>
                   <label>
                     <input
+                      id="upload-radio"
                       type="radio"
                       name="audioSource"
                       value="upload"
@@ -435,14 +452,20 @@ const TextInput = () => {
                 </div>
                 {audioSource === 'library' && (
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                      htmlFor="audio-library-select"
+                    >
                       Select an audio file from your library
                     </label>
                     <select
-                      value={selectedAudioId}
-                      onChange={(e) => setSelectedAudioId(e.target.value)}
+                      id="audio-library-select"
                       className="select-field w-full"
                       disabled={isProcessing}
+                      value={selectedAudioId}
+                      onChange={(e) => {
+                        setSelectedAudioId(e.target.value);
+                      }}
                     >
                       <option value="">Select an audio file...</option>
                       {Object.values(audioLibrary).map((audio) => (
@@ -472,6 +495,7 @@ const TextInput = () => {
                           Preview
                         </label>
                         <audio
+                          id="library-audio-preview"
                           controls
                           className="w-full"
                           src={audioLibrary[selectedAudioId]?.url}
@@ -482,15 +506,19 @@ const TextInput = () => {
                 )}
                 {audioSource === 'upload' && (
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                      htmlFor="audio-upload-input"
+                    >
                       Upload an audio file
                     </label>
                     <input
+                      id="audio-upload-input"
                       type="file"
-                      onChange={handleAudioUpload}
+                      disabled={isProcessing}
                       accept="audio/*"
                       className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold theme-file-input"
-                      disabled={isProcessing}
+                      onChange={handleAudioUpload}
                     />
                     {uploadedAudio && (
                       <div className="mt-2">
@@ -513,6 +541,7 @@ const TextInput = () => {
                           Preview
                         </label>
                         <audio
+                          id="uploaded-audio-preview"
                           controls
                           className="w-full"
                           src={uploadedAudio.url}
@@ -526,6 +555,7 @@ const TextInput = () => {
                     Manage Audio Library
                   </Link>
                   <button
+                    id="create-audio-section-button"
                     onClick={createAudioSection}
                     className="btn btn-primary"
                     disabled={

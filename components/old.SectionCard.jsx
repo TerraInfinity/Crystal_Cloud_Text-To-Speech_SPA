@@ -58,7 +58,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
   const [audioSource, setAudioSource] = useState('library'); // New state for audio source
 
   const toggleSectionType = () => {
-    const newType = section.type === 'text-to-audio' ? 'audio-only' : 'text-to-audio';
+    const newType = section.type === 'text-to-speech' ? 'audio-only' : 'text-to-speech';
     sessionActions.updateSection({
       ...section,
       type: newType,
@@ -236,7 +236,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
                   className="ml-2 text-sm font-normal"
                   style={{ color: 'var(--text-secondary)' }}
                 >
-                  ({section.type === 'text-to-audio' ? 'Text to Speech' : 'Audio Only'})
+                  ({section.type === 'text-to-speech' ? 'Text to Speech' : 'Audio Only'})
                 </span>
               </h3>
             )}
@@ -283,7 +283,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
             style={{ color: 'var(--accent-color)' }}
             title="Toggle Section Type"
           >
-            {section.type === 'text-to-audio' ? (
+            {section.type === 'text-to-speech' ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -364,7 +364,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
       </div>
       {isExpanded && (
         <div className="mt-4">
-          {section.type === 'text-to-audio' ? (
+          {section.type === 'text-to-speech' ? (
             <div>
               {isEditing ? (
                 <div>

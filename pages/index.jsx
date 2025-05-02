@@ -6,21 +6,22 @@ import ThemeToggle from '../components/ThemeToggle';
 
 export default function Home() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-color)' }}>
+    <div id="app-container" className="min-h-screen" style={{ backgroundColor: 'var(--bg-color)' }}>
       <Head>
         <title>Text-to-Speech Application</title>
         <meta name="description" content="Convert text to speech with customizable templates" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-        <main className="container mx-auto px-4 py-8">
-          <header className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-indigo-700">
+        <main id="main-content" className="container mx-auto px-4 py-8">
+          <header id="app-header" className="flex justify-between items-center mb-8">
+            <h1 id="app-title" className="text-3xl font-bold text-indigo-700">
               Text-to-Speech Converter
             </h1>
-            <div className="flex items-center space-x-4">
+            <div id="header-controls" className="flex items-center space-x-4">
               <ThemeToggle />
-              <Link href="/audio" className="btn btn-secondary flex items-center">
+              <Link id="audio-library-link" href="/audio" className="btn btn-secondary flex items-center">
                 <svg
+                  id="audio-icon"
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5 mr-1"
                   viewBox="0 0 20 20"
@@ -42,8 +43,8 @@ export default function Home() {
           
         </main>
 
-      <footer className="mt-12 py-6 text-center text-gray-500 text-sm">
-        <p>Text-to-Speech Web Application © {new Date().getFullYear()}</p>
+      <footer id="app-footer" className="mt-12 py-6 text-center text-gray-500 text-sm">
+        <p id="copyright-text">Text-to-Speech Web Application © {new Date().getFullYear()}</p>
       </footer>
     </div>
   );

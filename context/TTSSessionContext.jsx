@@ -60,7 +60,7 @@ export const TTSSessionProvider = ({ children }) => {
   }, [state.notification]);
 
   if (isLoading) {
-    return <div>Loading session state...</div>;
+    return <div id="tts-loading-session-state">Loading session state...</div>;
   }
 
   return (

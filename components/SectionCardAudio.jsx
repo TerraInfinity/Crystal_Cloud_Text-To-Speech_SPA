@@ -131,11 +131,11 @@ const SectionCardAudio = ({ section }) => {
           }
         `}
       </style>
-      <p style={{ color: 'var(--text-color)' }} className="mb-4">
+      <p style={{ color: 'var(--text-color)' }} className="mb-4" id="section-card-audio-description">
         This is an audio-only section. Choose how to provide the audio:
       </p>
-      <div className="mb-4">
-        <label className="mr-4">
+      <div className="mb-4" id="section-card-audio-source-options">
+        <label className="mr-4" id="section-card-library-option">
           <input
             type="radio"
             name="audioSource"
@@ -156,7 +156,7 @@ const SectionCardAudio = ({ section }) => {
           />
           Select from Library
         </label>
-        <label>
+        <label id="section-card-upload-option">
           <input
             type="radio"
             name="audioSource"
@@ -178,8 +178,9 @@ const SectionCardAudio = ({ section }) => {
         </label>
       </div>
       {audioSource === 'library' && (
-        <div className="mb-4">
+        <div className="mb-4" id="section-card-library-selector">
           <select
+            id="section-card-audio-library-select"
             value={section.audioId || ''}
             onChange={(e) => {
               const audioId = e.target.value;
@@ -236,8 +237,10 @@ const SectionCardAudio = ({ section }) => {
         </div>
       )}
       {audioSource === 'upload' && (
-        <div className="mb-4">
+        <div className="mb-4" id="section-card-upload-container">
           <input
+            id="section-card-audio-upload-input"
+            data-testid="section-card-audio-upload-input"
             type="file"
             onChange={handleAudioUpload}
             accept="audio/*"
@@ -269,6 +272,8 @@ const SectionCardAudio = ({ section }) => {
       >
         {showAudioPlayer ? (
           <audio
+            id="section-card-audio-player"
+            data-testid="section-card-audio-player"
             controls
             src={audioData.url}
             className="w-full max-w-md"
@@ -279,6 +284,7 @@ const SectionCardAudio = ({ section }) => {
         ) : (
           <button
             id="section-card-play-audio-button-mini"
+            data-testid="section-card-play-audio-button-mini"
             onClick={togglePlayAudio}
             className="btn btn-secondary flex items-center mr-2"
             style={{ padding: '0.5rem' }}
@@ -313,6 +319,8 @@ const SectionCardAudio = ({ section }) => {
           </button>
         )}
         <button
+          id="section-card-toggle-player-button"
+          data-testid="section-card-toggle-player-button"
           onClick={toggleAudioPlayer}
           className="p-1"
           style={{ color: 'var(--text-secondary)' }}
@@ -348,7 +356,7 @@ const SectionCardAudio = ({ section }) => {
         </button>
       </div>
       {!showPlayAudioItems && (
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }} id="section-card-audio-instruction">
           {audioSource === 'library'
             ? 'Please select an audio file from the library to play.'
             : 'Please upload an audio file to play.'}

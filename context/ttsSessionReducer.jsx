@@ -3,6 +3,8 @@ import { devLog } from '../utils/logUtils';
 
 // Helper function to normalize sections
 const normalizeSection = (section) => {
+  devLog('Normalizing section before:', section);
+  
   const defaultVoice = {
     engine: 'gtts',
     id: 'en-US-Standard-A',
@@ -11,32 +13,40 @@ const normalizeSection = (section) => {
   };
   const defaultVoiceSettings = { volume: 1, rate: 1, pitch: 1 };
 
+  // Make sure we preserve the original type
+  const originalType = section.type || 'text-to-speech';
+  
   const normalizedSection = {
     id: section.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     title: section.title || 'Untitled Section',
-    type: section.type || 'text-to-audio',
+    // Preserve the original type exactly as it was
+    type: originalType,
     text: section.text || '',
   };
 
-  if (section.type === 'text-to-audio') {
+  // Handle voice and voice settings based on the section type
+  if (originalType === 'text-to-speech') {
     // Only set a default voice if section.voice is undefined, not if it's null
     normalizedSection.voice = section.voice === undefined ? defaultVoice : section.voice;
     normalizedSection.voiceSettings = section.voiceSettings || defaultVoiceSettings;
-  } else {
+  } else if (originalType === 'audio-only') {
+    // Make sure we explicitly set voice and voiceSettings to undefined for audio-only
     normalizedSection.voice = undefined;
     normalizedSection.voiceSettings = undefined;
-  }
-
-  if (section.type === 'audio-only') {
+    
     // Preserve audioId if it exists in the section or updates
     if ('audioId' in section) {
       normalizedSection.audioId = section.audioId;
+    }
+    if ('audioSource' in section) {
+      normalizedSection.audioSource = section.audioSource;
     }
     if (section.audioUrl) {
       normalizedSection.audioUrl = section.audioUrl;
     }
   }
 
+  devLog('Normalized section after:', normalizedSection);
   return normalizedSection;
 };
 
@@ -275,7 +285,7 @@ export function ttsSessionReducer(state, action) {
             {
               id: `section-${Date.now()}`,
               title: `Section 1`,
-              type: 'text-to-audio',
+              type: 'text-to-speech',
               text: '',
               voice: null,
               voiceSettings: { pitch: 1, rate: 1, volume: 1 },

@@ -82,6 +82,7 @@ export default function ThemeToggle() {
 
   return (
     <button
+      id="theme-toggle-button"
       onClick={cycleTheme}
       className="p-2 rounded-md hover:opacity-80 transition-colors flex items-center justify-center"
       style={{

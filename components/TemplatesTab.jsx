@@ -40,7 +40,7 @@ const TemplatesTab = () => {
     const newSection = {
       id: `section-${Date.now()}`,
       title: `Section ${sections.length + 1}`,
-      type: 'text-to-audio',
+      type: 'text-to-speech',
       text: '',
       voice: null,
       voiceSettings: { pitch: 1, rate: 1, volume: 1 },
@@ -77,15 +77,47 @@ const TemplatesTab = () => {
       sessionActions.setError('Please enter a template name');
       return;
     }
+    
+    // Ensure each section has the correct properties based on type
+    const processedSections = sections.map(section => {
+      // Create a deep copy to avoid mutation
+      const processedSection = { ...section };
+      
+      // Make sure type is explicitly set
+      processedSection.type = section.type || 'text-to-speech';
+      
+      console.log('Processing section for template:', processedSection);
+      
+      if (processedSection.type === 'text-to-speech') {
+        // Ensure text-to-speech sections have voice and voiceSettings
+        processedSection.voice = section.voice || null;
+        processedSection.voiceSettings = section.voiceSettings || { volume: 1, rate: 1, pitch: 1 };
+        // Make sure audioId is removed to avoid confusion
+        delete processedSection.audioId;
+        delete processedSection.audioSource;
+      } else if (processedSection.type === 'audio-only') {
+        // Ensure audio-only sections don't have voice-related properties
+        delete processedSection.voice;
+        delete processedSection.voiceSettings;
+        // But they should have audioId preserved if it exists
+        processedSection.audioId = section.audioId;
+        processedSection.audioSource = section.audioSource || 'library';
+      }
+      
+      return processedSection;
+    });
+    
     const template = {
       id: editingTemplate?.id || `template-${Date.now()}`,
       name: templateName,
       description: templateDescription,
-      sections,
+      sections: processedSections,
     };
+    
+    console.log('Saving template with sections:', processedSections);
     actions.saveTemplate(template);
     console.log('Saved template:', template);
-    sessionActions.clearTemplateCreationForm();
+    handleClearTemplateForm();
     sessionActions.setNotification({ type: 'success', message: 'Template saved successfully!' });
   };
 
@@ -95,6 +127,38 @@ const TemplatesTab = () => {
     sessionActions.setTemplateName(template.name);
     sessionActions.setTemplateDescription(template.description || '');
     sessionActions.setTemplateCreationSections(template.sections);
+  };
+
+  useEffect(() => {
+    // Check if the initial section is created with proper type
+    if (sections.length > 0) {
+      sections.forEach((section, index) => {
+        // Make sure all sections have the correct type
+        if (section.type !== 'text-to-speech' && section.type !== 'audio-only') {
+          updateSection(index, { type: 'text-to-speech' });
+        }
+      });
+    }
+  }, [sections.length]);
+
+  // Wrapper for clearTemplateCreationForm that adds a default section if needed
+  const handleClearTemplateForm = () => {
+    sessionActions.clearTemplateCreationForm();
+    
+    // After clearing, add a default section if needed
+    setTimeout(() => {
+      if (sessionState.templateCreation.sections.length === 0) {
+        const defaultSection = {
+          id: `section-${Date.now()}`,
+          title: 'Section 1',
+          type: 'text-to-speech',
+          text: '',
+          voice: null,
+          voiceSettings: { pitch: 1, rate: 1, volume: 1 },
+        };
+        sessionActions.addTemplateCreationSection(defaultSection);
+      }
+    }, 0);
   };
 
   console.log('Rendering saved templates:', Object.values(templates || {}));
@@ -107,15 +171,16 @@ const TemplatesTab = () => {
           <h2 className="text-2xl font-semibold">
             {editingTemplate ? 'Edit Template' : 'Create New Template'}
           </h2>
-          <button onClick={sessionActions.clearTemplateCreationForm} className="btn btn-secondary p-2" title="Start Over">
+          <button onClick={handleClearTemplateForm} className="btn btn-secondary p-2" title="Start Over">
             <FaRedo className="text-lg" />
           </button>
         </div>
 
         <div className="form-container flex flex-col gap-4">
           <div className="form-group flex flex-col gap-2">
-            <label className="text-sm font-medium text-[var(--text-secondary)]">Template Name</label>
+            <label htmlFor="template-name" className="text-sm font-medium text-[var(--text-secondary)]">Template Name</label>
             <input
+              id="template-name"
               type="text"
               value={templateName}
               onChange={(e) => sessionActions.setTemplateName(e.target.value)}
@@ -125,8 +190,9 @@ const TemplatesTab = () => {
           </div>
 
           <div className="form-group flex flex-col gap-2">
-            <label className="text-sm font-medium text-[var(--text-secondary)]">Template Description (optional)</label>
+            <label htmlFor="template-description" className="text-sm font-medium text-[var(--text-secondary)]">Template Description (optional)</label>
             <textarea
+              id="template-description"
               value={templateDescription}
               onChange={(e) => sessionActions.setTemplateDescription(e.target.value)}
               className="input-field"
@@ -169,6 +235,7 @@ const TemplatesTab = () => {
                 <div className="section-card flex-1">
                   <div className="section-header flex justify-between items-center mb-4">
                     <input
+                      id={`section-title-${section.id}`}
                       type="text"
                       value={section.title}
                       onChange={(e) => updateSection(index, { title: e.target.value })}
@@ -190,21 +257,24 @@ const TemplatesTab = () => {
                     <div className="form-group flex flex-col gap-2">
                       <label className="text-sm font-medium text-[var(--text-secondary)]">Section Type</label>
                       <select
+                        id={`section-type-${section.id}`}
                         value={section.type}
                         onChange={(e) => updateSection(index, { type: e.target.value })}
                         className="select-field"
                       >
-                        <option value="text-to-audio">Text to Audio</option>
+                        <option value="text-to-speech">Text to Speech</option>
                         <option value="audio-only">Audio Only</option>
                       </select>
                     </div>
 
-                    {section.type === 'text-to-audio' && (
+                    {section.type === 'text-to-speech' && (
                       <>
                         <div className="form-group flex flex-col gap-2">
-                          <label className="text-sm font-medium text-[var(--text-secondary)]">Voice</label>
+                          <label className="text-sm font-medium text-[var(--text-secondary)]" htmlFor={`section-voice-${section.id}`}>Voice</label>
                           {voicesLoaded ? (
                             <select
+                              id={`section-voice-${section.id}`}
+                              data-testid={`section-voice-${section.id}`}
                               value={section.voice ? `${section.voice.engine}-${section.voice.id}` : ''}
                               onChange={(e) => {
                                 const selectedValue = e.target.value;
@@ -236,6 +306,7 @@ const TemplatesTab = () => {
                         <div className="form-group flex flex-col gap-2">
                           <label className="text-sm font-medium text-[var(--text-secondary)]">Default Text</label>
                           <textarea
+                            id={`section-text-${section.id}`}
                             value={section.text}
                             onChange={(e) => updateSection(index, { text: e.target.value })}
                             className="input-field"
@@ -248,8 +319,10 @@ const TemplatesTab = () => {
 
                     {section.type === 'audio-only' && (
                       <div className="form-group flex flex-col gap-2">
-                        <label className="text-sm font-medium text-[var(--text-secondary)]">Select Audio</label>
+                        <label className="text-sm font-medium text-[var(--text-secondary)]" htmlFor={`section-audio-${section.id}`}>Select Audio</label>
                         <select
+                          id={`section-audio-${section.id}`}
+                          data-testid={`section-audio-${section.id}`}
                           value={section.audioId || ''}
                           onChange={(e) => {
                             const audioId = e.target.value;
@@ -278,7 +351,7 @@ const TemplatesTab = () => {
           </div>
 
           <div className="form-actions flex justify-end gap-2">
-            <button onClick={saveTemplate} className="btn btn-primary button-gradient p-2" title="Save Template">
+            <button id="save-template-btn" onClick={saveTemplate} className="btn btn-primary button-gradient p-2" title="Save Template">
               <FaSave className="text-lg" />
             </button>
           </div>
@@ -298,6 +371,7 @@ const TemplatesTab = () => {
                   </span>
                   <div className="template-actions flex gap-2">
                     <button
+                      id={`edit-template-${template.id}`}
                       onClick={() => editTemplate(template)}
                       className="btn btn-secondary p-2"
                       title="Edit Template"
@@ -305,9 +379,10 @@ const TemplatesTab = () => {
                       <FaEdit className="text-lg" />
                     </button>
                     <button
+                      id={`delete-template-${template.id}`}
                       onClick={() => {
                         actions.deleteTemplate(template.id);
-                        if (editingTemplate?.id === template.id) sessionActions.clearTemplateCreationForm();
+                        if (editingTemplate?.id === template.id) handleClearTemplateForm();
                       }}
                       className="btn btn-danger p-2"
                       title="Delete Template"

@@ -386,12 +386,14 @@ const AudioLibrary = () => {
       {/* Notification Display - Only on /audio to avoid duplicates on root */}
       {sessionState.notification && window.location.pathname === '/audio' && (
         <div
+          id="notification-container"
           className={`p-4 rounded-lg mb-4 ${
             sessionState.notification.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
           }`}
         >
           {sessionState.notification.message}
           <button
+            id="notification-dismiss-btn"
             onClick={() => sessionActions.setNotification(null)}
             className="ml-4 text-sm underline"
           >
@@ -400,10 +402,11 @@ const AudioLibrary = () => {
         </div>
       )}
 
-      <h2 className="text-xl font-medium">Sound Effects Library</h2>
+      <h2 id="audio-library-title" className="text-xl font-medium">Sound Effects Library</h2>
 
       {/* Upload Section */}
       <div
+        id="audio-upload-section"
         className="rounded-lg p-4"
         style={{
           backgroundColor: 'var(--card-bg)',
@@ -412,8 +415,9 @@ const AudioLibrary = () => {
         }}
       >
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-medium">Upload New Sound Effect</h3>
+          <h3 id="upload-section-title" className="text-lg font-medium">Upload New Sound Effect</h3>
           <button
+            id="toggle-settings-btn"
             onClick={() => setShowSettings(!showSettings)}
             className="text-sm text-indigo-600 hover:text-indigo-800"
           >
@@ -422,10 +426,11 @@ const AudioLibrary = () => {
         </div>
 
         <div className="mb-2">
-          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-color)' }}>
+          <label id="audio-file-label" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-color)' }}>
             Audio File
           </label>
           <input
+            id="audio-upload-input"
             type="file"
             ref={fileInputRef}
             onChange={handleAudioUpload}
@@ -433,14 +438,15 @@ const AudioLibrary = () => {
             className="theme-file-input block w-full text-sm"
             disabled={isProcessing}
           />
-          <p className="text-xs text-gray-500 italic mt-1">Supported: MP3, WAV, OGG</p>
+          <p id="audio-file-hint" className="text-xs text-gray-500 italic mt-1">Supported: MP3, WAV, OGG</p>
         </div>
 
         {showSettings && (
-          <div className="space-y-3">
+          <div id="audio-settings" className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Audio Name</label>
+              <label id="audio-name-label" className="block text-sm font-medium text-gray-700 mb-1">Audio Name</label>
               <input
+                id="audio-name-input"
                 type="text"
                 value={audioName}
                 onChange={(e) => setAudioName(e.target.value)}
@@ -450,8 +456,9 @@ const AudioLibrary = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Placeholder Text</label>
+              <label id="audio-placeholder-label" className="block text-sm font-medium text-gray-700 mb-1">Placeholder Text</label>
               <input
+                id="audio-placeholder-input"
                 type="text"
                 value={placeholderText}
                 onChange={(e) => setPlaceholderText(e.target.value)}
@@ -461,8 +468,9 @@ const AudioLibrary = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Default Volume</label>
+              <label id="audio-volume-label" className="block text-sm font-medium text-gray-700 mb-1">Default Volume</label>
               <input
+                id="audio-volume-input"
                 type="range"
                 min="0"
                 max="1"
@@ -479,6 +487,7 @@ const AudioLibrary = () => {
       {/* Now Playing Section */}
       {selectedAudio && (
         <div
+          id="now-playing-section"
           className="rounded-lg p-4"
           style={{
             backgroundColor: 'var(--card-bg)',
@@ -486,8 +495,9 @@ const AudioLibrary = () => {
             borderWidth: '1px',
           }}
         >
-          <h3 className="text-lg font-medium mb-2">Now Playing: {selectedAudio.name}</h3>
+          <h3 id="now-playing-title" className="text-lg font-medium mb-2">Now Playing: {selectedAudio.name}</h3>
           <audio
+            id="now-playing-audio"
             ref={audioPlayerRef}
             controls
             className="w-full"
@@ -500,6 +510,7 @@ const AudioLibrary = () => {
 
       {/* Audio Library List */}
       <div
+        id="audio-library-list"
         className="rounded-lg p-4"
         style={{
           backgroundColor: 'var(--card-bg)',
@@ -507,22 +518,24 @@ const AudioLibrary = () => {
           borderWidth: '1px',
         }}
       >
-        <h3 className="text-lg font-medium mb-3">Your Sound Effects</h3>
+        <h3 id="library-list-title" className="text-lg font-medium mb-3">Your Sound Effects</h3>
         {Object.keys(audioLibrary).length === 0 ? (
-          <p className="text-gray-500">No sound effects in your library yet.</p>
+          <p id="empty-library-message" className="text-gray-500">No sound effects in your library yet.</p>
         ) : (
-          <div className="space-y-2">
+          <div id="audio-items-container" className="space-y-2">
             {Object.values(audioLibrary).map((audio) => (
               <div
                 key={audio.id}
+                id={`audio-item-${audio.id}`}
                 className="p-2 rounded-md hover:bg-gray-100"
                 style={{ backgroundColor: 'var(--card-bg)' }}
               >
                 {editingAudioId === audio.id ? (
-                  <div className="space-y-2">
+                  <div id={`edit-audio-form-${audio.id}`} className="space-y-2">
                     <div>
-                      <label className="block text-xs font-medium text-gray-700">Audio Name</label>
+                      <label id={`edit-name-label-${audio.id}`} className="block text-xs font-medium text-gray-700">Audio Name</label>
                       <input
+                        id={`edit-name-input-${audio.id}`}
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
@@ -531,8 +544,9 @@ const AudioLibrary = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700">Placeholder Text</label>
+                      <label id={`edit-placeholder-label-${audio.id}`} className="block text-xs font-medium text-gray-700">Placeholder Text</label>
                       <input
+                        id={`edit-placeholder-input-${audio.id}`}
                         type="text"
                         value={editPlaceholder}
                         onChange={(e) => setEditPlaceholder(e.target.value)}
@@ -542,12 +556,14 @@ const AudioLibrary = () => {
                     </div>
                     <div className="flex space-x-2">
                       <button
+                        id={`save-edit-btn-${audio.id}`}
                         onClick={() => saveEdit(audio.id)}
                         className="text-sm text-indigo-600 hover:text-indigo-800"
                       >
                         Save
                       </button>
                       <button
+                        id={`cancel-edit-btn-${audio.id}`}
                         onClick={cancelEdit}
                         className="text-sm text-gray-600 hover:text-gray-800"
                       >
@@ -558,11 +574,12 @@ const AudioLibrary = () => {
                 ) : (
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h4 className="text-sm font-medium">{audio.name}</h4>
-                      <p className="text-xs text-gray-500">[{audio.placeholder}]</p>
+                      <h4 id={`audio-name-${audio.id}`} className="text-sm font-medium">{audio.name}</h4>
+                      <p id={`audio-placeholder-${audio.id}`} className="text-xs text-gray-500">[{audio.placeholder}]</p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
+                        id={`audio-volume-range-${audio.id}`}
                         type="range"
                         min="0"
                         max="1"
@@ -572,6 +589,7 @@ const AudioLibrary = () => {
                         className="w-20"
                       />
                       <button
+                        id={`play-audio-btn-${audio.id}`}
                         onClick={() => playAudio(audio)}
                         className="p-1 text-indigo-600 hover:text-indigo-800"
                         title="Play"
@@ -590,6 +608,7 @@ const AudioLibrary = () => {
                         </svg>
                       </button>
                       <button
+                        id={`edit-audio-btn-${audio.id}`}
                         onClick={() => startEditing(audio)}
                         className="p-1 text-gray-600 hover:text-gray-800"
                         title="Edit"
@@ -606,6 +625,7 @@ const AudioLibrary = () => {
                         </svg>
                       </button>
                       <button
+                        id={`delete-audio-btn-${audio.id}`}
                         onClick={() => deleteAudio(audio.id)}
                         className="p-1 text-red-600 hover:text-red-800"
                         title="Delete"
@@ -634,6 +654,7 @@ const AudioLibrary = () => {
       {/* Delete All Button */}
       <div className="flex justify-end">
         <button
+          id="delete-all-sound-effects-btn"
           onClick={deleteAllAudios}
           className="btn btn-danger text-sm"
         >

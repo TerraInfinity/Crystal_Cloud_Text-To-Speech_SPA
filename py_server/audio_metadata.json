@@ -14,7 +14,7 @@
       }
     },
     "date": "2025-04-27T00:18:51.210571",
-    "volume": 1.0,
+    "volume": 0.5,
     "placeholder": "grimessync",
     "url": "/audio/GRIMESSYNC.wav"
   },
@@ -71,8 +71,27 @@
       }
     },
     "date": "2025-04-27T00:18:51.416608",
-    "volume": 1.0,
+    "volume": 0.5,
     "placeholder": "freeze",
     "url": "/audio/FREEZE.wav"
+  },
+  {
+    "id": "1497e5b2-9545-4c22-81eb-0729a80408fc",
+    "name": "whatever1",
+    "type": "audio/wav",
+    "size": 231468,
+    "category": "sound_effect",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "whatever1.wav",
+        "type": "audio/wav",
+        "size": 231468
+      }
+    },
+    "date": "2025-05-01T22:48:19.685987",
+    "volume": 0.4,
+    "placeholder": "whatever1",
+    "url": "/audio/whatever1.wav"
   }
 ]
