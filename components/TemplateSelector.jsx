@@ -1,8 +1,26 @@
+/**
+ * @fileoverview Template Selector component for the Text-to-Speech application.
+ * Provides functionality for selecting and loading different TTS templates
+ * that define the structure and content of TTS sections.
+ * 
+ * @requires React
+ * @requires ../context/TTSContext
+ * @requires ../context/TTSSessionContext
+ * @requires ../utils/logUtils
+ */
+
 import React, { useCallback } from 'react';
 import { useTTS } from '../context/TTSContext';
 import { useTTSSession } from '../context/TTSSessionContext';
 import { devLog } from '../utils/logUtils';
 
+/**
+ * TemplateSelector component for selecting and loading TTS templates.
+ * Allows users to choose from pre-defined templates or load demo content.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered TemplateSelector component
+ */
 const TemplateSelector = () => {
   const { state } = useTTS(); // Destructure state and actions
   const { state: sessionState, actions: sessionActions } = useTTSSession();
@@ -18,7 +36,12 @@ const TemplateSelector = () => {
     language: 'en-US',
   };
 
-  // Load template content
+  /**
+   * Loads the selected template's content.
+   * Creates sections based on the template definition and adds them to the session state.
+   * 
+   * @param {string} templateName - The name/ID of the template to load
+   */
   const loadTemplate = async (templateName) => {
     sessionActions.setTemplate(templateName);
     sessionActions.setProcessing(true);
@@ -114,8 +137,10 @@ const TemplateSelector = () => {
     }
   };
 
-  
-  // Load demo content
+  /**
+   * Loads demo content with pre-defined sections and content.
+   * This is a convenience function for users to see a working example.
+   */
   const loadDemoContent = useCallback(() => {
     sessionActions.loadDemoContent();
   }, [sessionActions]);

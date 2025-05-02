@@ -1,7 +1,13 @@
 // context/ttsSessionReducer.jsx
 import { devLog } from '../utils/logUtils';
 
-// Helper function to normalize sections
+/**
+ * Helper function to normalize TTS section objects
+ * Ensures consistent structure and default values for section properties
+ * 
+ * @param {Object} section - The section to normalize
+ * @returns {Object} Normalized section with default values applied
+ */
 const normalizeSection = (section) => {
   devLog('Normalizing section before:', section);
   
@@ -50,26 +56,38 @@ const normalizeSection = (section) => {
   return normalizedSection;
 };
 
-// The rest of the file remains unchanged
+/**
+ * Reducer function for the TTS session state
+ * Handles all state updates for the current working session
+ * 
+ * @param {Object} state - Current session state
+ * @param {Object} action - Action object with type and payload
+ * @returns {Object} The new state after applying the action
+ */
 export function ttsSessionReducer(state, action) {
   switch (action.type) {
     case 'SET_INPUT_TEXT':
+      // Set the input text for TTS
       const newInputTextState = { ...state, inputText: action.payload };
       return newInputTextState;
 
     case 'SET_SELECTED_INPUT_VOICE':
+      // Set the selected voice for input text
       const newSelectedVoiceState = { ...state, selectedInputVoice: action.payload };
       return newSelectedVoiceState;
 
     case 'SET_INPUT_TYPE':
+      // Set input type (text or audio)
       const newInputTypeState = { ...state, inputType: action.payload };
       return newInputTypeState;
 
     case 'SET_TEMPLATE':
+      // Set the current template
       const newTemplateState = { ...state, currentTemplate: action.payload };
       return newTemplateState;
 
     case 'SET_SECTIONS':
+      // Set all sections (overwriting existing ones)
       const newSectionsState = {
         ...state,
         sections: action.payload.map(normalizeSection),
@@ -77,6 +95,7 @@ export function ttsSessionReducer(state, action) {
       return newSectionsState;
 
     case 'ADD_SECTION':
+      // Add a new section to the end of the sections array
       const newAddSectionState = {
         ...state,
         sections: [...state.sections, normalizeSection(action.payload)],
@@ -84,6 +103,7 @@ export function ttsSessionReducer(state, action) {
       return newAddSectionState;
 
     case 'UPDATE_SECTION':
+      // Update an existing section by ID
       devLog('Updating section with payload:', action.payload);
       const updatedSections = state.sections.map((section) =>
         section.id === action.payload.id ? normalizeSection(action.payload) : section
@@ -93,11 +113,13 @@ export function ttsSessionReducer(state, action) {
       return newUpdateSectionState;
 
     case 'REMOVE_SECTION':
+      // Remove a section by ID
       const filteredSections = state.sections.filter((section) => section.id !== action.payload);
       const newRemoveSectionState = { ...state, sections: filteredSections };
       return newRemoveSectionState;
 
     case 'REORDER_SECTIONS':
+      // Reorder all sections based on the provided array
       const newReorderSectionsState = {
         ...state,
         sections: action.payload.map(normalizeSection),
@@ -105,22 +127,27 @@ export function ttsSessionReducer(state, action) {
       return newReorderSectionsState;
 
     case 'SET_ACTIVE_TAB':
+      // Set the active tab in the UI
       const newActiveTabState = { ...state, activeTab: action.payload };
       return newActiveTabState;
 
     case 'SET_PROCESSING':
+      // Set the processing state (loading indicator)
       const newProcessingState = { ...state, isProcessing: action.payload };
       return newProcessingState;
 
     case 'SET_ERROR':
+      // Set an error message
       const newErrorState = { ...state, errorMessage: action.payload };
       return newErrorState;
 
     case 'SET_NOTIFICATION':
+      // Set a notification message
       const newNotificationState = { ...state, notification: action.payload };
       return newNotificationState;
 
     case 'SET_GENERATED_AUDIO':
+      // Set generated audio data for a specific section
       const { sectionId, audioData } = action.payload;
       return {
         ...state,
@@ -131,18 +158,22 @@ export function ttsSessionReducer(state, action) {
       };
 
     case 'SET_MERGED_AUDIO':
+      // Set the merged audio URL for playback
       const newMergedAudioState = { ...state, mergedAudio: action.payload };
       return newMergedAudioState;
 
     case 'SET_PLAYING':
+      // Set the playing state for audio playback
       const newPlayingState = { ...state, isPlaying: action.payload };
       return newPlayingState;
 
     case 'SET_SELECTED_AUDIO':
+      // Set the selected audio from the library
       const newSelectedAudioState = { ...state, selectedAudioLibraryId: action.payload };
       return newSelectedAudioState;
 
     case 'SET_SECTION_VOICE':
+      // Set the voice for a specific section
       devLog('Setting voice for section:', action.payload.sectionId, 'Voice:', action.payload.voice);
       const updatedSectionsWithVoice = state.sections.map((section) =>
         section.id === action.payload.sectionId
@@ -153,6 +184,7 @@ export function ttsSessionReducer(state, action) {
       return { ...state, sections: updatedSectionsWithVoice };
 
     case 'SET_VOICE_SETTINGS':
+      // Set voice settings for a specific section
       devLog('Setting voice settings for section:', action.payload.sectionId, 'Settings:', action.payload.settings);
       const updatedSectionsWithSettings = state.sections.map((section) =>
         section.id === action.payload.sectionId
@@ -163,6 +195,7 @@ export function ttsSessionReducer(state, action) {
       return { ...state, sections: updatedSectionsWithSettings };
 
     case 'LOAD_SESSION_STATE':
+      // Load a complete session state (e.g., from storage)
       const loadedGeneratedAudios = action.payload.generatedTTSAudios || {};
       const normalizedGeneratedAudios = Object.keys(loadedGeneratedAudios).reduce(
         (acc, id) => {
@@ -186,6 +219,7 @@ export function ttsSessionReducer(state, action) {
       };
 
     case 'LOAD_DEMO_CONTENT':
+      // Load demo content (e.g., sample project)
       devLog('Loading demo content:', action.payload);
       return {
         ...state,
@@ -195,20 +229,23 @@ export function ttsSessionReducer(state, action) {
         speechEngine: action.payload.speechEngine,
       };
 
-    // New actions for templateCreation
+    // Template creation actions
     case 'SET_TEMPLATE_NAME':
+      // Set the name for a template being created
       return {
         ...state,
         templateCreation: { ...state.templateCreation, templateName: action.payload },
       };
 
     case 'SET_TEMPLATE_DESCRIPTION':
+      // Set the description for a template being created
       return {
         ...state,
         templateCreation: { ...state.templateCreation, templateDescription: action.payload },
       };
 
     case 'SET_TEMPLATE_CREATION_SECTIONS':
+      // Set all sections for template creation
       return {
         ...state,
         templateCreation: {
@@ -218,6 +255,7 @@ export function ttsSessionReducer(state, action) {
       };
 
     case 'ADD_TEMPLATE_CREATION_SECTION':
+      // Add a section to template creation
       return {
         ...state,
         templateCreation: {
@@ -227,6 +265,7 @@ export function ttsSessionReducer(state, action) {
       };
 
     case 'UPDATE_TEMPLATE_CREATION_SECTION':
+      // Update a section in template creation
       const { index, updates } = action.payload;
       const newTemplateSections = [...state.templateCreation.sections];
       newTemplateSections[index] = normalizeSection({ ...newTemplateSections[index], ...updates });
@@ -236,6 +275,7 @@ export function ttsSessionReducer(state, action) {
       };
 
     case 'REMOVE_TEMPLATE_CREATION_SECTION':
+      // Remove a section from template creation (prevent removing last section)
       if (state.templateCreation.sections.length === 1) return state;
       return {
         ...state,
@@ -246,6 +286,7 @@ export function ttsSessionReducer(state, action) {
       };
 
     case 'MOVE_TEMPLATE_CREATION_SECTION_UP':
+      // Move a template section up in the order
       if (action.payload === 0) return state;
       const sectionsUp = [...state.templateCreation.sections];
       [sectionsUp[action.payload - 1], sectionsUp[action.payload]] = [
@@ -258,6 +299,7 @@ export function ttsSessionReducer(state, action) {
       };
 
     case 'MOVE_TEMPLATE_CREATION_SECTION_DOWN':
+      // Move a template section down in the order
       if (action.payload === state.templateCreation.sections.length - 1) return state;
       const sectionsDown = [...state.templateCreation.sections];
       [sectionsDown[action.payload], sectionsDown[action.payload + 1]] = [
@@ -270,12 +312,14 @@ export function ttsSessionReducer(state, action) {
       };
 
     case 'SET_EDITING_TEMPLATE':
+      // Set the template being edited
       return {
         ...state,
         templateCreation: { ...state.templateCreation, editingTemplate: action.payload },
       };
 
     case 'CLEAR_TEMPLATE_CREATION_FORM':
+      // Reset the template creation form to default values
       return {
         ...state,
         templateCreation: {

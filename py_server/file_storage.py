@@ -1,3 +1,22 @@
+"""
+Audio File Storage and Management Module
+
+This module provides a Flask-based API for managing audio files, including:
+1. Uploading audio files with metadata
+2. Retrieving audio file listings with metadata
+3. Serving audio files
+4. Updating audio metadata
+5. Deleting audio files
+
+The module maintains a JSON-based metadata store that tracks:
+- File IDs, names, and locations
+- Audio categories and properties
+- Source information
+- Custom placeholders for text replacement
+
+This can be used as a standalone server or integrated with other Flask applications
+by using the setup_routes() function.
+"""
 import os
 import json
 import uuid
@@ -26,6 +45,15 @@ METADATA_FILE = os.path.join(SCRIPT_DIR, "audio_metadata.json")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def save_metadata(metadata_list):
+    """
+    Save the audio metadata list to the JSON metadata file
+    
+    Args:
+        metadata_list (list): List of metadata dictionaries to save
+        
+    Raises:
+        Exception: If there's an error writing to the metadata file
+    """
     try:
         with open(METADATA_FILE, 'w') as f:
             json.dump(metadata_list, f, indent=2)
@@ -35,6 +63,16 @@ def save_metadata(metadata_list):
         raise
 
 def load_metadata():
+    """
+    Load the audio metadata list from the JSON metadata file
+    
+    Returns:
+        list: List of metadata dictionaries, with default values added for missing fields
+        
+    Raises:
+        ValueError: If metadata file doesn't contain a list
+        Exception: For other errors reading the metadata file
+    """
     try:
         if not os.path.exists(METADATA_FILE):
             logging.info(f"Metadata file {METADATA_FILE} does not exist. Initializing empty list.")
@@ -57,6 +95,7 @@ def load_metadata():
             logging.error(f"Metadata file {METADATA_FILE} does not contain a list. Found: {type(metadata_list)}")
             raise ValueError("Metadata file must contain a list")
 
+        # Ensure all entries have required fields with default values
         for metadata in metadata_list:
             if not isinstance(metadata, dict):
                 logging.warning(f"Skipping invalid metadata entry: {metadata}")
@@ -97,6 +136,9 @@ def get_unique_filename(base_name, extension, directory):
     
     Returns:
         str: A unique filename (e.g., "bird.wav", "bird_1.wav", or "bird_1634567890.wav").
+        
+    Raises:
+        OSError: If unable to generate a unique filename after 1000 attempts
     """
     filename = secure_filename(f"{base_name}.{extension}" if extension else base_name)
     file_path = os.path.join(directory, filename)
@@ -122,6 +164,22 @@ def get_unique_filename(base_name, extension, directory):
 
 @app.route('/upload', methods=['POST'])
 def upload_audio():
+    """
+    Upload one or more audio files with metadata
+    
+    Handles two upload modes:
+    1. Single file upload: Using 'audio' form field
+    2. Multiple file upload: Using 'files' form field
+    
+    Optional form fields:
+    - category: File category (sound_effect, voice, song, text, json, other)
+    - name: Custom name for the file(s)
+    - placeholder: Text replacement placeholder
+    - volume: Playback volume (0.0-1.0)
+    
+    Returns:
+        JSON response with file URL(s) or error
+    """
     try:
         uploaded_metadata = []
         category = request.form.get('category', 'other')
@@ -143,6 +201,7 @@ def upload_audio():
             logging.warning(f"Invalid volume format: {volume_str}. Defaulting to 1.")
             volume = 1.0
 
+        # Handle single file upload (used by React frontend)
         if 'audio' in request.files:
             file = request.files['audio']
             if file.filename == '':
@@ -184,6 +243,7 @@ def upload_audio():
             logging.info(f"Uploaded single file: {filename} with name: {name}, placeholder: {placeholder_value}, volume: {volume}")
             return jsonify({'url': metadata['url']}), 200
 
+        # Handle multiple file upload (used by HTML frontend)
         if 'files' in request.files:
             files = request.files.getlist('files')
             if not files or all(file.filename == '' for file in files):
@@ -238,6 +298,22 @@ def upload_audio():
 
 @app.route('/audio/<audio_id>', methods=['PATCH'])
 def update_audio_metadata(audio_id):
+    """
+    Update metadata for an audio file
+    
+    Expects JSON with one or more of:
+    - name: New name for the audio
+    - placeholder: New placeholder text
+    - volume: New volume value
+    
+    If name is changed, the file will be renamed
+    
+    Args:
+        audio_id (str): The UUID of the audio file to update
+        
+    Returns:
+        JSON with updated metadata or error
+    """
     try:
         data = request.get_json()
         if not data:
@@ -261,6 +337,7 @@ def update_audio_metadata(audio_id):
         if 'volume' in data:
             audio_metadata['volume'] = float(data['volume'])
 
+        # If name changed, rename the actual file
         if 'name' in data and data['name'] != old_name:
             extension = current_filename.rsplit('.', 1)[-1] if '.' in current_filename else ''
             new_filename = get_unique_filename(data['name'], extension, UPLOAD_DIR)
@@ -284,6 +361,12 @@ def update_audio_metadata(audio_id):
 
 @app.route('/audio/list', methods=['GET'])
 def list_audio():
+    """
+    List all available audio files with their metadata
+    
+    Returns:
+        JSON array of all audio file metadata
+    """
     try:
         metadata_list = load_metadata()
         logging.info(f"Returning {len(metadata_list)} files from /audio/list")
@@ -294,6 +377,15 @@ def list_audio():
 
 @app.route('/audio/<filename>', methods=['GET'])
 def serve_audio(filename):
+    """
+    Serve an audio file by filename
+    
+    Args:
+        filename (str): Name of the file to serve
+        
+    Returns:
+        Audio file or error JSON if file not found
+    """
     try:
         logging.info(f"Serving file: {filename}")
         return send_from_directory(UPLOAD_DIR, filename)
@@ -303,6 +395,15 @@ def serve_audio(filename):
 
 @app.route('/audio/<filename>', methods=['DELETE'])
 def delete_audio(filename):
+    """
+    Delete an audio file and its metadata
+    
+    Args:
+        filename (str): Name of the file to delete
+        
+    Returns:
+        JSON with success or error message
+    """
     try:
         file_path = os.path.join(UPLOAD_DIR, filename)
         if not os.path.exists(file_path):
@@ -321,6 +422,19 @@ def delete_audio(filename):
 
 @app.route('/audio/<filename>', methods=['PUT'])
 def replace_audio(filename):
+    """
+    Replace an existing audio file while preserving its URL/ID
+    
+    Args:
+        filename (str): Name of the file to replace
+        
+    Request:
+        - audio: The new audio file
+        - category (optional): New category
+        
+    Returns:
+        JSON with file URL or error
+    """
     try:
         if 'audio' not in request.files:
             return jsonify({'error': 'No audio file provided'}), 400
@@ -363,6 +477,14 @@ def replace_audio(filename):
         return jsonify({'error': 'Failed to replace file'}), 500
 
 def setup_routes(flask_app):
+    """
+    Register all routes to the provided Flask application
+    
+    This allows the file_storage module to be integrated with other Flask apps
+    
+    Args:
+        flask_app: The Flask application to register routes with
+    """
     flask_app.route('/upload', methods=['POST'])(upload_audio)
     flask_app.route('/audio/list', methods=['GET'])(list_audio)
     flask_app.route('/audio/<filename>', methods=['GET'])(serve_audio)

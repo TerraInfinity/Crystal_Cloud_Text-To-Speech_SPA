@@ -1,8 +1,17 @@
 /**
- * Storage service for handling settings, audio, and extensible cloud storage
- * Supports localStorage, IndexedDB, and cloud providers like S3.
+ * Storage service for handling settings, audio, and extensible cloud storage.
+ * Provides a unified interface for data persistence across different storage mechanisms:
+ * - localStorage for settings, templates, sections, and API keys
+ * - IndexedDB for audio files and larger binary data
+ * - Amazon S3 for cloud storage and file sharing
+ * 
+ * @module storageService
  */
 class StorageService {
+    /**
+     * Initializes the storage service with default provider configurations.
+     * Sets up storage provider mapping for different data types.
+     */
     constructor() {
         // Default storage provider configuration (extensible for S3, Google Drive, etc.)
         this.storageProvider = {
@@ -13,7 +22,9 @@ class StorageService {
     }
 
     /**
-     * Save settings to localStorage
+     * Save settings to localStorage.
+     * Serializes the settings object to JSON and stores it using a known key.
+     * 
      * @param {Object} settings - Settings object to save
      * @returns {boolean} - True if saved successfully, false otherwise
      */
@@ -28,7 +39,9 @@ class StorageService {
     }
 
     /**
-     * Load settings from localStorage
+     * Load settings from localStorage.
+     * Retrieves and deserializes the settings object from storage.
+     * 
      * @returns {Object|null} - Retrieved settings object or null if not found or on error
      */
     loadSettings() {
@@ -42,7 +55,9 @@ class StorageService {
     }
 
     /**
-     * Save template to localStorage
+     * Save template to localStorage.
+     * Adds or updates a named template in the templates collection.
+     * 
      * @param {string} templateName - Unique name of the template
      * @param {Object} templateData - Template data to save
      * @returns {boolean} - True if saved successfully, false otherwise
@@ -60,7 +75,9 @@ class StorageService {
     }
 
     /**
-     * Load all templates from localStorage
+     * Load all templates from localStorage.
+     * Retrieves and deserializes all templates as a collection.
+     * 
      * @returns {Object|null} - Object containing all templates or null if not found or on error
      */
     loadTemplates() {
@@ -74,7 +91,9 @@ class StorageService {
     }
 
     /**
-     * Load a specific template from localStorage
+     * Load a specific template from localStorage.
+     * Retrieves a single named template from the templates collection.
+     * 
      * @param {string} templateName - Name of the template to load
      * @returns {Object|null} - Retrieved template object or null if not found or on error
      */
@@ -89,7 +108,9 @@ class StorageService {
     }
 
     /**
-     * Delete a template from localStorage
+     * Delete a template from localStorage.
+     * Removes a named template from the templates collection if it exists.
+     * 
      * @param {string} templateName - Name of the template to delete
      * @returns {boolean} - True if deleted successfully, false if not found or on error
      */
@@ -109,7 +130,9 @@ class StorageService {
     }
 
     /**
-     * Save section to localStorage for auto-recovery
+     * Save section to localStorage for auto-recovery.
+     * Adds or updates a section in the sections collection using a unique ID.
+     * 
      * @param {string} sectionId - Unique ID of the section
      * @param {Object} sectionData - Section data to save
      * @returns {boolean} - True if saved successfully, false otherwise
@@ -127,7 +150,9 @@ class StorageService {
     }
 
     /**
-     * Load all sections from localStorage
+     * Load all sections from localStorage.
+     * Retrieves and deserializes all sections as a collection.
+     * 
      * @returns {Object|null} - Object containing all sections or null if not found or on error
      */
     loadSections() {
@@ -141,7 +166,9 @@ class StorageService {
     }
 
     /**
-     * Save audio to IndexedDB for offline use
+     * Save audio to IndexedDB for offline use.
+     * Creates or updates IndexedDB database as needed and stores the audio blob.
+     * 
      * @param {string} audioId - Unique ID for the audio
      * @param {Blob} audioBlob - Audio data as a Blob
      * @returns {Promise<boolean>} - Resolves to true on success, rejects with error on failure
@@ -172,7 +199,9 @@ class StorageService {
     }
 
     /**
-     * Load audio from IndexedDB
+     * Load audio from IndexedDB.
+     * Retrieves a stored audio blob by its ID, creating the database if it doesn't exist.
+     * 
      * @param {string} audioId - ID of the audio to load
      * @returns {Promise<Blob|null>} - Resolves to audio Blob or null if not found, rejects on error
      */
@@ -202,7 +231,9 @@ class StorageService {
     }
 
     /**
-     * Delete audio from IndexedDB
+     * Delete audio from IndexedDB.
+     * Removes a stored audio blob by its ID if it exists.
+     * 
      * @param {string} audioId - ID of the audio to delete
      * @returns {Promise<boolean>} - Resolves to true on success, rejects with error on failure
      */
@@ -226,7 +257,10 @@ class StorageService {
     }
 
     /**
-     * Save API keys securely (basic encoding, not true encryption)
+     * Save API keys securely (basic encoding, not true encryption).
+     * Encodes the keys using base64 for basic obfuscation before storing in localStorage.
+     * Note: This is not secure encryption and should not be relied on for high-security needs.
+     * 
      * @param {Object} keys - API keys object to save
      * @returns {boolean} - True if saved successfully, false otherwise
      */
@@ -242,7 +276,9 @@ class StorageService {
     }
 
     /**
-     * Load API keys from localStorage
+     * Load API keys from localStorage.
+     * Retrieves and decodes the API keys from basic obfuscation.
+     * 
      * @returns {Object|null} - Retrieved API keys object or null if not found or on error
      */
     loadApiKeys() {
@@ -257,7 +293,9 @@ class StorageService {
     }
 
     /**
-     * Clear all stored data from localStorage and IndexedDB
+     * Clear all stored data from localStorage and IndexedDB.
+     * Removes all application data for a clean state or for privacy purposes.
+     * 
      * @returns {boolean} - True if cleared successfully, false on error
      */
     clearAllData() {
@@ -276,7 +314,9 @@ class StorageService {
     }
 
     /**
-     * Upload a file to Amazon S3
+     * Upload a file to Amazon S3.
+     * Uses AWS SDK to put an object in the specified S3 bucket and returns its URL.
+     * 
      * @param {File|Blob} file - File or Blob to upload
      * @param {string} bucket - S3 bucket name
      * @param {string} key - S3 object key (path)
@@ -301,7 +341,9 @@ class StorageService {
     }
 
     /**
-     * Write data (string or JSON) to Amazon S3
+     * Write data (string or JSON) to Amazon S3.
+     * Serializes objects to JSON if needed and uploads to S3 with appropriate content type.
+     * 
      * @param {string|Object} data - Data to write (string or object to be JSON-stringified)
      * @param {string} bucket - S3 bucket name
      * @param {string} key - S3 object key (path)
@@ -336,7 +378,9 @@ class StorageService {
     }
 
     /**
-     * Download audio files from Amazon S3
+     * Download audio files from Amazon S3.
+     * Retrieves multiple audio files from S3 and converts them to Blobs.
+     * 
      * @param {string} bucket - S3 bucket name
      * @param {string[]} keys - Array of S3 object keys to download
      * @returns {Promise<Blob[]>} - Resolves to an array of audio Blobs
@@ -358,7 +402,9 @@ class StorageService {
     }
 
     /**
-     * Create a presigned URL for an Amazon S3 object
+     * Create a presigned URL for an Amazon S3 object.
+     * Generates a time-limited URL that allows temporary access to the object.
+     * 
      * @param {string} bucket - S3 bucket name
      * @param {string} key - S3 object key (path)
      * @param {number} [expires=3600] - URL expiration time in seconds (default: 1 hour)
@@ -377,7 +423,9 @@ class StorageService {
     }
 
     /**
-     * Configure the storage provider (for future extensibility)
+     * Configure the storage provider (for future extensibility).
+     * Updates the storage provider mapping to use different backends for different data types.
+     * 
      * @param {Object} providerConfig - Configuration object (e.g., { audio: 's3', settings: 'googledrive' })
      */
     configureProvider(providerConfig) {

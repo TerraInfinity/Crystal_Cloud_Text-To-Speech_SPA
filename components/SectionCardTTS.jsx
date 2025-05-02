@@ -1,8 +1,37 @@
+/**
+ * @fileoverview Text-to-Speech section card component for the TTS application.
+ * Handles the rendering and functionality of text-to-speech sections within
+ * the SectionCard component, providing voice selection and text editing.
+ * 
+ * @requires React
+ * @requires ../context/TTSContext
+ * @requires ../context/TTSSessionContext
+ * @requires ../utils/logUtils
+ */
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTTS } from '../context/TTSContext';
 import { useTTSSession } from '../context/TTSSessionContext';
 import { devLog } from '../utils/logUtils';
 
+/**
+ * SectionCardTTS component for handling text-to-speech section content.
+ * Provides interfaces for editing text content, selecting voices, and
+ * adjusting voice settings (volume, rate, pitch).
+ * 
+ * @component
+ * @param {Object} props - Component props
+ * @param {Object} props.section - The section data
+ * @param {boolean} props.isEditing - Whether the section is being edited
+ * @param {Function} props.setIsEditing - Function to set editing state
+ * @param {string} props.editedText - The current edited text
+ * @param {Function} props.setEditedText - Function to update edited text
+ * @param {Object|null} props.editedVoice - The current edited voice
+ * @param {Function} props.setEditedVoice - Function to update edited voice
+ * @param {Object} props.voiceSettings - The current voice settings
+ * @param {Function} props.setVoiceSettings - Function to update voice settings
+ * @returns {JSX.Element} The rendered SectionCardTTS component
+ */
 const SectionCardTTS = ({
   section,
   isEditing,
@@ -20,7 +49,10 @@ const SectionCardTTS = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
 
-  // Initialize and sync editedVoice with sessionState.sections
+  /**
+   * Initialize and sync edited voice with session state.
+   * Ensures the component's voice state is consistent with global state.
+   */
   useEffect(() => {
     if (section.type !== 'text-to-speech') return;
 
@@ -42,7 +74,9 @@ const SectionCardTTS = ({
     }
   }, [sessionState.sections, section.id, section.type, editedVoice, setEditedVoice, actions, state.settings.defaultVoice]);
 
-  // Initialize voiceSettings in session state if missing
+  /**
+   * Initialize voice settings in session state if missing.
+   */
   useEffect(() => {
     if (section.type !== 'text-to-speech') return;
 
@@ -53,7 +87,9 @@ const SectionCardTTS = ({
     }
   }, [section.id, section.type, actions, voiceSettings, sessionState.sections]);
 
-  // Save voiceSettings to session state on change
+  /**
+   * Save voice settings to session state when they change.
+   */
   useEffect(() => {
     if (section.type !== 'text-to-speech') return;
 
@@ -65,11 +101,19 @@ const SectionCardTTS = ({
     }
   }, [voiceSettings, section.id, section.type, actions]);
 
-  // Get active voices and filter for the section's engine
+  /**
+   * Get active voices and filter for the section's engine.
+   * @type {Array}
+   */
   const allActiveVoices = useMemo(
     () => Object.values(state?.settings?.activeVoices || {}).flat(),
     [state?.settings?.activeVoices]
   );
+  
+  /**
+   * Filter voices to show based on the current engine.
+   * @type {Array}
+   */
   const voicesToShow = useMemo(() => {
     const engine = editedVoice?.engine || 'gtts';
     const filteredVoices = allActiveVoices.filter(v => v.engine === engine);
@@ -86,6 +130,10 @@ const SectionCardTTS = ({
     return [defaultVoice];
   }, [allActiveVoices, editedVoice, state?.settings?.defaultVoices]);
 
+  /**
+   * Get the default voice object from settings.
+   * @type {Object|null}
+   */
   const defaultVoiceObj = useMemo(() => {
     const defaultVoiceSetting = state?.settings?.defaultVoice;
     if (defaultVoiceSetting) {
@@ -95,6 +143,10 @@ const SectionCardTTS = ({
     return voicesToShow[0] || null;
   }, [state?.settings?.defaultVoice, voicesToShow]);
 
+  /**
+   * Filter out the default voice from the list of voices to show.
+   * @type {Array}
+   */
   const filteredVoicesToShow = useMemo(() => {
     if (defaultVoiceObj) {
       return voicesToShow.filter(
@@ -104,6 +156,10 @@ const SectionCardTTS = ({
     return voicesToShow;
   }, [voicesToShow, defaultVoiceObj]);
 
+  /**
+   * Format the default voice info for display.
+   * @type {string}
+   */
   const defaultVoiceInfo = useMemo(() => {
     return defaultVoiceObj
       ? `Default Voice - ${defaultVoiceObj.name} (${defaultVoiceObj.language}) - ${defaultVoiceObj.engine}`
@@ -113,6 +169,9 @@ const SectionCardTTS = ({
   const audioData = sessionState?.generatedTTSAudios[section.id];
   const hasAudio = !!audioData && !!audioData.url;
 
+  /**
+   * Set up audio element for playback and handle cleanup.
+   */
   useEffect(() => {
     if (hasAudio && audioData.url) {
       audioRef.current = new Audio(audioData.url);
@@ -139,6 +198,9 @@ const SectionCardTTS = ({
     }
   }, [audioData?.url, hasAudio, section.id]);
 
+  /**
+   * Toggle play/pause of the section's audio.
+   */
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (isPlaying) {

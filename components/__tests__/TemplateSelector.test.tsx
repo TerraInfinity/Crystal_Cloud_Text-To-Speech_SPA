@@ -151,7 +151,7 @@ describe('TemplateSelector', () => {
         message: 'Custom Template template loaded',
       });
       expect(mockSessionActions.setProcessing).toHaveBeenCalledWith(false);
-      expect(devLog).toHaveBeenCalledWith('Loading template sections:', expect.any(Array));
+      expect(devLog).toHaveBeenCalledWith('Loading template sections with types:', expect.any(Array));
     });
   });
 

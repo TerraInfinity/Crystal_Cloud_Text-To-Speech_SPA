@@ -1,7 +1,27 @@
+/**
+ * @fileoverview Audio-only section card component for the TTS application.
+ * Handles the rendering and functionality of audio-only sections within
+ * the SectionCard component, providing audio selection and playback.
+ * 
+ * @requires React
+ * @requires ../context/TTSContext
+ * @requires ../context/TTSSessionContext
+ */
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
 import { useTTSSession } from '../context/TTSSessionContext';
 
+/**
+ * SectionCardAudio component for handling audio-only section content.
+ * Provides interfaces for selecting audio from library or uploading new audio,
+ * as well as playing back selected audio files.
+ * 
+ * @component
+ * @param {Object} props - Component props
+ * @param {Object} props.section - The section data
+ * @returns {JSX.Element} The rendered SectionCardAudio component
+ */
 const SectionCardAudio = ({ section }) => {
   const { state, isProcessing } = useTTS();
   const { state: sessionState, actions: sessionActions } = useTTSSession();
@@ -19,6 +39,9 @@ const SectionCardAudio = ({ section }) => {
 
   const audioRef = useRef(null);
 
+  /**
+   * Logs component initialization for debugging purposes.
+   */
   useEffect(() => {
     console.log('SectionCardAudio mounted with:', {
       sectionAudioSource: section.audioSource,
@@ -30,6 +53,9 @@ const SectionCardAudio = ({ section }) => {
     });
   }, []);
 
+  /**
+   * Updates the visibility of audio playback controls based on audio source and availability.
+   */
   useEffect(() => {
     if (audioSource === 'library') {
       setShowPlayAudioItems(!!section.audioId && hasAudio);
@@ -38,6 +64,9 @@ const SectionCardAudio = ({ section }) => {
     }
   }, [audioSource, section.audioId, hasAudio, audioData]);
 
+  /**
+   * Sets up audio playback and cleanup.
+   */
   useEffect(() => {
     if (hasAudio && audioData.url) {
       if (audioRef.current) {
@@ -59,6 +88,12 @@ const SectionCardAudio = ({ section }) => {
     };
   }, [audioData?.url, hasAudio]);
 
+  /**
+   * Handles audio file upload for the section.
+   * Creates an object URL for the uploaded audio file.
+   * 
+   * @param {Object} e - The file input change event
+   */
   const handleAudioUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) {
@@ -90,6 +125,9 @@ const SectionCardAudio = ({ section }) => {
     }
   };
 
+  /**
+   * Toggles audio playback (play/pause).
+   */
   const togglePlayAudio = () => {
     if (!audioRef.current) {
       audioRef.current = new Audio(audioData.url);
@@ -111,6 +149,9 @@ const SectionCardAudio = ({ section }) => {
     }
   };
 
+  /**
+   * Toggles the visibility of the audio player.
+   */
   const toggleAudioPlayer = () => {
     setShowAudioPlayer((prev) => !prev);
     if (isPlaying) {

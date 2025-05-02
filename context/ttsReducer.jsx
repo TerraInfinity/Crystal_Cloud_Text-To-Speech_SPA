@@ -3,15 +3,26 @@ import { initialPersistentState } from './ttsDefaults';
 import { removeFromStorage } from './storage';
 import { devLog } from '../utils/logUtils';
 
+/**
+ * Reducer function for the TTS global state
+ * Handles all state updates for the persistent application state
+ * 
+ * @param {Object} state - Current state object (defaults to initialPersistentState)
+ * @param {Object} action - Action object with type and payload
+ * @returns {Object} The new state after applying the action
+ */
 export function ttsReducer(state = initialPersistentState, action) {
   switch (action.type) {
     case 'LOAD_PERSISTENT_STATE':
+      // Load saved state from storage, merging with initialPersistentState
       return { ...initialPersistentState, ...action.payload };
 
     case 'SET_THEME':
+      // Update application theme
       return { ...state, theme: action.payload };
 
     case 'SET_SPEECH_ENGINE':
+      // Set the active speech engine (e.g., 'gtts', 'elevenLabs')
       return {
         ...state,
         settings: {
@@ -22,6 +33,7 @@ export function ttsReducer(state = initialPersistentState, action) {
 
     case 'SET_SELECTED_VOICE':
       {
+        // Set the selected voice for a specific engine
         const { engine, voice } = action.payload;
         return {
           ...state,
@@ -37,6 +49,7 @@ export function ttsReducer(state = initialPersistentState, action) {
 
     case 'ADD_CUSTOM_VOICE':
       {
+        // Add a custom voice to the specified engine
         const { engine: customEngine, voice: customVoice } = action.payload;
         const currentCustomVoices = state.settings.customVoices[customEngine] || [];
         return {
@@ -53,6 +66,7 @@ export function ttsReducer(state = initialPersistentState, action) {
 
     case 'REMOVE_CUSTOM_VOICE':
       {
+        // Remove a custom voice from the specified engine
         const { engine: removeEngine, voiceId } = action.payload;
         const updatedCustomVoices = (state.settings.customVoices[removeEngine] || []).filter(
           (v) => v.id !== voiceId
@@ -78,6 +92,7 @@ export function ttsReducer(state = initialPersistentState, action) {
 
     case 'ADD_ACTIVE_VOICE':
       {
+        // Add a voice to the active voices list for the specified engine
         const { engine: activeEngine, voice: activeVoice } = action.payload;
         const currentActiveVoices = state.settings.activeVoices[activeEngine] || [];
         const voiceWithEngine = { ...activeVoice, engine: activeEngine };
@@ -105,6 +120,7 @@ export function ttsReducer(state = initialPersistentState, action) {
 
     case 'REMOVE_ACTIVE_VOICE':
       {
+        // Remove a voice from the active voices list for the specified engine
         const { engine: removeActiveEngine, voiceId } = action.payload;
         const activeForEngine = state.settings.activeVoices[removeActiveEngine] || [];
         const updatedActiveForEngine = activeForEngine.filter((v) => v.id !== voiceId);
@@ -136,6 +152,7 @@ export function ttsReducer(state = initialPersistentState, action) {
 
     case 'SET_API_KEY':
       {
+        // Set an API key for a specific service
         const { keyName, value } = action.payload;
         return {
           ...state,
@@ -148,6 +165,7 @@ export function ttsReducer(state = initialPersistentState, action) {
 
     case 'ADD_API_KEY':
       {
+        // Add an API key to an array of keys
         const { keyArray, keyValue } = action.payload;
         return {
           ...state,
@@ -160,6 +178,7 @@ export function ttsReducer(state = initialPersistentState, action) {
 
     case 'REMOVE_API_KEY':
       {
+        // Remove an API key from an array of keys
         const { keyArray: removeKeyArray, index: removeIndex } = action.payload;
         return {
           ...state,
@@ -171,6 +190,7 @@ export function ttsReducer(state = initialPersistentState, action) {
       }
 
     case 'SET_MODE':
+      // Set application mode (demo or production)
       const newMode = action.payload;
       if (newMode === 'demo') {
         const filteredActiveVoices = {};
@@ -198,16 +218,19 @@ export function ttsReducer(state = initialPersistentState, action) {
       };
 
     case 'SAVE_AUDIO':
+      // Save audio data to the audio library
       return {
         ...state,
         AudioLibrary: { ...state.AudioLibrary, [action.payload.id]: action.payload },
       };
 
     case 'DELETE_AUDIO':
+      // Delete audio from the audio library
       const { [action.payload]: removedAudio, ...remainingAudios } = state.AudioLibrary;
       return { ...state, AudioLibrary: remainingAudios };
 
     case 'LOAD_AUDIO_LIBRARY':
+      // Load the entire audio library
       return {
         ...state,
         AudioLibrary:
@@ -215,6 +238,7 @@ export function ttsReducer(state = initialPersistentState, action) {
       };
 
     case 'SAVE_TEMPLATE':
+      // Save a template to the templates collection
       return {
         ...state,
         templates: {
@@ -224,10 +248,12 @@ export function ttsReducer(state = initialPersistentState, action) {
       };
 
     case 'DELETE_TEMPLATE':
+      // Delete a template from the templates collection
       const { [action.payload]: removedTemplate, ...remainingTemplates } = state.templates;
       return { ...state, templates: remainingTemplates };
 
     case 'LOAD_TEMPLATES':
+      // Load all templates from storage
       const loadedTemplates =
         action.payload && typeof action.payload === 'object' ? action.payload : {};
       return {
@@ -236,30 +262,35 @@ export function ttsReducer(state = initialPersistentState, action) {
       };
 
     case 'SET_DEFAULT_VOICE':
+      // Set the default voice for a specific engine
       return {
         ...state,
         settings: { ...state.settings, defaultVoice: action.payload },
       };
 
     case 'LOAD_ACTIVE_VOICES':
+      // Load active voices from storage
       return {
         ...state,
         settings: { ...state.settings, activeVoices: action.payload },
       };
 
     case 'LOAD_CUSTOM_VOICES':
+      // Load custom voices from storage
       return {
         ...state,
         settings: { ...state.settings, customVoices: action.payload },
       };
 
     case 'UPDATE_DEFAULT_VOICES':
+      // Update the list of default voices
       return {
         ...state,
         settings: { ...state.settings, defaultVoices: action.payload },
       };
 
     case 'RESET_STATE':
+      // Reset state to initial values and clear storage
       devLog('Processing RESET_STATE');
       if (typeof window !== 'undefined') {
         removeFromStorage('tts_persistent_state', 'localStorage');
@@ -269,6 +300,7 @@ export function ttsReducer(state = initialPersistentState, action) {
       return initialPersistentState;
 
     case 'SET_STORAGE_CONFIG':
+      // Update storage configuration
       return {
         ...state,
         settings: {

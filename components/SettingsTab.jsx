@@ -1,8 +1,28 @@
+/**
+ * @fileoverview Settings management component for the TTS application
+ * 
+ * This file contains the SettingsTab component which provides a user interface for managing
+ * various settings related to the TTS application including:
+ * - Mode selection (demo vs production)
+ * - Speech engine selection (gtts, elevenLabs, awsPolly, googleCloud, azureTTS, ibmWatson)
+ * - API key management for various TTS services
+ * - Voice management (adding/removing voices, setting default voices)
+ * - AI provider configuration (OpenAI, Anthropic)
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTTS } from '../context/TTSContext';
 import { useTTSSession } from '../context/TTSSessionContext';
 import { devLog } from '../utils/logUtils';
 
+/**
+ * Settings management component with comprehensive configuration options
+ * for the TTS application including mode settings, speech engine configuration,
+ * voice management, and API key administration.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered SettingsTab component
+ */
 const SettingsTab = () => {
   const {
     state: persistentState,
@@ -50,7 +70,10 @@ const SettingsTab = () => {
   );
   const [isCustomVoiceExpanded, setIsCustomVoiceExpanded] = useState(false);
 
-  // Compute available voices, using defaultVoices and customVoices
+  /**
+   * Computed property for available voices, combining default and custom voices
+   * @type {Array<Object>}
+   */
   const availableVoices = useMemo(() => {
     const engineDefaultVoices = defaultVoices[speechEngine] || [];
     if (!defaultVoices[speechEngine]) {
@@ -62,10 +85,16 @@ const SettingsTab = () => {
     ];
   }, [speechEngine, defaultVoices, customVoices]);
 
-  // Get active voice IDs for the current engine
+  /**
+   * Set of active voice IDs for the current engine
+   * @type {Set<string>}
+   */
   const activeVoiceIds = useMemo(() => new Set((activeVoices[speechEngine] || []).map(v => v.id)), [activeVoices, speechEngine]);
 
-  // Compute languages with at least one available (non-active) voice
+  /**
+   * Available languages with at least one non-active voice
+   * @type {Array<string>}
+   */
   const languages = useMemo(() => {
     return [...new Set(
       availableVoices
@@ -74,7 +103,10 @@ const SettingsTab = () => {
     )].sort();
   }, [availableVoices, activeVoiceIds]);
 
-  // Filter voices for the current language, excluding active voices
+  /**
+   * Filtered voices for the current language, excluding active voices
+   * @type {Array<Object>}
+   */
   const voicesForLanguage = useMemo(() => 
     availableVoices
       .filter(v => v.language === currentLanguage)
@@ -82,19 +114,26 @@ const SettingsTab = () => {
     [availableVoices, currentLanguage, activeVoiceIds]
   );
 
-  // Determine the current selected voice
+  /**
+   * Currently selected voice and voice ID
+   */
   const selectedVoice = selectedVoices[speechEngine];
   const currentVoiceId = voicesForLanguage.some(v => v.id === selectedVoice?.id)
     ? selectedVoice?.id
     : voicesForLanguage[0]?.id || '';
 
-  // Get all active voices across all engines
+  /**
+   * All active voices across all engines, filtered by mode if necessary
+   * @type {Array<Object>}
+   */
   const allActiveVoices = useMemo(() => {
     const voices = Object.values(activeVoices).flat();
     return mode === 'demo' ? voices.filter(voice => voice.engine === 'gtts') : voices;
   }, [activeVoices, mode]);
 
-  // useEffect Hooks
+  /**
+   * Effect to set default voice when changing speech engines
+   */
   useEffect(() => {
     if (availableVoices.length > 0 && (!selectedVoices[speechEngine] || !selectedVoices[speechEngine].id)) {
       const defaultVoice = availableVoices[0];
@@ -103,19 +142,29 @@ const SettingsTab = () => {
     }
   }, [speechEngine, availableVoices, selectedVoices, persistentActions]);
 
+  /**
+   * Effect to update selected voice when changing language
+   */
   useEffect(() => {
     if (voicesForLanguage.length > 0 && (!selectedVoice || !voicesForLanguage.some(v => v.id === selectedVoice.id))) {
       persistentActions.setSelectedVoice(speechEngine, voicesForLanguage[0]);
     }
   }, [currentLanguage, voicesForLanguage, speechEngine, selectedVoice, persistentActions]);
 
+  /**
+   * Effect to update current language when available languages change
+   */
   useEffect(() => {
     if (languages.length > 0 && !languages.includes(currentLanguage)) {
       setCurrentLanguage(languages[0]);
     }
   }, [languages, currentLanguage]);
 
-  // Functions
+  /**
+   * Toggles between demo and production modes
+   * In demo mode, only gtts is available
+   * In production mode, various cloud-based TTS services are available
+   */
   const toggleMode = () => {
     const newMode = mode === 'demo' ? 'production' : 'demo';
     persistentActions.setMode(newMode);
@@ -135,6 +184,10 @@ const SettingsTab = () => {
     });
   };
 
+  /**
+   * Handles speech engine change and updates mode accordingly
+   * @param {string} engine - The speech engine to switch to
+   */
   const handleSpeechEngineChange = (engine) => {
     persistentActions.setSpeechEngine(engine);
     if (engine === 'gtts') {
@@ -144,6 +197,9 @@ const SettingsTab = () => {
     }
   };
 
+  /**
+   * Adds a new ElevenLabs API key
+   */
   const addElevenLabsApiKey = () => {
     if (newElevenLabsKey) {
       persistentActions.addApiKey('elevenLabsApiKeys', newElevenLabsKey);
@@ -152,11 +208,18 @@ const SettingsTab = () => {
     }
   };
 
+  /**
+   * Removes an ElevenLabs API key
+   * @param {number} index - Index of the key to remove
+   */
   const removeElevenLabsApiKey = (index) => {
     persistentActions.removeApiKey('elevenLabsApiKeys', index);
     sessionActions.setNotification({ type: 'success', message: 'ElevenLabs API key removed' });
   };
 
+  /**
+   * Adds AWS Polly credentials (access key and secret key)
+   */
   const addAwsPollyCredential = () => {
     if (newAwsAccessKey && newAwsSecretKey) {
       persistentActions.addApiKey('awsPollyCredentials', {
@@ -169,11 +232,18 @@ const SettingsTab = () => {
     }
   };
 
+  /**
+   * Removes AWS Polly credentials
+   * @param {number} index - Index of the credentials to remove
+   */
   const removeAwsPollyCredential = (index) => {
     persistentActions.removeApiKey('awsPollyCredentials', index);
     sessionActions.setNotification({ type: 'success', message: 'AWS Polly credentials removed' });
   };
 
+  /**
+   * Adds a new Google Cloud TTS API key
+   */
   const addGoogleCloudKey = () => {
     if (newGoogleCloudKey) {
       persistentActions.addApiKey('googleCloudCredentials', newGoogleCloudKey);
@@ -182,11 +252,18 @@ const SettingsTab = () => {
     }
   };
 
+  /**
+   * Removes a Google Cloud TTS API key
+   * @param {number} index - Index of the key to remove
+   */
   const removeGoogleCloudKey = (index) => {
     persistentActions.removeApiKey('googleCloudCredentials', index);
     sessionActions.setNotification({ type: 'success', message: 'Google Cloud TTS API key removed' });
   };
 
+  /**
+   * Adds a new Azure TTS API key
+   */
   const addAzureTTSKey = () => {
     if (newAzureKey) {
       persistentActions.addApiKey('azureTTSCredentials', newAzureKey);
@@ -195,11 +272,18 @@ const SettingsTab = () => {
     }
   };
 
+  /**
+   * Removes an Azure TTS API key
+   * @param {number} index - Index of the key to remove
+   */
   const removeAzureTTSKey = (index) => {
     persistentActions.removeApiKey('azureTTSCredentials', index);
     sessionActions.setNotification({ type: 'success', message: 'Azure TTS API key removed' });
   };
 
+  /**
+   * Adds a new IBM Watson TTS API key
+   */
   const addIbmWatsonKey = () => {
     if (newIbmWatsonKey) {
       persistentActions.addApiKey('ibmWatsonCredentials', newIbmWatsonKey);
@@ -208,16 +292,28 @@ const SettingsTab = () => {
     }
   };
 
+  /**
+   * Removes an IBM Watson TTS API key
+   * @param {number} index - Index of the key to remove
+   */
   const removeIbmWatsonKey = (index) => {
     persistentActions.removeApiKey('ibmWatsonCredentials', index);
     sessionActions.setNotification({ type: 'success', message: 'IBM Watson TTS API key removed' });
   };
 
+  /**
+   * Saves an API key to persistent storage
+   * @param {string} keyName - The name of the API key to save
+   * @param {string} value - The value of the API key
+   */
   const saveApiKey = (keyName, value) => {
     persistentActions.setApiKey(keyName, value);
     sessionActions.setNotification({ type: 'success', message: 'API key saved successfully' });
   };
 
+  /**
+   * Adds a custom voice to the selected speech engine
+   */
   const addCustomVoice = () => {
     if (newVoiceName && newVoiceId && newVoiceLanguage) {
       const existingVoice = availableVoices.find(v => v.id === newVoiceId);
@@ -242,11 +338,19 @@ const SettingsTab = () => {
     }
   };
 
+  /**
+   * Removes a custom voice from the selected speech engine
+   * @param {string} voiceId - ID of the voice to remove
+   */
   const removeCustomVoice = (voiceId) => {
     persistentActions.removeCustomVoice(speechEngine, voiceId);
     sessionActions.setNotification({ type: 'success', message: 'Custom voice removed' });
   };
 
+  /**
+   * Adds the currently selected voice to active voices
+   * In demo mode, only gtts voices can be added
+   */
   const handleAddActiveVoice = () => {
     if (selectedVoice) {
       if (mode === 'demo' && selectedVoice.engine !== 'gtts') {
@@ -284,6 +388,12 @@ const SettingsTab = () => {
     }
   };
 
+  /**
+   * Removes a voice from active voices
+   * Prevents removing the last active voice
+   * @param {string} engine - The speech engine the voice belongs to
+   * @param {string} voiceId - ID of the voice to remove
+   */
   const handleRemoveActiveVoice = (engine, voiceId) => {
     if (allActiveVoices.length === 1) {
       sessionActions.setNotification({

@@ -1,7 +1,25 @@
+/**
+ * @fileoverview Audio Library component for the Text-to-Speech application.
+ * Provides a comprehensive interface for managing audio files including uploading,
+ * editing, playing, and deleting sound effects for use in TTS projects.
+ * 
+ * @requires React
+ * @requires ../context/TTSContext
+ * @requires ../context/TTSSessionContext
+ */
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
 import { useTTSSession } from '../context/TTSSessionContext';
 
+/**
+ * AudioLibrary component for managing sound effects and audio files.
+ * Provides a full interface for uploading, editing, playing, and deleting
+ * audio files that can be used in TTS projects.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered AudioLibrary component
+ */
 const AudioLibrary = () => {
   const { state, actions } = useTTS();
   const { state: sessionState, actions: sessionActions, isProcessing } = useTTSSession();
@@ -18,7 +36,10 @@ const AudioLibrary = () => {
   const [editPlaceholder, setEditPlaceholder] = useState('');
   const audioPlayerRef = useRef(null);
 
-  // Fetch audio list from server on mount
+  /**
+   * Fetches audio list from server on component mount.
+   * Loads sound effects from storage into the audio library.
+   */
   useEffect(() => {
     const fetchAudioList = async () => {
       try {
@@ -50,7 +71,14 @@ const AudioLibrary = () => {
     fetchAudioList();
   }, [actions, sessionActions]);
 
-  // Utility function to check for duplicate name or placeholder
+  /**
+   * Checks if a name or placeholder value already exists in the library.
+   * 
+   * @param {string} value - The value to check for duplicates
+   * @param {string} type - The type of value to check ('name' or 'placeholder')
+   * @param {string} [excludeId=null] - ID to exclude from the check (for editing)
+   * @returns {boolean} True if the value is a duplicate, false otherwise
+   */
   const isDuplicate = (value, type, excludeId = null) => {
     const libraryValues = Object.values(audioLibrary);
     return libraryValues.some(
@@ -62,7 +90,14 @@ const AudioLibrary = () => {
     );
   };
 
-  // Utility function to generate a unique name or placeholder
+  /**
+   * Generates a unique name or placeholder based on a base value.
+   * Appends a counter until a unique value is found.
+   * 
+   * @param {string} baseValue - The base value to start with
+   * @param {string} type - The type of value ('name' or 'placeholder')
+   * @returns {string} A unique value for the library
+   */
   const generateUniqueValue = (baseValue, type) => {
     let uniqueValue = baseValue;
     let counter = 1;
@@ -80,7 +115,13 @@ const AudioLibrary = () => {
     return uniqueValue;
   };
 
-  // Audio Upload Handler
+  /**
+   * Handles audio file upload.
+   * Processes the file, generates unique name and placeholder if needed,
+   * and uploads to storage.
+   * 
+   * @param {Object} e - The file input change event
+   */
   const handleAudioUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith('audio/')) {
@@ -150,7 +191,11 @@ const AudioLibrary = () => {
     }
   };
 
-  // Play Audio
+  /**
+   * Plays the selected audio file.
+   * 
+   * @param {Object} audio - The audio file object to play
+   */
   const playAudio = (audio) => {
     setSelectedAudio(audio);
     if (audioPlayerRef.current) {
@@ -161,7 +206,12 @@ const AudioLibrary = () => {
     }
   };
 
-  // Update Audio Volume
+  /**
+   * Updates the volume for an audio file.
+   * 
+   * @param {string} audioId - The ID of the audio to update
+   * @param {number} newVolume - The new volume value
+   */
   const updateAudioVolume = async (audioId, newVolume) => {
     const audio = audioLibrary[audioId];
     if (audio) {
@@ -177,7 +227,11 @@ const AudioLibrary = () => {
     }
   };
 
-  // Delete Audio
+  /**
+   * Deletes an audio file from storage.
+   * 
+   * @param {string} audioId - The ID of the audio to delete
+   */
   const deleteAudio = async (audioId) => {
     if (window.confirm('Are you sure you want to delete this sound effect?')) {
       try {
@@ -220,7 +274,9 @@ const AudioLibrary = () => {
     }
   };
 
-  // Delete All Audios
+  /**
+   * Deletes all audio files from storage.
+   */
   const deleteAllAudios = async () => {
     if (Object.keys(audioLibrary).length === 0) {
       sessionActions.setNotification({
@@ -269,14 +325,22 @@ const AudioLibrary = () => {
     }
   };
 
-  // Start Editing Audio
+  /**
+   * Begins editing an audio file's metadata.
+   * 
+   * @param {Object} audio - The audio file to edit
+   */
   const startEditing = (audio) => {
     setEditingAudioId(audio.id);
     setEditName(audio.name);
     setEditPlaceholder(audio.placeholder || '');
   };
 
-   // Save Edited Audio
+  /**
+   * Saves edited audio metadata.
+   * 
+   * @param {string} audioId - The ID of the audio being edited
+   */
    const saveEdit = async (audioId) => {
     try {
       const audio = audioLibrary[audioId];
@@ -359,15 +423,18 @@ const AudioLibrary = () => {
     }
   };
 
-  
-  // Cancel Editing
+  /**
+   * Cancels the current audio editing operation.
+   */
   const cancelEdit = () => {
     setEditingAudioId(null);
     setEditName('');
     setEditPlaceholder('');
   };
 
-  // Audio Player Cleanup
+  /**
+   * Clean up audio player when component unmounts.
+   */
   useEffect(() => {
     const player = audioPlayerRef.current;
     const handleEnded = () => setIsPlaying(false);

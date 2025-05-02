@@ -1,14 +1,38 @@
+/**
+ * @fileoverview Templates Tab component for the Text-to-Speech application.
+ * Provides functionality for creating, editing, and managing templates
+ * that define predefined structures for TTS projects.
+ * 
+ * @requires React
+ * @requires ../context/TTSContext
+ * @requires ../context/TTSSessionContext
+ * @requires react-icons/fa
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTTS } from '../context/TTSContext';
 import { useTTSSession } from '../context/TTSSessionContext';
 import { FaPlus, FaTrash, FaSave, FaRedo, FaEdit, FaTimes, FaChevronUp, FaChevronDown } from 'react-icons/fa';
 
+/**
+ * TemplatesTab component for creating and managing templates.
+ * Allows users to create, edit, save, and delete templates that define
+ * predefined structures for TTS projects.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered TemplatesTab component
+ */
 const TemplatesTab = () => {
   const { state, actions } = useTTS();
   const { state: sessionState, actions: sessionActions } = useTTSSession();
 
   const templates = state.templates;
   const audioLibrary = state?.AudioLibrary || {};
+  
+  /**
+   * Get available voices for the template sections.
+   * @type {Array}
+   */
   const activeVoices = useMemo(() => {
     const voices = Object.values(state.settings.activeVoices || {}).flat();
     return voices.length > 0 ? voices : (state?.settings?.defaultVoices?.gtts || []);
@@ -19,12 +43,16 @@ const TemplatesTab = () => {
   // Use templateCreation state from TTSSessionContext
   const { templateName, templateDescription, sections, editingTemplate } = sessionState.templateCreation;
 
-  // Debug state updates
+  /**
+   * Debug state updates when templates change.
+   */
   useEffect(() => {
     console.log('Templates updated:', templates);
   }, [templates]);
 
-  // Check if voices are loaded
+  /**
+   * Check if voices are loaded for dropdown selection.
+   */
   useEffect(() => {
     console.log('state.settings.activeVoices:', state.settings.activeVoices);
     console.log('activeVoices:', activeVoices);
@@ -36,6 +64,9 @@ const TemplatesTab = () => {
     }
   }, [state.settings.activeVoices, activeVoices]);
 
+  /**
+   * Adds a new section to the template being created or edited.
+   */
   const addSection = () => {
     const newSection = {
       id: `section-${Date.now()}`,
@@ -48,6 +79,12 @@ const TemplatesTab = () => {
     sessionActions.addTemplateCreationSection(newSection);
   };
 
+  /**
+   * Updates a section in the template with new values.
+   * 
+   * @param {number} index - The index of the section to update
+   * @param {Object} updates - The properties to update
+   */
   const updateSection = (index, updates) => {
     console.log('Updating section at index:', index, 'with updates:', updates);
     sessionActions.updateTemplateCreationSection(index, updates);
@@ -56,6 +93,12 @@ const TemplatesTab = () => {
     }, 0);
   };
 
+  /**
+   * Removes a section from the template.
+   * Ensures at least one section remains in the template.
+   * 
+   * @param {number} index - The index of the section to remove
+   */
   const removeSection = (index) => {
     if (sections.length === 1) {
       sessionActions.setNotification({ type: 'warning', message: 'At least one section is required!' });
@@ -64,14 +107,28 @@ const TemplatesTab = () => {
     sessionActions.removeTemplateCreationSection(index);
   };
 
+  /**
+   * Moves a section up in the template order.
+   * 
+   * @param {number} index - The index of the section to move up
+   */
   const moveSectionUp = (index) => {
     sessionActions.moveTemplateCreationSectionUp(index);
   };
 
+  /**
+   * Moves a section down in the template order.
+   * 
+   * @param {number} index - The index of the section to move down
+   */
   const moveSectionDown = (index) => {
     sessionActions.moveTemplateCreationSectionDown(index);
   };
 
+  /**
+   * Saves the current template.
+   * Validates and processes sections before saving.
+   */
   const saveTemplate = () => {
     if (!templateName.trim()) {
       sessionActions.setError('Please enter a template name');
@@ -121,6 +178,12 @@ const TemplatesTab = () => {
     sessionActions.setNotification({ type: 'success', message: 'Template saved successfully!' });
   };
 
+  /**
+   * Begins editing an existing template.
+   * Loads the template data into the form for editing.
+   * 
+   * @param {Object} template - The template to edit
+   */
   const editTemplate = (template) => {
     if (template.id === 'general') return;
     sessionActions.setEditingTemplate(template);
@@ -129,6 +192,9 @@ const TemplatesTab = () => {
     sessionActions.setTemplateCreationSections(template.sections);
   };
 
+  /**
+   * Ensures all sections have the correct type property.
+   */
   useEffect(() => {
     // Check if the initial section is created with proper type
     if (sections.length > 0) {
@@ -141,7 +207,10 @@ const TemplatesTab = () => {
     }
   }, [sections.length]);
 
-  // Wrapper for clearTemplateCreationForm that adds a default section if needed
+  /**
+   * Clears the template form and adds a default section if needed.
+   * Wrapper for clearTemplateCreationForm that ensures at least one section exists.
+   */
   const handleClearTemplateForm = () => {
     sessionActions.clearTemplateCreationForm();
     

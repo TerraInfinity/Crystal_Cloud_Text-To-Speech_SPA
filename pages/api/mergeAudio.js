@@ -10,14 +10,26 @@ import axios from 'axios';
 const writeFileAsync = promisify(fs.writeFile);
 const unlinkAsync = promisify(fs.unlink);
 
-// Development logging helper
+/**
+ * Development logging helper function
+ * Only logs to console in non-production environments
+ * 
+ * @param {...any} args - Arguments to log to console
+ */
 const devLog = (...args) => {
     if (process.env.NODE_ENV !== 'production') {
         console.log('[mergeAudio API]', ...args);
     }
 };
 
-// Helper function to save a data URL to a temporary file
+/**
+ * Saves a data URL to a temporary file and normalizes audio format
+ * 
+ * @param {string} dataUrl - Base64 encoded data URL of audio file
+ * @param {number} index - Index of the audio file in the array
+ * @returns {Promise<string>} Path to normalized temporary audio file
+ * @throws {Error} If file is invalid or normalization fails
+ */
 async function saveDataUrlToTempFile(dataUrl, index) {
     try {
         const [header, base64Data] = dataUrl.split(',');
@@ -76,7 +88,14 @@ async function saveDataUrlToTempFile(dataUrl, index) {
     }
 }
 
-// Helper function to download a remote file to a temporary file
+/**
+ * Downloads a remote audio file and normalizes it
+ * 
+ * @param {string} url - URL of the remote audio file
+ * @param {number} index - Index of the audio file in the array
+ * @returns {Promise<string>} Path to normalized temporary audio file
+ * @throws {Error} If download fails or normalization fails
+ */
 async function downloadFileToTemp(url, index) {
     try {
         const fileName = `input-${index}-${uuidv4()}.wav`;
@@ -122,7 +141,13 @@ async function downloadFileToTemp(url, index) {
     }
 }
 
-// Helper function to merge audio files using FFmpeg
+/**
+ * Merges multiple audio files into a single WAV file
+ * 
+ * @param {string[]} audioUrls - Array of URLs or data URLs of audio files to merge
+ * @returns {Promise<string>} Path to the merged audio file
+ * @throws {Error} If merging fails or input validation fails
+ */
 async function mergeAudioFiles(audioUrls) {
     const tempFiles = [];
     const outputFilePath = path.join(os.tmpdir(), `merged-${uuidv4()}.wav`);
@@ -204,7 +229,20 @@ async function mergeAudioFiles(audioUrls) {
     }
 }
 
-// Main handler
+/**
+ * API handler for merging multiple audio files
+ * 
+ * This endpoint takes an array of audio URLs (remote URLs or data URLs),
+ * downloads/processes them, normalizes to consistent format, and merges them
+ * into a single audio file.
+ * 
+ * @route POST /api/mergeAudio
+ * @param {Object} req - The request object
+ * @param {Object} req.body - The request body
+ * @param {string[]} req.body.audioUrls - Array of URLs or data URLs to merge
+ * @param {Object} res - The response object
+ * @returns {Object} JSON response with the URL to the merged audio file
+ */
 export default async function handler(req, res) {
     devLog('Request received:', req.method, req.body);
 

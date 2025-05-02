@@ -7,8 +7,20 @@ import { createSessionActions } from './ttsSessionActions';
 import { devLog } from '../utils/logUtils';
 import { loadDemoContent } from './demoContentLoader';
 
+/**
+ * Context for managing TTS session state and operations
+ * Handles the current working session within the application
+ * @type {React.Context}
+ */
 const TTSSessionContext = createContext();
 
+/**
+ * Provider component for TTS session functionality
+ * Manages session state for the current working text-to-speech project
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components
+ * @returns {JSX.Element} The TTS session provider component
+ */
 export const TTSSessionProvider = ({ children }) => {
   const [state, dispatch] = useReducer(ttsSessionReducer, initialSessionState);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,6 +28,10 @@ export const TTSSessionProvider = ({ children }) => {
 
   // Load session state from sessionStorage on mount
   useEffect(() => {
+    /**
+     * Loads the session state from storage
+     * @returns {Promise<void>}
+     */
     const loadState = async () => {
       try {
         const savedState = await loadFromStorage('tts_session_state', false, 'sessionStorage');
@@ -70,6 +86,11 @@ export const TTSSessionProvider = ({ children }) => {
   );
 };
 
+/**
+ * Custom hook to access the TTS session context
+ * @returns {Object} The session context object {state, actions}
+ * @throws {Error} If used outside of a TTSSessionProvider
+ */
 export const useTTSSession = () => {
   const context = useContext(TTSSessionContext);
   if (!context) {

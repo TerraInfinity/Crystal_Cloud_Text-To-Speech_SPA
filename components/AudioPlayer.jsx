@@ -1,18 +1,39 @@
+/**
+ * @fileoverview Audio playback and export component for the Text-to-Speech application.
+ * This component provides functionality to generate, merge, play, and download audio
+ * from TTS sections.
+ * 
+ * @requires React
+ * @requires ../context/TTSContext
+ * @requires ../context/TTSSessionContext
+ * @requires ../utils/AudioProcessor
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
 import { useTTSSession } from '../context/TTSSessionContext';
 import { generateAllAudio, mergeAllAudio, downloadAudio } from '../utils/AudioProcessor';
 
+/**
+ * Audio Player component for TTS application.
+ * Provides controls for generating audio from text sections, merging audio files,
+ * playing back the merged audio, and downloading the final audio file.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered AudioPlayer component
+ */
 const AudioPlayer = () => {
   const { state: persistentState } = useTTS();
   const { state: sessionState, actions: sessionActions } = useTTSSession();
 
+  // Extract necessary state from context
   const sections = sessionState?.sections || [];
   const generatedAudios = sessionState?.generatedTTSAudios || {};
   const mergedAudio = sessionState?.mergedAudio || null;
   const isProcessing = sessionState?.isProcessing || false;
   const speechEngine = persistentState?.settings?.speechEngine || 'googlecloud';
 
+  // Component state
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioElement, setAudioElement] = useState(null);
@@ -23,9 +44,18 @@ const AudioPlayer = () => {
   const [isAudioMerged, setIsAudioMerged] = useState(false);
   const [isAudioDownloaded, setIsAudioDownloaded] = useState(false);
 
+  /**
+   * Filters valid sections that contain text for TTS processing
+   * @type {Array}
+   */
   const validSections = sections.filter(
     (section) => section.type === 'text-to-speech' && section.text?.trim()
   );
+  
+  /**
+   * Determines if all valid sections have generated audio
+   * @type {boolean}
+   */
   const allSectionsHaveAudio =
     validSections.length > 0 &&
     validSections.every(
@@ -35,6 +65,11 @@ const AudioPlayer = () => {
         typeof generatedAudios[section.id].url === 'string'
     );
 
+  /**
+   * Handles playing or pausing the merged audio.
+   * Creates a new audio element if one doesn't exist, or controls
+   * the existing one.
+   */
   const playAudio = () => {
     if (!mergedAudio) return;
 
@@ -62,6 +97,10 @@ const AudioPlayer = () => {
     }
   };
 
+  /**
+   * Cleanup effect for the audio element.
+   * Ensures audio is stopped and resources are released when component unmounts.
+   */
   useEffect(() => {
     return () => {
       if (audioElement) {

@@ -1,7 +1,24 @@
 /**
+ * Text Utilities Module
+ * 
+ * Provides functions for text manipulation and processing, including:
+ * - HTML parsing and text extraction
+ * - Section extraction and organization
+ * - Voice tag processing
+ * 
+ * Works in both client and server environments with appropriate fallbacks.
+ * 
+ * @module textUtils
+ */
+
+/**
  * Parse plain text from HTML content
+ * 
+ * Extracts readable text from HTML while removing scripts, styles, and tags.
+ * Works in both browser (using DOMParser) and server environments (using regex).
+ * 
  * @param {string} html - HTML content to parse
- * @returns {string} - Plain text extracted from HTML
+ * @returns {string} - Plain text extracted from HTML with whitespace normalized
  */
 export function parseTextFromHtml(html) {
     // Simple HTML parser (for client-side use)
@@ -40,9 +57,17 @@ export function parseTextFromHtml(html) {
 
 /**
  * Extract sections from text based on headings or markers
+ * 
+ * Parses text to identify sections based on marker brackets like [SectionName].
+ * Creates a structured object with section names as keys and content as values.
+ * All provided marker names are included in the result, even if empty.
+ * 
  * @param {string} text - Input text to parse
  * @param {string[]} sectionMarkers - Array of section marker strings to look for
- * @returns {Object} - Object with sections
+ * @returns {Object} - Object with section names as keys and section content as values
+ * @example
+ * // Input: "[Introduction] This is intro. [Conclusion] This is the end."
+ * // Returns: { Introduction: "This is intro.", Conclusion: "This is the end." }
  */
 export function extractSections(text, sectionMarkers) {
     const sections = {};
@@ -91,8 +116,21 @@ export function extractSections(text, sectionMarkers) {
 
 /**
  * Process text for special tags (voice and sound effects)
+ * 
+ * Identifies and extracts voice tags in the format [voice:NAME] and returns
+ * both the cleaned text (with tags removed) and structured voice settings.
+ * Also removes sound tags to keep the text clean for TTS processing.
+ * 
  * @param {string} text - Input text to process
- * @returns {Object} - Object with processed text and settings
+ * @returns {Object} - Object containing:
+ *   - text {string} - Cleaned text with all tags removed
+ *   - voiceSettings {Array} - Array of objects with voice settings:
+ *       - voice {string} - Voice identifier
+ *       - start {number} - Start position in the cleaned text
+ *       - end {number} - End position in the cleaned text
+ * @example
+ * // Input: "[voice:male] Hello world"
+ * // Returns: { text: "Hello world", voiceSettings: [{ voice: "male", start: 0, end: 11 }] }
  */
 export function processVoiceTags(text) {
     // First record all the voice tags and their positions

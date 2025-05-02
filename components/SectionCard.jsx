@@ -1,12 +1,37 @@
+/**
+ * @fileoverview Section card component for the Text-to-Speech application.
+ * This component renders and manages individual TTS or audio-only sections,
+ * handling section editing, playback, and type toggling.
+ * 
+ * @requires React
+ * @requires ../context/TTSSessionContext
+ * @requires ./SectionCardAudio
+ * @requires ./SectionCardTTS
+ * @requires ../utils/logUtils
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useTTSSession } from '../context/TTSSessionContext';
 import AudioSection from './SectionCardAudio';
 import TTSSection from './SectionCardTTS';
 import { devLog } from '../utils/logUtils';
 
+/**
+ * SectionCard component for rendering and managing individual TTS or audio-only sections.
+ * Handles section editing, reordering, deletion, and toggling between section types.
+ * 
+ * @component
+ * @param {Object} props - Component props
+ * @param {Object} props.section - The section data to render
+ * @param {number} props.index - The index of this section in the sections array
+ * @param {Function} props.moveUp - Function to move this section up in the order
+ * @param {Function} props.moveDown - Function to move this section down in the order
+ * @returns {JSX.Element} The rendered SectionCard component
+ */
 const SectionCard = ({ section, index, moveUp, moveDown }) => {
   const { state: sessionState, actions: sessionActions } = useTTSSession();
 
+  // Component state
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(section.title);
@@ -24,7 +49,10 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
       : null
   );
 
-  // Sync editedVoice and voiceSettings with sessionState.sections
+  /**
+   * Syncs voice and voice settings with sessionState.
+   * Ensures local state reflects the current settings from the session.
+   */
   useEffect(() => {
     const sectionData = sessionState.sections.find((s) => s.id === section.id);
     if (!sectionData) return;
@@ -81,6 +109,10 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
     }
   }, [sessionState.sections, section.id, section.type, editedVoice, voiceSettings, sessionActions]);
 
+  /**
+   * Toggles the section type between text-to-speech and audio-only.
+   * Updates section properties based on the new type.
+   */
   const toggleSectionType = () => {
     const newType = section.type === 'text-to-speech' ? 'audio-only' : 'text-to-speech';
     const defaultVoice = {
@@ -119,6 +151,10 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
     sessionActions.updateSection(updatedSection);
   };
 
+  /**
+   * Saves section changes to the session state.
+   * Updates the section with edited values for title, text, voice, and voiceSettings.
+   */
   const saveSection = () => {
     // Debug: Log the state before saving
     devLog('Current editedVoice before save:', editedVoice);
@@ -158,6 +194,10 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
     }, 100); // Delay to ensure storage is updated
   };
 
+  /**
+   * Deletes the section after confirmation.
+   * Removes the section from the session state.
+   */
   const deleteSection = () => {
     if (window.confirm(`Are you sure you want to delete "${section.title}"?`)) {
       sessionActions.removeSection(section.id);

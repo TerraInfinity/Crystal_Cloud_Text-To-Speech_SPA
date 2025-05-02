@@ -1,5 +1,17 @@
 import storageService from './storageService';
 
+/**
+ * Audio Processing Service
+ * 
+ * Handles complex audio manipulation, conversion, and merging capabilities.
+ * Provides functionality for working with audio files including:
+ * - Merging multiple audio files into a single file
+ * - Converting mono audio to stereo
+ * - Creating silent audio segments
+ * - WAV encoding and audio buffer manipulation
+ * 
+ * @module audioProcessingService
+ */
 class AudioProcessingService {
     /**
      * Orchestrates merging audio files from S3: downloads, combines,
@@ -37,6 +49,13 @@ class AudioProcessingService {
     /**
      * Combines multiple audio Blobs into a single WAV Blob, ensuring all inputs have the same sample rate.
      * Decodes audio, merges buffers, and converts to stereo if necessary.
+     * 
+     * Core processing steps:
+     * 1. Decodes each Blob into an AudioBuffer
+     * 2. Determines the final channel count and total length
+     * 3. Creates an output buffer and copies data from each input buffer in sequence
+     * 4. Converts to stereo if the source is mono
+     * 5. Encodes the final buffer as a WAV file
      *
      * @param {Blob[]} blobs - Array of audio Blobs to combine (assumes all are valid audio files)
      * @returns {Promise<Blob>} - The combined WAV Blob
@@ -115,7 +134,12 @@ class AudioProcessingService {
 
     /**
      * Encodes an AudioBuffer into a WAV Blob using PCM 16-bit format.
-     * This is a private helper method for internal use only.
+     * Handles WAV header creation and interleaved PCM samples generation.
+     * 
+     * Structure of a WAV file:
+     * - RIFF header
+     * - Format chunk
+     * - Data chunk with interleaved PCM samples
      *
      * @private
      * @param {AudioBuffer} buffer - The AudioBuffer to encode

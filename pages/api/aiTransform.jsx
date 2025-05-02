@@ -1,3 +1,18 @@
+/**
+ * API handler for text transformation using AI services
+ * 
+ * This endpoint processes text through either OpenAI or Anthropic AI services
+ * based on the provided prompt instructions.
+ * 
+ * @route POST /api/aiTransform
+ * @param {Object} req - The request object
+ * @param {Object} req.body - The request body
+ * @param {string} req.body.text - The text to be processed
+ * @param {string} req.body.prompt - Instructions for how the AI should process the text
+ * @param {string} req.body.provider - The AI provider to use ('openai' or 'anthropic')
+ * @param {Object} res - The response object
+ * @returns {Object} JSON response with the transformed text or error message
+ */
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -22,7 +37,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'OpenAI API key is required' });
       }
       
-      // Call OpenAI API
+      /**
+       * Call OpenAI API with the provided text and prompt
+       * Using gpt-3.5-turbo model with temperature 0.7
+       */ 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -63,7 +81,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'Anthropic API key is required' });
       }
       
-      // Call Anthropic API
+      /**
+       * Call Anthropic API with the provided text and prompt
+       * Using claude-2 model with max tokens 2000
+       */
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {

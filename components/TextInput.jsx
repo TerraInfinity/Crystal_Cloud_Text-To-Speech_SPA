@@ -1,9 +1,29 @@
+/**
+ * @fileoverview Input component for the Text-to-Speech application.
+ * This component handles text input, file upload, URL import, audio selection,
+ * and voice selection for creating new TTS sections.
+ * 
+ * @requires React
+ * @requires ../context/TTSContext
+ * @requires next/link
+ * @requires ../context/TTSSessionContext
+ * @requires ../utils/logUtils
+ */
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTTS } from '../context/TTSContext';
 import Link from 'next/link';
 import { useTTSSession } from '../context/TTSSessionContext';
 import { devLog } from '../utils/logUtils';
 
+/**
+ * Text and audio input component for TTS processing.
+ * Provides interfaces for entering text, selecting voice, importing text from various sources,
+ * selecting audio files, and creating new TTS or audio-only sections.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered TextInput component
+ */
 const TextInput = () => {
   const { state, actions: ttsActions, isProcessing } = useTTS();
   const { state: sessionState, actions: sessionActions } = useTTSSession();
@@ -14,12 +34,23 @@ const TextInput = () => {
   const sections = sessionState?.sections || [];
   const audioLibrary = state?.AudioLibrary || {};
 
+  /**
+   * Computes the list of all active voices from the TTS state.
+   * 
+   * @type {Array}
+   */
   const allActiveVoices = useMemo(() => {
     const voices = Object.values(state?.settings?.activeVoices || {}).flat();
     devLog('All active voices computed:', voices);
     return voices;
   }, [state?.settings?.activeVoices]);
 
+  /**
+   * Filters the list of voices to display in the voice selection dropdown.
+   * Falls back to default voice if no active voices are available.
+   * 
+   * @type {Array}
+   */
   const voicesToShow = useMemo(() => {
     if (allActiveVoices.length > 0) {
       return allActiveVoices;
@@ -64,6 +95,9 @@ const TextInput = () => {
 
   const speechEngine = state?.speechEngine || 'gtts';
 
+  /**
+   * Fetches audio library files from storage when the component mounts.
+   */
   useEffect(() => {
     if (Object.keys(audioLibrary).length === 0 && !isProcessing) {
       const fetchAudioList = async () => {
@@ -85,6 +119,11 @@ const TextInput = () => {
     }
   }, [audioLibrary, ttsActions, sessionActions, isProcessing]);
 
+  /**
+   * Handles input type change between text and audio.
+   * 
+   * @param {string} type - The input type to switch to ('text' or 'audio')
+   */
   const handleInputTypeChange = (type) => {
     sessionActions.setInputType(type);
     setAudioSource('library');
@@ -92,10 +131,21 @@ const TextInput = () => {
     setUploadedAudio(null);
   };
 
+  /**
+   * Handles text change in the textarea.
+   * 
+   * @param {Object} e - The input change event
+   */
   const handleTextChange = (e) => {
     sessionActions.setInputText(e.target.value);
   };
 
+  /**
+   * Handles file upload for text input.
+   * Reads text from a file and sets it as the input text.
+   * 
+   * @param {Object} e - The file input change event
+   */
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || file.type !== 'text/plain') {
@@ -118,6 +168,10 @@ const TextInput = () => {
     }
   };
 
+  /**
+   * Imports text content from a URL.
+   * Calls the server API to fetch and process the URL content.
+   */
   const handleUrlImport = async () => {
     if (!urlInput) {
       sessionActions.setError('Please enter a URL');
@@ -148,6 +202,12 @@ const TextInput = () => {
     }
   };
 
+  /**
+   * Handles audio file upload for audio sections.
+   * Creates an object URL for the uploaded audio file.
+   * 
+   * @param {Object} e - The file input change event
+   */
   const handleAudioUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) {
@@ -178,6 +238,10 @@ const TextInput = () => {
     }
   };
 
+  /**
+   * Creates a new text-to-speech section from the current input text.
+   * Adds the section to the session state.
+   */
   const createNewSection = () => {
     if (!inputText.trim()) {
       sessionActions.setError('Please enter some text first');
@@ -199,6 +263,10 @@ const TextInput = () => {
     devLog('New section created with voice:', selectedVoice);
   };
 
+  /**
+   * Creates a new audio-only section using either a library audio or uploaded audio.
+   * Adds the section to the session state.
+   */
   const createAudioSection = () => {
     if (audioSource === 'library' && !selectedAudioId) {
       sessionActions.setError('Please select an audio file from the library');
@@ -239,6 +307,12 @@ const TextInput = () => {
     setUploadedAudio(null);
   };
 
+  /**
+   * Handles voice selection change.
+   * Updates the selected voice in the session state.
+   * 
+   * @param {Object} e - The select change event
+   */
   const handleVoiceChange = (e) => {
     const selectedValue = e.target.value;
     if (selectedValue === '') {

@@ -1,4 +1,7 @@
-// Function to define default voices for each speech engine
+/**
+ * Function to define default voices for each speech engine
+ * @returns {Object} Object containing lists of default voices organized by engine
+ */
 const defaultVoiceList = () => ({
     gtts: [
         { name: 'American English', id: 'en-com', language: 'en', tld: 'com', engine: 'gtts' },
@@ -119,15 +122,20 @@ const defaultVoiceList = () => ({
 
 
 
+/**
+ * Get the default voices for all TTS engines
+ * @returns {Object} Object containing voice lists for all supported engines
+ */
 export const getDefaultVoices = () => {
     return defaultVoiceList();
 };
 
 
-
-
-
-
+/**
+ * Template for Yoga Kriya TTS project
+ * Includes pre-defined sections for a structured yoga practice
+ * @type {Object}
+ */
 export const yogaKriyaTemplate = {
     id: 'yogaKriya',
     name: 'Yoga Kriya',
@@ -178,7 +186,11 @@ export const yogaKriyaTemplate = {
 };
 
 
-// Initial state
+/**
+ * Initial persistent state for the TTS application
+ * Contains default settings, voices, and configurations
+ * @type {Object}
+ */
 export const initialPersistentState = {
     theme: 'glitch',
     fileHistory: [],
@@ -220,9 +232,12 @@ export const initialPersistentState = {
     
 };
 
+/**
+ * Initial session state for the TTS application
+ * Contains temporary state for the current working session
+ * @type {Object}
+ */
 export const initialSessionState = {
-
-
     inputText: '',
     inputType: 'text', // 'text' or 'audio'
     currentTemplate: 'general',
@@ -251,6 +266,4 @@ export const initialSessionState = {
         ],
         editingTemplate: null,
       },
-
-
 };

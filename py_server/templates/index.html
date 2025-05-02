@@ -1,9 +1,27 @@
 <!DOCTYPE html>
+<!--
+  gTTS Demo Interface
+  
+  This HTML file provides a basic user interface for:
+  1. Converting text to speech using the gTTS API
+  2. Uploading, managing, and playing audio files
+  3. Viewing audio file metadata
+  
+  The interface includes:
+  - A demo button to generate sample TTS audio
+  - Audio playback controls
+  - Audio specifications display
+  - File uploading and management
+  - File filtering by category
+  - File searching by name
+-->
 <html>
 
 <head>
     <title>gTTS Demo</title>
     <style>
+        /* Basic page styling */
+        
         body {
             font-family: sans-serif;
             margin: 2em;
@@ -14,6 +32,7 @@
         h2 {
             color: #333;
         }
+        /* Audio player and spec containers */
         
         .specs,
         .audio-controls {
@@ -23,6 +42,7 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+        /* File details section - hidden by default */
         
         .file-details {
             margin-left: 20px;
@@ -31,6 +51,7 @@
             background-color: #f0f0f0;
             border-left: 2px solid #007bff;
         }
+        /* Individual file entry styling */
         
         .file-entry {
             border-bottom: 1px solid #ccc;
@@ -39,6 +60,7 @@
             margin-bottom: 5px;
             border-radius: 5px;
         }
+        /* Toggle details button styling */
         
         .toggle-btn {
             cursor: pointer;
@@ -46,6 +68,7 @@
             text-decoration: underline;
             font-size: 0.9em;
         }
+        /* Search and filter controls */
         
         .search-bar,
         .category-filter {
@@ -62,6 +85,7 @@
         .search-bar input {
             width: 300px;
         }
+        /* Button styling */
         
         button {
             padding: 8px 16px;
@@ -86,6 +110,7 @@
 
 <body>
     <h1>gTTS Demo</h1>
+    <!-- TTS demo section -->
     <button id="generateBtn">Generate Audio ("Demo, testing!")</button>
     <div class="audio-controls" id="audioControls" style="display:none;">
         <audio id="audioPlayer" controls></audio>
@@ -93,6 +118,8 @@
         <a id="downloadLink" href="#" download="demo.wav">Download Audio</a>
     </div>
     <div class="specs" id="specs"></div>
+
+    <!-- File management section -->
     <h2>Stored Files</h2>
     <div class="category-filter">
         <label for="category">Filter by category: </label>
@@ -116,8 +143,10 @@
     <div id="fileList"></div>
 
     <script>
+        // Store all files data
         let allFiles = [];
 
+        // TTS demo button handler
         document.getElementById('generateBtn').onclick = async function() {
             const btn = this;
             btn.disabled = true;
@@ -125,6 +154,7 @@
             document.getElementById('audioControls').style.display = "none";
             document.getElementById('specs').textContent = "";
             try {
+                // Call the TTS API
                 const resp = await fetch('/gtts', {
                     method: 'POST',
                     headers: {
@@ -136,6 +166,8 @@
                 });
                 const data = await resp.json();
                 if (!data.audioBase64) throw new Error(data.message || "No audio returned");
+
+                // Convert base64 to binary for audio playback
                 const byteCharacters = atob(data.audioBase64);
                 const byteNumbers = new Array(byteCharacters.length);
                 for (let i = 0; i < byteCharacters.length; i++) {
@@ -146,9 +178,13 @@
                     type: 'audio/wav'
                 });
                 const url = URL.createObjectURL(blob);
+
+                // Set up audio player and download link
                 document.getElementById('audioPlayer').src = url;
                 document.getElementById('downloadLink').href = url;
                 document.getElementById('audioControls').style.display = "";
+
+                // Get audio metadata when loaded
                 const audio = document.getElementById('audioPlayer');
                 audio.onloadedmetadata = function() {
                     const duration = audio.duration.toFixed(2);
@@ -164,6 +200,7 @@
                     }
                 };
 
+                // Display audio specifications
                 function showSpecs(duration, sampleRate, size) {
                     document.getElementById('specs').innerHTML =
                         `<b>Specs:</b><br>File type: audio/wav<br>Sample rate: ${sampleRate} Hz<br>Duration: ${duration} seconds<br>File size: ${size} bytes`;
@@ -175,11 +212,13 @@
             btn.textContent = 'Generate Audio ("Demo, testing!")';
         };
 
+        // Extract sample rate from WAV file
         function getWavSampleRate(arrayBuffer) {
             const view = new DataView(arrayBuffer);
             return view.getUint32(24, true);
         }
 
+        // Render the list of audio files with controls
         function renderFileList(files) {
             const fileListDiv = document.getElementById('fileList');
             fileListDiv.innerHTML = '';
@@ -212,6 +251,7 @@
                         <p><b>Placeholder:</b> ${file.placeholder}</p>
                     </div>
                 `;
+                // Add toggle functionality for file details
                 const toggleBtn = fileDiv.querySelector('.toggle-btn');
                 const detailsDiv = fileDiv.querySelector('.file-details');
                 toggleBtn.addEventListener('click', () => {
@@ -221,6 +261,7 @@
             });
         }
 
+        // Fetch and update the file list from the server
         function updateFileList() {
             fetch('/audio/list')
                 .then(response => {
@@ -237,6 +278,7 @@
                 });
         }
 
+        // Filter files based on search term and category
         function filterFiles() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const category = document.getElementById('category').value;
@@ -248,9 +290,11 @@
             renderFileList(filteredFiles);
         }
 
+        // Set up event listeners for search and filter
         document.getElementById('searchInput').addEventListener('input', filterFiles);
         document.getElementById('category').addEventListener('change', filterFiles);
 
+        // Handle purge button click
         document.getElementById('purgeBtn').onclick = function() {
             if (confirm("Are you sure you want to delete all files? This action cannot be undone.")) {
                 fetch('/purge', { method: 'POST' })
@@ -269,15 +313,18 @@
             }
         };
 
+        // Handle upload button click
         document.getElementById('uploadBtn').onclick = function() {
             document.getElementById('fileInput').click();
         };
 
+        // Handle file selection for upload
         document.getElementById('fileInput').onchange = function() {
             const files = this.files;
             if (files.length > 0) uploadFiles(files);
         };
 
+        // Upload files to server
         function uploadFiles(files) {
             const formData = new FormData();
             Array.from(files).forEach(file => {
@@ -307,7 +354,10 @@
                 });
         }
 
+        // Initialize file list on page load
         updateFileList();
+        
+        // Set up refresh button
         document.getElementById('refreshBtn').onclick = updateFileList;
     </script>
 </body>

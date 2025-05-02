@@ -7,10 +7,17 @@ import { createTtsActions } from './ttsActions';
 import { TTSSessionProvider } from './TTSSessionContext';
 import { devLog } from '../utils/logUtils';
 
-// Create the context
+/**
+ * Context for managing TTS (Text-to-Speech) state and operations
+ * @type {React.Context}
+ */
 const TTSContext = createContext();
 
-// Custom hook to use the context
+/**
+ * Custom hook to access the TTS context
+ * @returns {Object} The TTS context object containing state, dispatch, and actions
+ * @throws {Error} If used outside of a TTSProvider
+ */
 export const useTTS = () => {
   const context = useContext(TTSContext);
   if (context === undefined) {
@@ -19,9 +26,18 @@ export const useTTS = () => {
   return context;
 };
 
-// Provider component
+/**
+ * Provider component for TTS functionality
+ * Manages global TTS state, settings, and configuration
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components
+ * @returns {JSX.Element} The TTS provider component
+ */
 export const TTSProvider = ({ children }) => {
-  // Compute initial state with theme from localStorage
+  /**
+   * Computes the initial state with theme from localStorage
+   * @returns {Object} The initial state for the TTS context
+   */
   const getInitialState = () => {
     if (typeof window === 'undefined') {
       return initialPersistentState;
@@ -42,7 +58,10 @@ export const TTSProvider = ({ children }) => {
   // Define actions using memoization
   const actions = useMemo(() => createTtsActions(dispatch), [dispatch]);
 
-  // Function to fetch gTTS voices
+  /**
+   * Fetches gTTS voices from the server
+   * @returns {Promise<void>}
+   */
   const fetchGttsVoices = async () => {
     try {
       const response = await fetch('http://localhost:5000/gtts/voices');
@@ -83,6 +102,10 @@ export const TTSProvider = ({ children }) => {
   useEffect(() => {
     let isMounted = true;
 
+    /**
+     * Initializes the application
+     * Loads state, settings, and assets from storage
+     */
     const initApp = async () => {
       if (typeof window !== 'undefined' && isMounted) {
         try {

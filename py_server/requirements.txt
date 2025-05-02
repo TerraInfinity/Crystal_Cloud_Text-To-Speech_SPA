@@ -1,0 +1,16 @@
+# Core server dependencies
+Flask>=2.0.0
+Flask-CORS>=3.0.0
+
+# Text-to-speech
+gTTS>=2.2.0
+
+# File management and security
+Werkzeug>=2.0.0
+
+# Database (for optional Neon PostgreSQL integration)
+drizzle-orm>=0.29.0
+@neondatabase/serverless>=0.6.0
+
+# Utilities
+python-dotenv>=0.19.0 

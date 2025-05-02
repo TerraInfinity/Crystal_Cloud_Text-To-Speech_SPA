@@ -3,6 +3,15 @@ import { TTSProvider } from '../context/TTSContext';
 import AudioLibrary from '../components/AudioLibrary';
 import Link from 'next/link';
 
+/**
+ * Audio Library Page Component
+ * 
+ * This page provides an interface for users to manage their audio library.
+ * Users can upload, organize, and select audio files for use in the TTS application.
+ * The AudioLibrary component handles the core functionality of audio file management.
+ * 
+ * @returns {JSX.Element} The rendered Audio Library page
+ */
 export default function AudioPage() {
   return (
       <div id="audio-page-container" className="container mx-auto px-4 py-8">

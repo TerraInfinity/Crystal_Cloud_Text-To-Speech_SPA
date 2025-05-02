@@ -1,6 +1,8 @@
 /**
  * Speech service to handle different text-to-speech engines.
  * Supports gTTS, ElevenLabs, AWS Polly, Google Cloud TTS, Azure TTS, and IBM Watson TTS for text-to-speech conversion.
+ * Provides a unified interface for converting text to speech, managing voices, and generating audio segments.
+ * @module speechService
  */
 const devLog = (...args) => {
     if (process.env.NODE_ENV !== 'production') {
@@ -10,9 +12,10 @@ const devLog = (...args) => {
 
 class SpeechService {
     /**
-     * Normalize audio response to { url, duration, sampleRate }
+     * Normalize audio response to a standard format regardless of source TTS engine
      * @param {Object} data - The response data from TTS API
-     * @returns {{url: string, duration: number, sampleRate: number}}
+     * @returns {{url: string, duration: number, sampleRate: number}} Normalized audio data
+     * @throws {Error} If invalid audio response format is provided
      */
     normalizeAudioResponse(data) {
         devLog('normalizeAudioResponse called', data);
@@ -37,8 +40,10 @@ class SpeechService {
 
     /**
      * Convert text to speech using gTTS via a Python server endpoint.
+     * Maps frontend voice IDs to backend voice IDs and handles voice validation.
+     * 
      * @param {string} text - The text to convert to speech.
-     * @param {Object} options - Options for speech synthesis.
+     * @param {Object} [options] - Options for speech synthesis.
      * @param {Object} [options.voice] - Voice object from activeVoices (e.g., { id: 'in', engine: 'gtts', tld: 'co.in' }).
      * @param {Array} [options.activeVoices] - List of active voices from TTSContext for validation.
      * @returns {Promise<{url: string, duration: number, sampleRate: number}>} - Promise resolving to normalized audio response.
@@ -109,6 +114,8 @@ class SpeechService {
 
     /**
      * Convert text to speech using ElevenLabs API.
+     * Requires an API key and validates the voice against activeVoices.
+     * 
      * @param {string} text - The text to convert to speech.
      * @param {Object} options - Options for speech synthesis.
      * @param {string} options.apiKey - ElevenLabs API key (required).
@@ -176,6 +183,8 @@ class SpeechService {
 
     /**
      * Convert text to speech using AWS Polly via an API endpoint.
+     * Requires AWS credentials and validates the voice against activeVoices.
+     * 
      * @param {string} text - The text to convert to speech.
      * @param {Object} options - Options for speech synthesis.
      * @param {string} options.accessKey - AWS access key (required).
@@ -238,8 +247,10 @@ class SpeechService {
 
     /**
      * Convert text to speech using Google Cloud Text-to-Speech via an API endpoint.
+     * Validates the voice against activeVoices and accepts an optional API key.
+     * 
      * @param {string} text - The text to convert to speech.
-     * @param {Object} options - Options for speech synthesis.
+     * @param {Object} [options] - Options for speech synthesis.
      * @param {string} [options.apiKey] - Google Cloud API key.
      * @param {Object} [options.voice] - Voice object from activeVoices (default: { id: 'en-US-Wavenet-D' }).
      * @param {Array} [options.activeVoices] - List of active voices for validation.
@@ -292,8 +303,10 @@ class SpeechService {
 
     /**
      * Convert text to speech using Microsoft Azure Cognitive Services TTS via an API endpoint.
+     * Validates the voice against activeVoices and accepts an optional API key.
+     * 
      * @param {string} text - The text to convert to speech.
-     * @param {Object} options - Options for speech synthesis.
+     * @param {Object} [options] - Options for speech synthesis.
      * @param {string} [options.apiKey] - Azure API key.
      * @param {Object} [options.voice] - Voice object from activeVoices (default: { id: 'en-US-JennyNeural' }).
      * @param {Array} [options.activeVoices] - List of active voices for validation.
@@ -346,8 +359,10 @@ class SpeechService {
 
     /**
      * Convert text to speech using IBM Watson TTS via an API endpoint.
+     * Validates the voice against activeVoices and accepts an optional API key.
+     * 
      * @param {string} text - The text to convert to speech.
-     * @param {Object} options - Options for speech synthesis.
+     * @param {Object} [options] - Options for speech synthesis.
      * @param {string} [options.apiKey] - IBM Watson API key.
      * @param {Object} [options.voice] - Voice object from activeVoices (default: { id: 'en-US_AllisonV3Voice' }).
      * @param {Array} [options.activeVoices] - List of active voices for validation.
@@ -400,6 +415,8 @@ class SpeechService {
 
     /**
      * Get available voices for a specified speech engine, prioritizing activeVoices from TTSContext.
+     * Falls back to fetching voices from the server or returns static lists for some engines.
+     * 
      * @param {string} engine - Speech engine ('gTTS', 'elevenLabs', 'awsPolly', 'googleCloud', 'azureTTS', 'ibmWatson').
      * @param {Object} [options] - Options for retrieving voices.
      * @param {Array} [options.activeVoices] - List of active voices from TTSContext.
@@ -538,8 +555,10 @@ class SpeechService {
 
     /**
      * Convert text to speech using specified engine and upload the audio.
+     * High-level method that delegates to specific engine methods based on the engine parameter.
+     * 
      * @param {string} text - The text to convert to speech.
-     * @param {string} engine - TTS engine ('gTTS', 'awsPolly', 'elevenLabs', 'googleCloud', 'azureTTS', 'ibmWatson').
+     * @param {string} engine - TTS engine ('gtts', 'awsPolly', 'elevenLabs', 'googleCloud', 'azureTTS', 'ibmWatson').
      * @param {Object} [options] - Options for speech synthesis.
      * @param {Object} [options.voice] - Voice object from activeVoices.
      * @param {Array} [options.activeVoices] - List of active voices for validation.
@@ -588,6 +607,8 @@ class SpeechService {
 
     /**
      * Generate audio segments from a script, orchestrating TTS, pauses, and sound effects.
+     * Processes each script item based on its type (speech, pause, sound) and returns an array of segments.
+     * 
      * @param {Array} script - Array of script items defining the audio sequence.
      * @param {Object} script[] - Script item object.
      * @param {string} script[].type - Type of segment ('speech', 'pause', or 'sound').

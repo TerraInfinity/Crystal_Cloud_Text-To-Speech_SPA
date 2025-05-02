@@ -1,0 +1,248 @@
+# Crystal Cloud Text-To-Speech API Documentation
+
+This document provides detailed information about the API endpoints available in the Crystal Cloud Text-To-Speech SPA.
+
+## Table of Contents
+
+1. [AI Text Transformation API](#ai-text-transformation)
+2. [AWS Polly Text-to-Speech API](#aws-polly-text-to-speech)
+3. [Audio Merging API](#audio-merging)
+4. [URL Processing API](#url-processing)
+
+---
+
+## AI Text Transformation
+
+Transforms text using AI services (OpenAI or Anthropic) based on provided instructions.
+
+**Endpoint:** `POST /api/aiTransform`
+
+### Request
+
+```json
+{
+  "text": "Text content to be processed",
+  "prompt": "Instructions for how to process the text",
+  "provider": "openai|anthropic"
+}
+```
+
+### Headers
+
+When using OpenAI:
+- `x-openai-api-key`: Your OpenAI API key (optional if set in environment variables)
+
+When using Anthropic:
+- `x-anthropic-api-key`: Your Anthropic API key (optional if set in environment variables)
+
+### Parameters
+
+| Parameter | Type   | Required | Description                                  |
+|-----------|--------|----------|----------------------------------------------|
+| text      | string | Yes      | The text content to be processed             |
+| prompt    | string | Yes      | Instructions for how AI should process text  |
+| provider  | string | Yes      | AI provider to use ('openai' or 'anthropic') |
+
+### Response
+
+**Success (200 OK)**
+```json
+{
+  "result": "Transformed text content"
+}
+```
+
+**Error (4xx/5xx)**
+```json
+{
+  "message": "Error description"
+}
+```
+
+### Examples
+
+**Request**
+```json
+{
+  "text": "The quick brown fox jumps over the lazy dog.",
+  "prompt": "Translate this text to Spanish.",
+  "provider": "openai"
+}
+```
+
+**Response**
+```json
+{
+  "result": "El zorro marrón rápido salta sobre el perro perezoso."
+}
+```
+
+---
+
+## AWS Polly Text-to-Speech
+
+Converts text to speech using AWS Polly service.
+
+**Endpoint:** `GET /api/awsPolly`
+
+### Query Parameters
+
+| Parameter    | Type   | Required | Default   | Description                     |
+|--------------|--------|----------|-----------|---------------------------------|
+| text         | string | Yes      | -         | Text to convert to speech       |
+| voice        | string | No       | "Joanna"  | Voice ID to use for synthesis   |
+| language     | string | No       | "en-US"   | Language code                   |
+| outputFormat | string | No       | "mp3"     | Output audio format             |
+
+### Headers
+
+- `x-aws-access-key`: Your AWS access key ID (optional if set in environment variables)
+- `x-aws-secret-key`: Your AWS secret access key (optional if set in environment variables)
+
+### Response
+
+**Success (200 OK)**
+```json
+{
+  "message": "AWS Polly synthesis result message",
+  "params": {
+    "text": "Input text",
+    "voice": "Joanna",
+    "language": "en-US",
+    "outputFormat": "mp3"
+  },
+  "mockAudioUrl": "data:audio/mp3;base64,..."
+}
+```
+
+**Error (4xx/5xx)**
+```json
+{
+  "message": "Error description"
+}
+```
+
+> **Note:** The current implementation is a mock. In production, this would return actual speech audio data from AWS Polly.
+
+---
+
+## Audio Merging
+
+Merges multiple audio files into a single audio file.
+
+**Endpoint:** `POST /api/mergeAudio`
+
+### Request
+
+```json
+{
+  "audioUrls": [
+    "https://example.com/audio1.mp3",
+    "data:audio/wav;base64,..."
+  ]
+}
+```
+
+### Parameters
+
+| Parameter | Type     | Required | Description                                             |
+|-----------|----------|----------|---------------------------------------------------------|
+| audioUrls | string[] | Yes      | Array of URLs or data URLs of audio files to be merged  |
+
+### Response
+
+**Success (200 OK)**
+```json
+{
+  "mergedAudioUrl": "/merged/merged-uuid.wav"
+}
+```
+
+**Error (4xx/5xx)**
+```json
+{
+  "message": "Error description"
+}
+```
+
+### Notes
+
+- This endpoint can handle remote URLs, data URLs, and local file paths
+- Files are automatically normalized to 44100 Hz, 16-bit, mono WAV format before merging
+- Temporary files are cleaned up after processing
+- In development mode, detailed logs are produced to aid debugging
+
+---
+
+## URL Processing
+
+Extracts text content from a URL.
+
+**Endpoint:** `POST /api/processUrl`
+
+### Request
+
+```json
+{
+  "url": "https://example.com/article"
+}
+```
+
+### Parameters
+
+| Parameter | Type   | Required | Description                |
+|-----------|--------|----------|----------------------------|
+| url       | string | Yes      | URL to fetch and process   |
+
+### Response
+
+**Success (200 OK)**
+```json
+{
+  "text": "Extracted text content from the URL"
+}
+```
+
+**Error (4xx/5xx)**
+```json
+{
+  "message": "Error description"
+}
+```
+
+### Supported Content Types
+
+- `text/html`: HTML content is parsed to extract meaningful text
+- `text/plain`: Plain text is returned directly
+
+---
+
+## Error Handling
+
+All API endpoints follow a consistent error handling pattern:
+
+- **400 Bad Request**: Missing or invalid parameters
+- **405 Method Not Allowed**: Incorrect HTTP method used
+- **500 Internal Server Error**: Server-side processing errors
+
+Error responses include a `message` field with details about the error.
+
+---
+
+## Environment Variables
+
+The following environment variables can be used to configure the API:
+
+- `OPENAI_API_KEY`: Your OpenAI API key
+- `ANTHROPIC_API_KEY`: Your Anthropic API key
+- `AWS_ACCESS_KEY_ID`: Your AWS access key ID
+- `AWS_SECRET_ACCESS_KEY`: Your AWS secret access key
+- `USE_CLOUD_STORAGE`: Set to "true" to enable cloud storage for merged audio files
+
+---
+
+## Development Notes
+
+- In development mode, the audio merging API produces detailed logs
+- When `NODE_ENV` is not set to "production", additional debugging information is available
+- The AWS Polly implementation is currently a mock

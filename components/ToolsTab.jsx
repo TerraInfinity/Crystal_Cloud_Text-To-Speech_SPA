@@ -1,8 +1,26 @@
+/**
+ * @fileoverview Tools component for HTML parsing and AI transformation functionality
+ * 
+ * This file contains the ToolsTab component which provides utilities for:
+ * - Extracting text content from HTML
+ * - Fetching and parsing content from URLs 
+ * - Applying AI-powered transformations to text content
+ * - Using processed content in the main application
+ */
+
 import React, { useState } from 'react';
 import { useTTS } from '../context/TTSContext';
 import { useTTSSession } from '../context/TTSSessionContext';
 import { parseTextFromHtml } from '../utils/textUtils';
 
+/**
+ * ToolsTab component providing utilities for HTML/URL parsing and AI transformations.
+ * Allows users to extract text from HTML/URLs and process text with AI services
+ * before using it in the main application.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered ToolsTab component
+ */
 const ToolsTab = () => {
   const { actions, isProcessing } = useTTS();
   const { actions: sessionActions } = useTTSSession();
@@ -18,7 +36,10 @@ const ToolsTab = () => {
   const [aiProvider, setAiProvider] = useState('openai');
   const [selectedPresetPrompt, setSelectedPresetPrompt] = useState('');
   
-  // Preset prompts for AI transformation
+  /**
+   * Preset prompts available for AI transformation
+   * @type {Array<{id: string, label: string, prompt: string}>}
+   */
   const presetPrompts = [
     {
       id: 'yoga-extract',
@@ -37,7 +58,12 @@ const ToolsTab = () => {
     }
   ];
   
-  // Handle HTML/URL parsing
+  /**
+   * Parses HTML or URL input to extract plain text
+   * Uses direct HTML parsing for HTML content or API for URL extraction
+   * 
+   * @async
+   */
   const parseHtmlOrUrl = async () => {
     if (!htmlInput.trim()) {
       sessionActions.setError('Please enter HTML or a URL');
@@ -82,7 +108,10 @@ const ToolsTab = () => {
     }
   };
   
-  // Apply parsed result to main input
+  /**
+   * Applies the parsed result to the main text input area
+   * Sets the active tab to main and shows success notification
+   */
   const applyParsedResult = () => {
     if (parseResult) {
       sessionActions.setInputText(parseResult);
@@ -94,7 +123,11 @@ const ToolsTab = () => {
     }
   };
   
-  // Handle preset prompt selection
+  /**
+   * Handles preset prompt selection and updates the prompt field
+   * 
+   * @param {React.ChangeEvent<HTMLSelectElement>} e - The change event
+   */
   const handlePresetPromptChange = (e) => {
     const selectedId = e.target.value;
     setSelectedPresetPrompt(selectedId);
@@ -109,7 +142,12 @@ const ToolsTab = () => {
     }
   };
   
-  // Process text with AI
+  /**
+   * Processes text with selected AI provider
+   * Sends the text and prompt to the AI transformation API
+   * 
+   * @async
+   */
   const processWithAI = async () => {
     if (!aiInput.trim()) {
       sessionActions.setError('Please enter text to process');
@@ -154,7 +192,10 @@ const ToolsTab = () => {
     }
   };
   
-  // Apply AI result to main input
+  /**
+   * Applies AI processed result to the main text input area
+   * Sets the active tab to main and shows success notification
+   */
   const applyAiResult = () => {
     if (aiResult) {
       sessionActions.setInputText(aiResult);

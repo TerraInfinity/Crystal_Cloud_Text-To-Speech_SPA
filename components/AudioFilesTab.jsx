@@ -1,10 +1,26 @@
+/**
+ * @fileoverview Audio Files Tab component for the Text-to-Speech application.
+ * Provides functionality for uploading, managing, and playing audio files.
+ * 
+ * @requires React
+ * @requires ../context/TTSContext
+ */
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
 
+/**
+ * AudioFilesTab component for managing audio files.
+ * Handles audio uploads, playback, and management of saved audio files.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered AudioFilesTab component
+ */
 const AudioFilesTab = () => {
   const { state, actions, isProcessing, sessionActions } = useTTS();
   const savedAudios = state?.savedAudios || {};
 
+  // Refs and state
   const fileInputRef = useRef(null);
   const [audioName, setAudioName] = useState('');
   const [selectedAudio, setSelectedAudio] = useState(null);
@@ -13,6 +29,12 @@ const AudioFilesTab = () => {
   const [volume, setVolume] = useState(1);
   const audioPlayerRef = useRef(null);
 
+  /**
+   * Handles audio file upload.
+   * Creates an object URL for the uploaded audio and saves it to the TTS context.
+   * 
+   * @param {Object} e - The file input change event
+   */
   const handleAudioUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith('audio/')) {
@@ -48,6 +70,11 @@ const AudioFilesTab = () => {
     }
   };
 
+  /**
+   * Plays the selected audio file.
+   * 
+   * @param {Object} audio - The audio file object to play
+   */
   const playAudio = (audio) => {
     setSelectedAudio(audio);
     if (audioPlayerRef.current) {
@@ -58,6 +85,11 @@ const AudioFilesTab = () => {
     }
   };
 
+  /**
+   * Deletes an audio file after confirmation.
+   * 
+   * @param {string} audioId - The ID of the audio file to delete
+   */
   const deleteAudio = (audioId) => {
     if (window.confirm('Are you sure you want to delete this audio?')) {
       actions.deleteAudio(audioId);
@@ -71,6 +103,9 @@ const AudioFilesTab = () => {
     }
   };
 
+  /**
+   * Clean up audio player when component unmounts or selected audio changes.
+   */
   useEffect(() => {
     const player = audioPlayerRef.current;
     const handleEnded = () => setIsPlaying(false);

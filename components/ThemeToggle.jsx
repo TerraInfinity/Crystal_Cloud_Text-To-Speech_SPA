@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Theme Toggle component for the Text-to-Speech application.
+ * Provides functionality to cycle through different UI themes.
+ * 
+ * @requires ../context/TTSContext
+ * @requires @heroicons/react/24/outline
+ * @requires react-icons/ti
+ */
+
 import { useTTS } from '../context/TTSContext'; // Adjust path as needed
 import {
   SunIcon,
@@ -15,7 +24,14 @@ import {
 } from '@heroicons/react/24/outline';
 import { TiTree } from 'react-icons/ti';
 
-// Wrapper component to normalize TiTree attributes
+/**
+ * Wrapper component to normalize TiTree attributes.
+ * Ensures consistent props and styling for the tree icon.
+ * 
+ * @component
+ * @param {Object} props - Component props passed to TiTree
+ * @returns {JSX.Element} The normalized TiTree icon
+ */
 function NormalizedTiTree(props) {
   return (
     <TiTree
@@ -34,6 +50,10 @@ function NormalizedTiTree(props) {
   );
 }
 
+/**
+ * Available themes for the application
+ * @type {string[]}
+ */
 const themes = [
   'light',
   'dark',
@@ -51,6 +71,10 @@ const themes = [
   'cosmic',
 ];
 
+/**
+ * Mapping of theme names to their corresponding icons
+ * @type {Object.<string, Function>}
+ */
 const themeIcons = {
   light: SunIcon,
   dark: MoonIcon,
@@ -68,17 +92,29 @@ const themeIcons = {
   cosmic: StarIcon,
 };
 
+/**
+ * ThemeToggle component for changing the application's visual theme.
+ * Provides a button that cycles through available themes when clicked.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered ThemeToggle button
+ */
 export default function ThemeToggle() {
   const { state, actions } = useTTS();
   const { theme } = state;
 
+  /**
+   * Cycles to the next theme in the themes array.
+   * Updates the theme in the TTS context.
+   */
   const cycleTheme = () => {
     const currentIndex = themes.indexOf(theme);
     const nextIndex = (currentIndex + 1) % themes.length;
     actions.setTheme(themes[nextIndex]);
   };
 
-  const Icon = themeIcons[theme] || SunIcon; // Fallback to SunIcon if theme is undefined
+  // Get the icon component for the current theme, fallback to SunIcon if undefined
+  const Icon = themeIcons[theme] || SunIcon;
 
   return (
     <button

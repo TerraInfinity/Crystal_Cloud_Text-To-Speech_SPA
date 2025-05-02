@@ -3,7 +3,18 @@ import Link from 'next/link';
 import { TTSApp } from '../components/TTSApp';
 import ThemeToggle from '../components/ThemeToggle';
 
-
+/**
+ * Home Page Component
+ * 
+ * This is the main landing page of the Text-to-Speech application.
+ * It includes the core TTS functionality via the TTSApp component,
+ * as well as navigation to the Audio Library page and theme toggling.
+ * 
+ * The page uses a responsive layout with Tailwind CSS styling and
+ * supports theme customization through CSS variables.
+ * 
+ * @returns {JSX.Element} The rendered Home page
+ */
 export default function Home() {
   return (
     <div id="app-container" className="min-h-screen" style={{ backgroundColor: 'var(--bg-color)' }}>

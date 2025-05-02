@@ -1,9 +1,29 @@
+/**
+ * @fileoverview Sections list component for the Text-to-Speech application.
+ * Manages the list of TTS and audio sections, providing functionality for
+ * creating, reordering, and rendering sections.
+ * 
+ * @requires React
+ * @requires ../context/TTSContext
+ * @requires ./SectionCard
+ * @requires ../context/TTSSessionContext
+ * @requires ../utils/logUtils
+ */
+
 import React from 'react';
 import { useTTS } from '../context/TTSContext';
 import SectionCard from './SectionCard';
 import { useTTSSession } from '../context/TTSSessionContext';
 import { devLog } from '../utils/logUtils';
 
+/**
+ * SectionsList component for managing TTS and audio sections.
+ * Renders a list of sections and provides functionality to create,
+ * move up/down, and reorder sections.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered SectionsList component
+ */
 const SectionsList = () => {
   const { state, actions } = useTTS(); 
   const { state: sessionState, actions: sessionActions } = useTTSSession();
@@ -12,7 +32,10 @@ const SectionsList = () => {
  
 
 
-  // Create a new section
+  /**
+   * Creates a new section with default settings.
+   * Adds the section to the session state.
+   */
   const createNewSection = () => {
     const defaultVoice = {
       engine: 'gtts',
@@ -38,7 +61,12 @@ const SectionsList = () => {
     sessionActions.addSection(newSection);
   };
 
-  // Move section up
+  /**
+   * Moves a section up in the order.
+   * Swaps the section with the one above it.
+   * 
+   * @param {number} index - The index of the section to move up
+   */
   const moveUp = (index) => {
     if (index === 0) return;
     const items = Array.from(sections);
@@ -48,7 +76,12 @@ const SectionsList = () => {
     sessionActions.reorderSections(items);
   };
 
-  // Move section down
+  /**
+   * Moves a section down in the order.
+   * Swaps the section with the one below it.
+   * 
+   * @param {number} index - The index of the section to move down
+   */
   const moveDown = (index) => {
     if (index === sections.length - 1) return;
     const items = Array.from(sections);

@@ -1,11 +1,23 @@
 import speechService from '../services/speechService';
 
+/**
+ * Development log function that only logs in non-production environments
+ * 
+ * @param {...any} args - Arguments to log
+ */
 const devLog = (...args) => {
   if (process.env.NODE_ENV !== 'production') {
     console.log('[AudioProcessor]', ...args);
   }
 };
 
+/**
+ * Retrieves the credentials needed for a specific TTS engine from the persistent state
+ * 
+ * @param {string} engine - The TTS engine name ('elevenlabs', 'awspolly', 'googlecloud', 'azuretts', 'ibmwatson', or 'gtts')
+ * @param {Object} persistentState - The application's persistent state containing settings and credentials
+ * @returns {Object} Credentials object formatted for the specific engine
+ */
 const getCredentials = (engine, persistentState) => {
   switch (engine.toLowerCase()) {
     case 'elevenlabs':
@@ -25,7 +37,21 @@ const getCredentials = (engine, persistentState) => {
   }
 };
 
-
+/**
+ * Generates audio for all valid text sections using the specified speech engine
+ * 
+ * Processes each section individually, applying the appropriate voice and language settings.
+ * Updates the application state with generated audio URLs and handles any errors.
+ * 
+ * @param {Object} options - Configuration options
+ * @param {Array} options.validSections - Array of valid section objects containing text to convert
+ * @param {string} options.speechEngine - TTS engine to use for conversion
+ * @param {Object} options.persistentState - Application persistent state with settings and credentials
+ * @param {Object} options.sessionActions - Actions for updating session state
+ * @param {Function} options.setIsGenerating - State setter for generation in-progress indicator
+ * @param {Function} options.setIsAudioGenerated - State setter for generation complete indicator
+ * @returns {Promise<void>}
+ */
 const generateAllAudio = async ({
     validSections,
     speechEngine,
@@ -128,8 +154,21 @@ const generateAllAudio = async ({
     }
   };
 
-  
-
+/**
+ * Merges all generated audio files into a single audio file
+ * 
+ * Verifies that all sections have associated audio before attempting to merge.
+ * Sends the audio URLs to the server-side API for merging and updates the application
+ * state with the merged audio URL.
+ * 
+ * @param {Object} options - Configuration options
+ * @param {Array} options.validSections - Array of valid section objects
+ * @param {Object} options.generatedAudios - Object mapping section IDs to generated audio data
+ * @param {Object} options.sessionActions - Actions for updating session state
+ * @param {Function} options.setIsMerging - State setter for merging in-progress indicator
+ * @param {Function} options.setIsAudioMerged - State setter for merging complete indicator
+ * @returns {Promise<void>}
+ */
 const mergeAllAudio = async ({
   validSections,
   generatedAudios,
@@ -200,6 +239,18 @@ const mergeAllAudio = async ({
   }
 };
 
+/**
+ * Initiates a download of the merged audio file
+ * 
+ * Creates a temporary anchor element to trigger the browser's download functionality.
+ * Updates state to indicate download completion.
+ * 
+ * @param {Object} options - Configuration options
+ * @param {string} options.mergedAudio - URL of the merged audio file to download
+ * @param {Function} options.setIsDownloading - State setter for download in-progress indicator
+ * @param {Function} options.setIsAudioDownloaded - State setter for download complete indicator
+ * @returns {void}
+ */
 const downloadAudio = ({ mergedAudio, setIsDownloading, setIsAudioDownloaded }) => {
   devLog('downloadAudio called');
   if (!mergedAudio) {

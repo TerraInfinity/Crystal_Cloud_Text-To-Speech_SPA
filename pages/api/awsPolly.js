@@ -1,8 +1,21 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-// This is a mock implementation for AWS Polly
-
-// New function to handle AWS Polly-specific TTS calls
+/**
+ * Helper function to handle AWS Polly text-to-speech conversion
+ * 
+ * This function processes text into speech using AWS Polly service.
+ * Note: This is currently a mock implementation.
+ * 
+ * @param {Object} params - The TTS parameters
+ * @param {string} params.text - Text to convert to speech (required)
+ * @param {string} params.voice - Voice to use for synthesis (default: 'Joanna')
+ * @param {string} params.language - Language code (default: 'en-US')
+ * @param {string} params.outputFormat - Output audio format (default: 'mp3')
+ * @param {string} params.accessKey - AWS access key ID
+ * @param {string} params.secretKey - AWS secret access key
+ * @returns {Promise<Object>} Object containing the speech synthesis result
+ * @throws {Error} If required parameters are missing
+ */
 export async function callAwsPollyTTS({ text, voice = 'Joanna', language = 'en-US', outputFormat = 'mp3', accessKey, secretKey }) {
     if (!text) {
         throw new Error('Text parameter is required');
@@ -25,6 +38,22 @@ export async function callAwsPollyTTS({ text, voice = 'Joanna', language = 'en-U
     };
 }
 
+/**
+ * API handler for AWS Polly text-to-speech conversion
+ * 
+ * This endpoint converts text to speech using AWS Polly.
+ * Currently implemented as a mock that returns a base64 encoded audio string.
+ * 
+ * @route GET /api/awsPolly
+ * @param {NextApiRequest} req - The request object
+ * @param {Object} req.query - The query parameters
+ * @param {string} req.query.text - Text to convert to speech (required)
+ * @param {string} req.query.voice - Voice to use (default: 'Joanna')
+ * @param {string} req.query.language - Language code (default: 'en-US')
+ * @param {string} req.query.outputFormat - Audio format (default: 'mp3')
+ * @param {NextApiResponse} res - The response object
+ * @returns {Object} JSON response with the speech synthesis result or error message
+ */
 export default async function handler(req, res) {
     // Extract parameters
     const { text, voice = 'Joanna', language = 'en-US', outputFormat = 'mp3' } = req.query;

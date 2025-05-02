@@ -1,7 +1,11 @@
 // context/demoContentLoader.jsx
 import { devLog } from '../utils/logUtils';
 
-// Helper function to normalize sections
+/**
+ * Helper utility for normalizing TTS sections with default values
+ * @param {Object} section - The section object to normalize
+ * @returns {Object} The normalized section with default values applied
+ */
 const normalizeSection = (section) => {
   const defaultVoice = {
     engine: 'gtts',
@@ -29,6 +33,11 @@ const normalizeSection = (section) => {
   return normalizedSection;
 };
 
+/**
+ * Loads demo content from the server and dispatches it to the application state
+ * @param {Function} dispatch - The dispatch function from the TTS reducer context
+ * @returns {Promise<void>} A promise that resolves when the demo content is loaded
+ */
 export const loadDemoContent = async (dispatch) => {
   try {
     dispatch({ type: 'SET_PROCESSING', payload: true });

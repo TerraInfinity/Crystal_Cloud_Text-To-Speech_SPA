@@ -1,12 +1,24 @@
 import axios from 'axios';
 
-// Logging utility that can be disabled in test environment
+/**
+ * Utility for logging with the ability to disable in test environment
+ */
 const logUtil = {
+  /**
+   * Log an error message if not in test environment
+   * @param {string} message - The error message to log
+   * @param {...any} args - Additional arguments to log
+   */
   error: (message, ...args) => {
     if (process.env.NODE_ENV !== 'test') {
       console.error(message, ...args);
     }
   },
+  /**
+   * Log a message if not in test environment
+   * @param {string} message - The message to log
+   * @param {...any} args - Additional arguments to log
+   */
   log: (message, ...args) => {
     if (process.env.NODE_ENV !== 'test') {
       console.log(message, ...args);
@@ -34,7 +46,8 @@ export const setGlobalStorageConfig = (config) => {
  * Uploads a file to the server and returns the absolute URL.
  * @param {File} file - The file to upload.
  * @param {string} serverUrl - The server URL.
- * @returns {string} The absolute URL of the uploaded file.
+ * @param {Object} [metadata={}] - Optional metadata to include with the file.
+ * @returns {Promise<string>} The absolute URL of the uploaded file.
  */
 const uploadFile = async (file, serverUrl, metadata = {}) => {
   const formData = new FormData();
@@ -56,7 +69,7 @@ const uploadFile = async (file, serverUrl, metadata = {}) => {
  * Retrieves a file from the server as a Blob.
  * @param {string} key - The file identifier (filename).
  * @param {string} serverUrl - The server URL.
- * @returns {Blob} The file data as a Blob.
+ * @returns {Promise<Blob>} The file data as a Blob.
  */
 const getFile = async (key, serverUrl) => {
   try {
@@ -72,7 +85,7 @@ const getFile = async (key, serverUrl) => {
 /**
  * Lists all audio files available on the server.
  * @param {string} serverUrl - The server URL.
- * @returns {Array} A list of file metadata.
+ * @returns {Promise<Array>} A list of file metadata.
  */
 const listFiles = async (serverUrl) => {
   try {
@@ -87,7 +100,7 @@ const listFiles = async (serverUrl) => {
  * Deletes an audio file from the server.
  * @param {string} key - The file identifier (filename).
  * @param {string} serverUrl - The server URL.
- * @returns {boolean} True if deletion is successful.
+ * @returns {Promise<boolean>} True if deletion is successful.
  */
 const deleteFile = async (key, serverUrl) => {
   try {
@@ -103,7 +116,7 @@ const deleteFile = async (key, serverUrl) => {
  * @param {string} key - The file identifier.
  * @param {File} file - The new file to upload.
  * @param {string} serverUrl - The server URL.
- * @returns {string} The updated URL of the file.
+ * @returns {Promise<string>} The updated URL of the file.
  */
 const replaceFile = async (key, file, serverUrl) => {
   const formData = new FormData();
@@ -120,8 +133,8 @@ const replaceFile = async (key, file, serverUrl) => {
  * Updates metadata for an audio file on the server.
  * @param {string} audioId - The UUID of the audio file.
  * @param {Object} metadata - The metadata to update (e.g., { name, placeholder, volume }).
- * @param {string} serverUrl - The server URL.
- * @returns {Object} The updated metadata from the server.
+ * @param {string} [serverUrl=globalStorageConfig.serverUrl] - The server URL.
+ * @returns {Promise<Object>} The updated metadata from the server.
  */
 export const updateFileMetadata = async (audioId, metadata, serverUrl = globalStorageConfig.serverUrl) => {
     try {
@@ -142,12 +155,12 @@ export const updateFileMetadata = async (audioId, metadata, serverUrl = globalSt
     }
   };
 
-// Main Storage Functions
 /**
  * Saves data to the specified storage type.
  * @param {string} key - The key to store the value under.
  * @param {any} value - The value to store (string, object, or File).
  * @param {string} [storageType='localStorage'] - The storage type to use.
+ * @param {Object} [metadata={}] - Optional metadata for file storage.
  * @returns {Promise<string|undefined>} URL for fileStorage, undefined otherwise.
  */
 export const saveToStorage = async (key, value, storageType = 'localStorage', metadata = {}) => {

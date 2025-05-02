@@ -1,3 +1,15 @@
+/**
+ * @fileoverview Main application component for the Text-to-Speech (TTS) application.
+ * This component serves as the container for the entire application and manages
+ * the tab navigation between different sections of the app.
+ * 
+ * @requires React
+ * @requires next/link
+ * @requires ../context/TTSContext
+ * @requires ../context/TTSSessionContext
+ * @requires ../utils/logUtils
+ */
+
 import React, { useEffect } from 'react';
 import { useTTS } from '../context/TTSContext';
 import { useTTSSession } from '../context/TTSSessionContext';
@@ -10,7 +22,18 @@ import AudioLibrary from './AudioLibrary';
 import TemplatesTab from './TemplatesTab';
 import AudioPlayer from './AudioPlayer';
 import FileHistory from './FileHistory';
+import { devLog } from '../utils/logUtils';
 
+/**
+ * Main Text-to-Speech Application component.
+ * Handles tab navigation and renders the appropriate content based on the active tab.
+ * 
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} [props.initialText=''] - Initial text to populate in the text input
+ * @param {string} [props.initialTemplate='general'] - Initial template to use
+ * @returns {JSX.Element} The rendered TTSApp component
+ */
 export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
   // Access persistent state from TTSContext
   const { state: persistentState } = useTTS();
@@ -26,14 +49,21 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
   // Set initial values using session actions on first render
   useEffect(() => {
     if (initialText) {
+      devLog('Setting initial text from props:', initialText);
       sessionActions.setInputText(initialText);
     }
     if (initialTemplate) {
+      devLog('Setting initial template from props:', initialTemplate);
       sessionActions.setTemplate(initialTemplate);
     }
   }, [sessionActions, initialText, initialTemplate]);
 
-  // Handle tab switching with session action
+  /**
+   * Handles the tab change event.
+   * Updates the active tab in the session context.
+   * 
+   * @param {string} tab - The tab identifier to switch to
+   */
   const handleTabChange = (tab) => {
     sessionActions.setActiveTab(tab);
   };

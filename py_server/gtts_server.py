@@ -1,3 +1,24 @@
+"""
+Text-to-Speech Server based on Google TTS (gTTS)
+
+This Flask application provides a RESTful API for:
+1. Converting text to speech using Google's TTS engine
+2. Retrieving available voice options
+3. Audio file storage and management (via file_storage.py)
+
+The server handles audio conversion, format transformation (MP3 to WAV),
+and returns audio data in base64 format ready for client-side playback.
+
+Dependencies:
+- Flask, Flask-CORS: Web framework and Cross-Origin support
+- gTTS: Google Text-to-Speech library
+- ffmpeg: Audio conversion (must be installed on the system)
+- file_storage.py: File management module (included in this project)
+
+Usage:
+- Run this file directly to start the server on port 5000
+- Access the API endpoints as documented in README.md
+"""
 from flask import Flask, request, jsonify, send_file, render_template
 from flask_cors import CORS
 from gtts import gTTS
@@ -24,6 +45,7 @@ logging.basicConfig(
 
 # ANSI color codes for console
 class Colors:
+    """ANSI color codes for console output formatting"""
     BLUE = '\033[94m'
     GREEN = '\033[92m'
     RED = '\033[91m'
@@ -32,18 +54,18 @@ class Colors:
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Enable Cross-Origin Resource Sharing for all routes
 
 # Define directories and files
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR = os.path.join(SCRIPT_DIR, "Uploads")
-METADATA_FILE = os.path.join(SCRIPT_DIR, "audio_metadata.json")
+UPLOAD_DIR = os.path.join(SCRIPT_DIR, "Uploads")  # Directory for storing audio files
+METADATA_FILE = os.path.join(SCRIPT_DIR, "audio_metadata.json")  # File for storing metadata
 
 # Create the uploads directory if it doesn't exist
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 
-# Consolidated list of supported voices
+# Consolidated list of supported voices with their configurations
 SUPPORTED_VOICES = {
     'us': {'lang': 'en', 'tld': 'com', 'name': 'American English'},
     'au': {'lang': 'en', 'tld': 'com.au', 'name': 'Australian English'},
@@ -59,16 +81,36 @@ SUPPORTED_VOICES = {
     'pt-pt': {'lang': 'pt', 'tld': 'pt', 'name': 'Portuguese (Portugal)'},
     'pt-br': {'lang': 'pt', 'tld': 'com.br', 'name': 'Portuguese (Brazil)'},
 }
-# Register file_storage routes
+
+# Register all routes from file_storage.py (audio file management)
 setup_routes(app)
 
 # Routes
 @app.route('/')
 def index_page():
+    """
+    Serve the main HTML demo page
+    
+    Returns:
+        HTML: The index.html template with TTS demo interface
+    """
     return render_template('index.html')
 
 @app.route('/gtts', methods=['POST'])
 def text_to_speech():
+    """
+    Convert text to speech using Google TTS
+    
+    Expects JSON with:
+    - text: The text to convert to speech
+    - voice: Voice ID from SUPPORTED_VOICES (optional, defaults to 'us')
+    
+    Returns:
+        JSON with:
+        - audioBase64: Base64-encoded WAV audio
+        - duration: Audio duration in seconds
+        - mimeType: MIME type ('audio/wav')
+    """
     try:
         # Start of request (blue header)
         logging.info(f"{Colors.BLUE}=== /gtts Request ==={Colors.RESET}")
@@ -113,7 +155,7 @@ def text_to_speech():
             if unexpected_fields:
                 logging.warning(f"{Colors.YELLOW}Unexpected Fields: {unexpected_fields}{Colors.RESET}")
 
-        # Convert text to speech
+        # Convert text to speech using Google TTS
         tts = gTTS(text=text, lang=lang, tld=tld)
         audio_fp = io.BytesIO()
         tts.write_to_fp(audio_fp)
@@ -122,28 +164,33 @@ def text_to_speech():
         temp_mp3_path = None
         temp_wav_path = None
         try:
+            # Save MP3 to temporary file
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_mp3:
                 temp_mp3.write(audio_fp.read())
                 temp_mp3.flush()
                 temp_mp3_path = temp_mp3.name
 
+            # Create temporary WAV file
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
                 temp_wav_path = temp_wav.name
 
-            # Run FFmpeg silently by redirecting stdout and stderr to DEVNULL
+            # Convert MP3 to WAV using FFmpeg (redirecting output to prevent console spam)
             subprocess.run([
                 "ffmpeg", "-y", "-i", temp_mp3_path, "-vn", "-ac", "1", "-ar", "44100", temp_wav_path
             ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+            # Read WAV file properties
             with wave.open(temp_wav_path, 'rb') as wav_file:
                 sample_rate = wav_file.getframerate()
                 frames = wav_file.getnframes()
                 duration = frames / float(sample_rate)
 
+            # Read and encode the WAV file as base64
             with open(temp_wav_path, "rb") as f:
                 audio_base64 = base64.b64encode(f.read()).decode('utf-8')
 
         finally:
+            # Clean up temporary files
             if temp_mp3_path and os.path.exists(temp_mp3_path):
                 os.remove(temp_mp3_path)
             if temp_wav_path and os.path.exists(temp_wav_path):
@@ -171,6 +218,13 @@ def text_to_speech():
 
 @app.route('/gtts/voices', methods=['GET'])
 def get_voices():
+    """
+    Return a list of all supported voices
+    
+    Returns:
+        JSON with:
+        - voices: Array of voice objects with id, name, language, and tld
+    """
     try:
         logging.info("\n--- [GET] /gtts/voices ---")
         voices = [
@@ -191,13 +245,23 @@ def get_voices():
 
 @app.route('/purge', methods=['POST'])
 def purge_files():
+    """
+    Delete all audio files and clear metadata
+    
+    Returns:
+        JSON with success or error message
+    """
     try:
+        # Delete all files in the uploads directory
         for filename in os.listdir(UPLOAD_DIR):
             file_path = os.path.join(UPLOAD_DIR, filename)
             if os.path.isfile(file_path):
                 os.remove(file_path)
+        
+        # Clear the metadata file
         with open(METADATA_FILE, 'w') as f:
             pass  # Truncates the file
+        
         logging.info("All files purged successfully.")
         return jsonify({'message': 'All files purged successfully'}), 200
     except Exception as e:
