@@ -2,68 +2,187 @@
 
 ## Project Overview
 
-Crystal Cloud Text-to-Speech SPA is a Next.js-based single-page application (SPA) that facilitates text-to-speech (TTS) with integrated audio effects. It combines a frontend for user interaction, a Python server for local TTS processing, and API integrations for external TTS services (e.g., Eleven Labs, AWS Polly, IBM Watson, Google Cloud). The app supports customizable workflows for audio content creation.
+Crystal Cloud Text-to-Speech SPA is a Next.js-based single-page application (SPA) that facilitates text-to-speech (TTS) with integrated audio effects. It combines a React frontend for user interaction, a Python server for local TTS processing, and API integrations for external TTS services (e.g., Eleven Labs, AWS Polly). The app supports customizable workflows for audio content creation with features for template management, audio file management, and sophisticated text processing.
 
-## Technical Structure
+## Technical Architecture
 
-### Frontend
-- **Framework**: Next.js with React.
-- **State Management**: React Context (e.g., `TTSContext.jsx`).
-- **Key Files**:
-  - `pages/index.jsx`: Main entry point, renders the UI.
-  - `components/SectionCard.jsx`: Handles individual text or audio sections.
-  - `components/SectionList.jsx`: Manages the list of section cards.
+### Frontend Architecture
+- **Framework**: Next.js with React
+- **Styling**: Tailwind CSS with custom theming
+- **State Management**: Dual-context system
+  - `TTSContext`: Global persistent state (stored in localStorage)
+  - `TTSSessionContext`: Session-specific state (stored in sessionStorage)
 
-### Backend
-- **Python Server**: Located in `py_server/`, uses gTTS for local TTS and manages audio storage.
-- **API Routes**: In `services/api/`, handle external TTS service calls and audio merging.
-- **Key Files**:
-  - `py_server/gtts_server.py`: Local TTS processing.
+### Backend Services
+- **Python Server**: Located in `py_server/`, provides local TTS capabilities using gTTS
+- **API Routes**: Next.js API routes that proxy requests to external services
+- **External Services**: Integration with multiple TTS providers (ElevenLabs, AWS Polly)
 
-### Storage
-- **Options**: Local (via Python server), remote server, or cloud (e.g., S3, Google Drive).
-- **Configuration**: Set in `settings.json` or environment variables.
-- **Metadata**: Stored in JSON files or a database, per settings.
+### Storage Strategy
+- **Local Storage**: For settings, templates, and configurations
+- **Session Storage**: For active work session data
+- **File Storage**: Local (via Python server) or cloud-based (configurable)
 
-## Key Components
+## Core Components and Files
 
-- **`pages/index.jsx`**:
-  - Main UI entry point, integrates all tabs (Main, Settings, Templates, etc.).
-  - Uses `TTSContext.jsx` for state.
+### Application Entry Points
+- **`pages/index.jsx`**: Main application entry point, renders the primary TTS interface
+- **`pages/audioLibraryPage.jsx`**: Audio library management interface
+- **`pages/_app.jsx`**: Root component that initializes the global context providers
 
-- **`components/SectionCard.jsx`**:
-  - Manages section types (Text-to-Speech or Audio-Only).
-  - Interacts with `speechServiceAPI.jsx` for TTS generation.
+### Tab Components
+The UI is organized into tabs for different functionalities:
+- **`components/TTSApp.jsx`**: Main container that manages tab navigation
+- **`components/TemplatesTab.jsx`**: Template creation and management
+- **`components/AudioFilesTab.jsx`**: Audio file management interface
+- **`components/FileHistory.jsx`**: History of generated/merged files
+- **`components/SettingsTab.jsx`**: Application settings and API configuration
+- **`components/ToolsTab.jsx`**: Utilities for text processing and transformation
 
-- **`services/speechServiceAPI.jsx`**:
-  - Abstracts TTS API calls (e.g., Eleven Labs, AWS Polly, gTTS).
-  - Handles fallback logic for multiple API keys.
+### Core TTS Functionality
+- **`components/TextInput.jsx`**: Text input with formatting options
+- **`components/SectionsList.jsx`**: Container for all audio/text sections
+- **`components/SectionCard.jsx`**: Individual section representation with variants:
+  - **`SectionCardTTS.jsx`**: For text-to-speech sections
+  - **`SectionCardAudio.jsx`**: For audio-only sections
+- **`components/AudioPlayer.jsx`**: Controls for playback and audio file handling
+- **`components/TemplateSelector.jsx`**: Template loading interface
 
-- **`py_server/gtts_server.py`**:
-  - Processes local TTS requests using gTTS.
-  - Saves audio to `py_server/uploads/` or configured storage.
+### State Management
+- **Persistent Storage (localStorage)**:
+  - **`context/TTSContext.jsx`**: Context provider for global state
+  - **`context/ttsReducer.jsx`**: State update logic
+  - **`context/ttsActions.jsx`**: Action creators
+  - **`context/ttsDefaults.jsx`**: Default configuration values
+
+- **Session Storage (sessionStorage)**:
+  - **`context/TTSSessionContext.jsx`**: Session state provider
+  - **`context/ttsSessionReducer.jsx`**: Session state update logic
+  - **`context/ttsSessionActions.jsx`**: Session action creators
+
+### Services and APIs
+- **TTS Services**:
+  - **`services/api/speechServiceAPI.jsx`**: Central TTS service coordinator
+  - **`services/api/speechEngineAPIs/elevenLabsAPI.js`**: ElevenLabs integration
+  - **`services/api/speechEngineAPIs/awsPollyAPI.js`**: AWS Polly integration
+  
+- **Tool Services**:
+  - **`services/api/tools/aiServiceAPI.js`**: AI-powered text transformation
+  - **`services/api/tools/extractTextFromUrlAPI.js`**: Web content extraction
+
+- **Storage Service**:
+  - **`services/api/storageServiceAPI.js`**: Storage abstraction layer
+
+### Utility Functions
+- **`utils/AudioProcessor.jsx`**: Audio generation and merging utilities
+- **`utils/fileUtils.js`**: File handling helpers
+- **`utils/textUtils.js`**: Text processing functions
+- **`utils/logUtils.js`**: Logging utilities for development
 
 ## Data Flow
-1. User inputs text or selects a template on the **Main Tab**.
-2. **Section Cards** are populated in the **Section List**.
-3. **Generate Audio** triggers TTS requests (via APIs or gTTS) per card.
-4. Audio files are stored based on settings (local, remote, cloud).
-5. **Merge** combines audio files in order into a final file for download.
 
-## Development Environment
-1. Clone the repository.
-2. Install frontend dependencies: `npm install`.
-3. Set up the Python server: `pip install -r py_server/requirements.txt`.
-4. Configure environment variables:
-   - API keys for TTS services.
-   - Storage settings (local, remote, cloud).
-5. Run the app: `npm run dev`.
+1. **User Input Flow**:
+   - User enters text in `TextInput` or loads a template via `TemplateSelector`
+   - Sections are created and managed in `SectionsList`
+   - Each section is represented by a `SectionCard` (TTS or Audio variant)
 
-## Contributing
-- Adhere to coding standards in `developer_best-practice_README.md`.
-- Test new features with Jest and React Testing Library.
-- Submit pull requests with detailed change descriptions.
+2. **TTS Generation Flow**:
+   - User triggers TTS generation from `SectionCard` or globally
+   - Request flows through `speechServiceAPI` to the appropriate TTS engine
+   - Generated audio is stored and linked to the section
 
-## Notes
-- The app’s scalable design supports adding new TTS providers or tools.
-- Templates and file history storage can be extended to databases for persistence.
+3. **Audio Manipulation Flow**:
+   - `AudioProcessor` handles audio file operations
+   - `AudioPlayer` provides playback controls
+   - Merge functionality combines multiple audio files sequentially
+
+4. **State Management Flow**:
+   - Global settings/configurations stored in `TTSContext`
+   - Current session data (sections, audio files) in `TTSSessionContext`
+   - Actions dispatch through reducers to update state
+
+## Setup and Development
+
+### Prerequisites
+- Node.js (v14+)
+- npm or yarn
+- Python 3.x (for local TTS server)
+- ffmpeg (must be in PATH for audio processing)
+
+### Development Environment Setup
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd crystal-cloud-tts-spa
+   ```
+
+2. **Install frontend dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Set up the Python server** (optional, for local/remote TTS):
+   ```bash
+   cd py_server
+   pip install -r requirements.txt
+   ```
+
+4. **(Optional) Configure environment variables (Can be done in the App itself)**:
+   Create a `.env` file with:
+   ```
+   ELEVENLABS_API_KEY=your_key_here
+   AWS_POLLY_ACCESS_KEY=your_key_here
+   AWS_POLLY_SECRET_KEY=your_key_here
+   # Other API keys as needed
+   ```
+
+5. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+
+   ~or, if separating frontend (next.js) & backend (python)...
+
+   ```bash
+   npm run dev:frontend
+   and
+   npm run dev:backend
+   ```
+
+### Testing
+- Run the test suite with:
+  ```bash
+  npm test
+  ```
+
+- Component tests are located adjacent to their components
+- Context and utility tests are in dedicated test files
+
+## Adding New Features
+
+### Adding a New TTS Provider
+1. Create a new API file in `services/api/speechEngineAPIs/`
+2. Implement the standard interface (matching other providers)
+3. Add the provider to `speechServiceAPI.jsx`
+4. Update the settings UI in `SettingsTab.jsx`
+
+### Creating a New Tool
+1. Add the tool implementation in `services/api/tools/`
+2. Create UI components as needed
+3. Add to `ToolsTab.jsx`
+4. Update actions and state as required
+
+## Deployment Considerations
+- The application can be deployed as a static site with Next.js export
+- Python server can be deployed separately as a microservice (or not at all if configured not to)
+- Consider serverless functions for API integrations
+- Storage options include:
+  - Local file system (development only)
+  - S3 or similar cloud storage
+  - Database for metadata and small files
+
+## Design Principles
+- Component modularity for easy extension
+- Context separation for persistent vs. session state
+- Service abstraction for provider independence
+- Progressive enhancement for core functionality
