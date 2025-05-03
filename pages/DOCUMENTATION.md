@@ -106,7 +106,7 @@ The application includes several API routes for handling various Text-to-Speech 
 - `/api/aiTransform`: Transforms text using AI services (OpenAI, Anthropic)
 - `/api/awsPolly`: Converts text to speech using AWS Polly
 - `/api/mergeAudio`: Merges multiple audio files into a single file
-- `/api/processUrl`: Extracts text content from a provided URL
+- `/api/extractTextFromUrl`: Extracts text content from a provided URL
 
 ---
 

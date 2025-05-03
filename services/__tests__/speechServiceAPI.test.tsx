@@ -1,4 +1,4 @@
-import SpeechService from '../speechService';
+import speechServiceAPI from '../api/speechEngineAPIs/speechServiceAPI';
 
 // Mock the global fetch function
 global.fetch = jest.fn();
@@ -9,7 +9,7 @@ global.URL.createObjectURL = jest.fn().mockReturnValue('blob:mock-url');
 const originalConsoleLog = console.log;
 console.log = jest.fn();
 
-describe('SpeechService', () => {
+describe('speechServiceAPI', () => {
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks();
@@ -38,7 +38,7 @@ describe('SpeechService', () => {
         sampleRate: 44100
       };
       
-      const result = SpeechService.normalizeAudioResponse(data);
+      const result = speechServiceAPI.normalizeAudioResponse(data);
       
       expect(result).toEqual({
         url: 'https://example.com/audio.mp3',
@@ -54,7 +54,7 @@ describe('SpeechService', () => {
         sampleRate: 22050
       };
       
-      const result = SpeechService.normalizeAudioResponse(data);
+      const result = speechServiceAPI.normalizeAudioResponse(data);
       
       expect(result).toEqual({
         url: 'data:audio/wav;base64,base64data',
@@ -66,7 +66,7 @@ describe('SpeechService', () => {
     it('should throw error for invalid data', () => {
       const data = { invalid: 'data' };
       
-      expect(() => SpeechService.normalizeAudioResponse(data)).toThrow('Invalid audio response format');
+      expect(() => speechServiceAPI.normalizeAudioResponse(data)).toThrow('Invalid audio response format');
     });
   });
 
@@ -78,7 +78,7 @@ describe('SpeechService', () => {
         activeVoices: [{ id: 'en-com', engine: 'gtts' }]
       };
       
-      const result = await SpeechService.gTTSTTS(text, options);
+      const result = await speechServiceAPI.gTTSTTS(text, options);
       
       expect(fetch).toHaveBeenCalledWith(expect.any(String), {
         method: 'POST',
@@ -105,13 +105,13 @@ describe('SpeechService', () => {
         })
       });
       
-      await expect(SpeechService.gTTSTTS('error text')).rejects.toThrow('gTTS failed: gTTS error message');
+      await expect(speechServiceAPI.gTTSTTS('error text')).rejects.toThrow('gTTS failed: gTTS error message');
     });
   });
 
   describe('elevenLabsTTS', () => {
     it('should throw error if API key is missing', async () => {
-      await expect(SpeechService.elevenLabsTTS('test')).rejects.toThrow('ElevenLabs API key is required');
+      await expect(speechServiceAPI.elevenLabsTTS('test')).rejects.toThrow('ElevenLabs API key is required');
     });
 
     it('should convert text to speech using ElevenLabs', async () => {
@@ -130,7 +130,7 @@ describe('SpeechService', () => {
         similarity_boost: 0.8
       };
       
-      const result = await SpeechService.elevenLabsTTS(text, options);
+      const result = await speechServiceAPI.elevenLabsTTS(text, options);
       
       expect(fetch).toHaveBeenCalledWith(`https://api.elevenlabs.io/v1/text-to-speech/test-voice-id`, {
         method: 'POST',
@@ -151,7 +151,7 @@ describe('SpeechService', () => {
 
   describe('awsPollyTTS', () => {
     it('should throw error if AWS credentials are missing', async () => {
-      await expect(SpeechService.awsPollyTTS('test')).rejects.toThrow('AWS credentials are required');
+      await expect(speechServiceAPI.awsPollyTTS('test')).rejects.toThrow('AWS credentials are required');
     });
 
     it('should convert text to speech using AWS Polly', async () => {
@@ -165,7 +165,7 @@ describe('SpeechService', () => {
         outputFormat: 'mp3'
       };
       
-      const result = await SpeechService.awsPollyTTS(text, options);
+      const result = await speechServiceAPI.awsPollyTTS(text, options);
       
       expect(fetch).toHaveBeenCalledWith('/api/textToSpeech', {
         method: 'POST',
@@ -198,7 +198,7 @@ describe('SpeechService', () => {
         { id: 'voice2', engine: 'elevenlabs', name: 'Voice 2' }
       ];
       
-      const result = await SpeechService.getAvailableVoices('gtts', { activeVoices });
+      const result = await speechServiceAPI.getAvailableVoices('gtts', { activeVoices });
       
       expect(result).toEqual([activeVoices[0]]);
     });
@@ -213,7 +213,7 @@ describe('SpeechService', () => {
         })
       });
       
-      const result = await SpeechService.getAvailableVoices('gtts');
+      const result = await speechServiceAPI.getAvailableVoices('gtts');
       
       expect(fetch).toHaveBeenCalledWith('http://localhost:5000/gtts/voices');
       expect(result).toEqual([
@@ -224,14 +224,14 @@ describe('SpeechService', () => {
     it('should fall back to static list for gTTS if fetch fails', async () => {
       (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
       
-      const result = await SpeechService.getAvailableVoices('gtts');
+      const result = await speechServiceAPI.getAvailableVoices('gtts');
       
       expect(result.length).toBeGreaterThan(0);
       expect(result[0].engine).toBe('gtts');
     });
 
     it('should return static list for awspolly', async () => {
-      const result = await SpeechService.getAvailableVoices('awspolly');
+      const result = await speechServiceAPI.getAvailableVoices('awspolly');
       
       expect(result.length).toBeGreaterThan(0);
       expect(result[0].engine).toBe('awspolly');
@@ -240,64 +240,64 @@ describe('SpeechService', () => {
 
   describe('convert_text_to_speech_and_upload', () => {
     it('should throw error for unsupported engine', async () => {
-      await expect(SpeechService.convert_text_to_speech_and_upload('test', 'unsupported')).rejects.toThrow('Unsupported engine');
+      await expect(speechServiceAPI.convert_text_to_speech_and_upload('test', 'unsupported')).rejects.toThrow('Unsupported engine');
     });
 
     it('should call the appropriate method for each engine', async () => {
       // Spy on each TTS method
-      const gTTSspy = jest.spyOn(SpeechService, 'gTTSTTS').mockResolvedValue({
+      const gTTSspy = jest.spyOn(speechServiceAPI, 'gTTSTTS').mockResolvedValue({
         url: 'mock-url',
         duration: 5,
         sampleRate: 44100
       });
       
-      const elevenLabsSpy = jest.spyOn(SpeechService, 'elevenLabsTTS').mockResolvedValue({
+      const elevenLabsSpy = jest.spyOn(speechServiceAPI, 'elevenLabsTTS').mockResolvedValue({
         url: 'mock-url',
         duration: 5,
         sampleRate: 44100
       });
       
-      const awsPollySppy = jest.spyOn(SpeechService, 'awsPollyTTS').mockResolvedValue({
+      const awsPollySppy = jest.spyOn(speechServiceAPI, 'awsPollyTTS').mockResolvedValue({
         url: 'mock-url',
         duration: 5,
         sampleRate: 44100
       });
       
-      const googleCloudSpy = jest.spyOn(SpeechService, 'googleCloudTTS').mockResolvedValue({
+      const googleCloudSpy = jest.spyOn(speechServiceAPI, 'googleCloudTTS').mockResolvedValue({
         url: 'mock-url',
         duration: 5,
         sampleRate: 44100
       });
       
-      const azureSpy = jest.spyOn(SpeechService, 'azureTTS').mockResolvedValue({
+      const azureSpy = jest.spyOn(speechServiceAPI, 'azureTTS').mockResolvedValue({
         url: 'mock-url',
         duration: 5,
         sampleRate: 44100
       });
       
-      const ibmWatsonSpy = jest.spyOn(SpeechService, 'ibmWatsonTTS').mockResolvedValue({
+      const ibmWatsonSpy = jest.spyOn(speechServiceAPI, 'ibmWatsonTTS').mockResolvedValue({
         url: 'mock-url',
         duration: 5,
         sampleRate: 44100
       });
       
       // Test each engine
-      await SpeechService.convert_text_to_speech_and_upload('test', 'gtts', {});
+      await speechServiceAPI.convert_text_to_speech_and_upload('test', 'gtts', {});
       expect(gTTSspy).toHaveBeenCalled();
       
-      await SpeechService.convert_text_to_speech_and_upload('test', 'elevenlabs', {});
+      await speechServiceAPI.convert_text_to_speech_and_upload('test', 'elevenlabs', {});
       expect(elevenLabsSpy).toHaveBeenCalled();
       
-      await SpeechService.convert_text_to_speech_and_upload('test', 'awspolly', {});
+      await speechServiceAPI.convert_text_to_speech_and_upload('test', 'awspolly', {});
       expect(awsPollySppy).toHaveBeenCalled();
       
-      await SpeechService.convert_text_to_speech_and_upload('test', 'googlecloud', {});
+      await speechServiceAPI.convert_text_to_speech_and_upload('test', 'googlecloud', {});
       expect(googleCloudSpy).toHaveBeenCalled();
       
-      await SpeechService.convert_text_to_speech_and_upload('test', 'azuretts', {});
+      await speechServiceAPI.convert_text_to_speech_and_upload('test', 'azuretts', {});
       expect(azureSpy).toHaveBeenCalled();
       
-      await SpeechService.convert_text_to_speech_and_upload('test', 'ibmwatson', {});
+      await speechServiceAPI.convert_text_to_speech_and_upload('test', 'ibmwatson', {});
       expect(ibmWatsonSpy).toHaveBeenCalled();
     });
   });
@@ -305,7 +305,7 @@ describe('SpeechService', () => {
   describe('generate_audio_segments', () => {
     it('should generate segments from a mixed script', async () => {
       // Spy on convert_text_to_speech_and_upload
-      jest.spyOn(SpeechService, 'convert_text_to_speech_and_upload').mockResolvedValue({
+      jest.spyOn(speechServiceAPI, 'convert_text_to_speech_and_upload').mockResolvedValue({
         url: 'mock-audio-url',
         duration: 5,
         sampleRate: 44100
@@ -317,7 +317,7 @@ describe('SpeechService', () => {
         { type: 'sound', url: 'sound-effect.mp3', duration: 3 }
       ];
       
-      const result = await SpeechService.generate_audio_segments(script);
+      const result = await speechServiceAPI.generate_audio_segments(script);
       
       expect(result).toEqual([
         { type: 'audio', url: 'mock-audio-url', duration: 5 },
@@ -331,21 +331,21 @@ describe('SpeechService', () => {
         { type: 'unsupported', text: 'Invalid' }
       ];
       
-      await expect(SpeechService.generate_audio_segments(script)).rejects.toThrow('Unsupported script item type');
+      await expect(speechServiceAPI.generate_audio_segments(script)).rejects.toThrow('Unsupported script item type');
     });
   });
 
   describe('Other TTS methods', () => {
     it('should define googleCloudTTS method', () => {
-      expect(typeof SpeechService.googleCloudTTS).toBe('function');
+      expect(typeof speechServiceAPI.googleCloudTTS).toBe('function');
     });
 
     it('should define azureTTS method', () => {
-      expect(typeof SpeechService.azureTTS).toBe('function');
+      expect(typeof speechServiceAPI.azureTTS).toBe('function');
     });
 
     it('should define ibmWatsonTTS method', () => {
-      expect(typeof SpeechService.ibmWatsonTTS).toBe('function');
+      expect(typeof speechServiceAPI.ibmWatsonTTS).toBe('function');
     });
   });
 });

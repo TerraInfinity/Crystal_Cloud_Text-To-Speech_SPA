@@ -1,10 +1,10 @@
 // services/__tests__/audioProcessingService.test.ts
 
 import audioProcessingService from '../audioProcessingService';
-import storageService from '../storageService';
+import storageServiceAPI from '../storageServiceAPI';
 
 // Mock dependencies
-jest.mock('../storageService', () => ({
+jest.mock('../storageServiceAPI', () => ({
   download_audio_files_from_s3: jest.fn(),
   upload_file_to_s3: jest.fn(),
 }));
@@ -130,8 +130,8 @@ global.Blob = jest.fn().mockImplementation((content, options) => ({
 describe('audioProcessingService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.mocked(storageService.download_audio_files_from_s3).mockReset();
-    jest.mocked(storageService.upload_file_to_s3).mockReset();
+    jest.mocked(storageServiceAPI.download_audio_files_from_s3).mockReset();
+    jest.mocked(storageServiceAPI.upload_file_to_s3).mockReset();
   });
 
   describe('merge_audio_files_from_s3', () => {
@@ -141,19 +141,19 @@ describe('audioProcessingService', () => {
         new Blob(['test-data-1'], { type: 'audio/wav' }),
         new Blob(['test-data-2'], { type: 'audio/wav' }),
       ];
-      jest.mocked(storageService.download_audio_files_from_s3).mockResolvedValue(mockBlobs);
+      jest.mocked(storageServiceAPI.download_audio_files_from_s3).mockResolvedValue(mockBlobs);
       
       // Mock the upload result
       const mockS3Url = 'https://test-bucket.s3.amazonaws.com/merged.wav';
-      jest.mocked(storageService.upload_file_to_s3).mockResolvedValue(mockS3Url);
+      jest.mocked(storageServiceAPI.upload_file_to_s3).mockResolvedValue(mockS3Url);
       
       const bucket = 'test-bucket';
       const keys = ['01_part.wav', '02_part.wav'];
       
       const result = await audioProcessingService.merge_audio_files_from_s3(bucket, keys);
       
-      expect(storageService.download_audio_files_from_s3).toHaveBeenCalledWith(bucket, keys);
-      expect(storageService.upload_file_to_s3).toHaveBeenCalled();
+      expect(storageServiceAPI.download_audio_files_from_s3).toHaveBeenCalledWith(bucket, keys);
+      expect(storageServiceAPI.upload_file_to_s3).toHaveBeenCalled();
       expect(result).toBe(mockS3Url);
     });
     
@@ -163,8 +163,8 @@ describe('audioProcessingService', () => {
         new Blob(['test-data-1'], { type: 'audio/wav' }),
         new Blob(['test-data-2'], { type: 'audio/wav' }),
       ];
-      jest.mocked(storageService.download_audio_files_from_s3).mockResolvedValue(mockBlobs);
-      jest.mocked(storageService.upload_file_to_s3).mockResolvedValue('https://test-bucket.s3.amazonaws.com/merged.wav');
+      jest.mocked(storageServiceAPI.download_audio_files_from_s3).mockResolvedValue(mockBlobs);
+      jest.mocked(storageServiceAPI.upload_file_to_s3).mockResolvedValue('https://test-bucket.s3.amazonaws.com/merged.wav');
       
       // Use unsorted keys
       const bucket = 'test-bucket';
@@ -173,14 +173,14 @@ describe('audioProcessingService', () => {
       
       await audioProcessingService.merge_audio_files_from_s3(bucket, unsortedKeys);
       
-      expect(storageService.download_audio_files_from_s3).toHaveBeenCalledWith(bucket, expectedSortedKeys);
+      expect(storageServiceAPI.download_audio_files_from_s3).toHaveBeenCalledWith(bucket, expectedSortedKeys);
     });
     
     test('should use custom output bucket and key if provided', async () => {
       // Mock blobs and upload
       const mockBlobs = [new Blob(['test-data'], { type: 'audio/wav' })];
-      jest.mocked(storageService.download_audio_files_from_s3).mockResolvedValue(mockBlobs);
-      jest.mocked(storageService.upload_file_to_s3).mockResolvedValue('https://output-bucket.s3.amazonaws.com/custom-key.wav');
+      jest.mocked(storageServiceAPI.download_audio_files_from_s3).mockResolvedValue(mockBlobs);
+      jest.mocked(storageServiceAPI.upload_file_to_s3).mockResolvedValue('https://output-bucket.s3.amazonaws.com/custom-key.wav');
       
       const sourceBucket = 'source-bucket';
       const keys = ['audio.wav'];
@@ -191,7 +191,7 @@ describe('audioProcessingService', () => {
         sourceBucket, keys, outputBucket, outputKey
       );
       
-      expect(storageService.upload_file_to_s3).toHaveBeenCalledWith(
+      expect(storageServiceAPI.upload_file_to_s3).toHaveBeenCalledWith(
         expect.any(Object), // Use any instead of Blob for type safety
         outputBucket,
         outputKey

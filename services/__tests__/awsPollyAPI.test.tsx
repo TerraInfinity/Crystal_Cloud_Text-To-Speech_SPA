@@ -1,4 +1,4 @@
-// pages/api/__tests__/awsPolly.test.tsx
+// pages/api/__tests__/awsPollyAPI.test.tsx
 
 import { createMocks, MockRequest, MockResponse } from 'node-mocks-http';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -26,7 +26,7 @@ interface CallAwsPollyTTSParams {
 }
 
 // Mock the entire awsPolly module
-jest.mock('../awsPolly', () => {
+jest.mock('../api/speechEngineAPIs/awsPollyAPI', () => {
   const mockCallAwsPollyTTS = jest.fn(
     async (params: CallAwsPollyTTSParams): Promise<AwsPollyResponse> => {
       return {
@@ -86,7 +86,7 @@ jest.mock('../awsPolly', () => {
 });
 
 // Import the mocked module
-const { default: handler, callAwsPollyTTS } = require('../awsPolly');
+const { default: handler, callAwsPollyTTS } = require('../api/speechEngineAPIs/awsPollyAPI');
 
 describe('awsPolly API Handler', () => {
   let req: MockRequest<NextApiRequest>;

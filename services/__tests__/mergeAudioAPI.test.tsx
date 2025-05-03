@@ -19,9 +19,9 @@ jest.mock('fluent-ffmpeg', () => {
   });
 });
 
-// Mock the mergeAudio module itself to avoid file system operations
-jest.mock('../mergeAudio', () => {
-  const originalModule = jest.requireActual('../mergeAudio');
+// Mock the mergeAudioAPI module itself to avoid file system operations
+jest.mock('../api/mergeAudioAPI', () => {
+  const originalModule = jest.requireActual('../api/mergeAudioAPI');
   return {
     __esModule: true,
     default: jest.fn(async (req, res) => {
@@ -69,7 +69,7 @@ jest.mock('../mergeAudio', () => {
 });
 
 import { createMocks } from 'node-mocks-http';
-import handler from '../mergeAudio';
+import handler from '../api/mergeAudioAPI';
 import fs from 'fs';
 import axios from 'axios';
 import path from 'path';

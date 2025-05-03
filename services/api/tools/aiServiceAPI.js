@@ -9,9 +9,9 @@
  * - Text simplification for better understanding
  * - Speech-optimized text formatting
  * 
- * @module aiService
+ * @module aiServiceAPI
  */
-class AIService {
+class aiServiceAPI {
     /**
      * Transform text using OpenAI (ChatGPT)
      * 
@@ -248,4 +248,4 @@ class AIService {
 }
 
 // Export a singleton instance
-export default new AIService();
+export default new aiServiceAPI();

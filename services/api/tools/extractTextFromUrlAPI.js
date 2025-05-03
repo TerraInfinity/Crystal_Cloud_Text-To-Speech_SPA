@@ -1,4 +1,4 @@
-import { parseTextFromHtml } from '../../utils/textUtils';
+import { parseTextFromHtml } from '../../../utils/textUtils';
 
 /**
  * API handler for extracting text content from a URL
@@ -6,7 +6,7 @@ import { parseTextFromHtml } from '../../utils/textUtils';
  * This endpoint fetches content from a provided URL and extracts the text content.
  * It handles different content types (HTML, plain text) appropriately.
  * 
- * @route POST /api/processUrl
+ * @route POST /api/extractTextFromUrl
  * @param {Object} req - The request object
  * @param {Object} req.body - The request body
  * @param {string} req.body.url - The URL to fetch and process

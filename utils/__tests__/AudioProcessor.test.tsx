@@ -1,7 +1,8 @@
 // utils/__tests__/AudioProcessor.test.tsx
 
-import speechService from '../../services/speechService';
+import speechServiceAPI from '../../services/api/speechEngineAPIs/speechServiceAPI';
 import * as AudioProcessor from '../AudioProcessor';
+
 
 // Mock the AudioProcessor module to control devLog behavior
 jest.mock('../AudioProcessor', () => {
@@ -18,8 +19,8 @@ jest.mock('../AudioProcessor', () => {
   };
 });
 
-// Mock speechService
-jest.mock('../../services/speechService', () => ({
+// Mock speechServiceAPI
+jest.mock('../../services/api/speechEngineAPIs/speechServiceAPI', () => ({
   convert_text_to_speech_and_upload: jest.fn(),
 }));
 
@@ -113,7 +114,7 @@ describe('AudioProcessor', () => {
     });
 
     test('generates audio for all valid sections', async () => {
-      (speechService.convert_text_to_speech_and_upload as jest.Mock).mockResolvedValue({
+      (speechServiceAPI.convert_text_to_speech_and_upload as jest.Mock).mockResolvedValue({
         url: 'http://localhost/audio.mp3',
         duration: 5,
         sampleRate: 44100,
@@ -130,7 +131,7 @@ describe('AudioProcessor', () => {
 
       expect(mockSetIsGenerating).toHaveBeenCalledWith(true);
       expect(mockSessionActions.setProcessing).toHaveBeenCalledWith(true);
-      expect(speechService.convert_text_to_speech_and_upload).toHaveBeenCalledTimes(2);
+      expect(speechServiceAPI.convert_text_to_speech_and_upload).toHaveBeenCalledTimes(2);
       expect(mockSessionActions.setGeneratedAudio).toHaveBeenCalledTimes(2);
       expect(mockSessionActions.setNotification).toHaveBeenCalledWith({
         type: 'success',
@@ -142,7 +143,7 @@ describe('AudioProcessor', () => {
     });
 
     test('handles failed sections', async () => {
-      (speechService.convert_text_to_speech_and_upload as jest.Mock)
+      (speechServiceAPI.convert_text_to_speech_and_upload as jest.Mock)
         .mockResolvedValueOnce({ url: 'http://localhost/audio1.mp3', duration: 5, sampleRate: 44100 })
         .mockRejectedValueOnce(new Error('Speech synthesis failed'));
 
@@ -161,7 +162,7 @@ describe('AudioProcessor', () => {
     });
 
     test('handles unexpected errors', async () => {
-      (speechService.convert_text_to_speech_and_upload as jest.Mock).mockRejectedValue(
+      (speechServiceAPI.convert_text_to_speech_and_upload as jest.Mock).mockRejectedValue(
         new Error('Unexpected error')
       );
 

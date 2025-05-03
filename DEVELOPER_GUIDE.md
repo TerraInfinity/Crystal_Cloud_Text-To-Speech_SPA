@@ -16,10 +16,9 @@ Crystal Cloud Text-to-Speech SPA is a Next.js-based single-page application (SPA
 
 ### Backend
 - **Python Server**: Located in `py_server/`, uses gTTS for local TTS and manages audio storage.
-- **API Routes**: In `pages/api/`, handle external TTS service calls and audio merging.
+- **API Routes**: In `services/api/`, handle external TTS service calls and audio merging.
 - **Key Files**:
   - `py_server/gtts_server.py`: Local TTS processing.
-  - `pages/api/aiTransform.jsx`: Routes TTS requests.
 
 ### Storage
 - **Options**: Local (via Python server), remote server, or cloud (e.g., S3, Google Drive).
@@ -34,9 +33,9 @@ Crystal Cloud Text-to-Speech SPA is a Next.js-based single-page application (SPA
 
 - **`components/SectionCard.jsx`**:
   - Manages section types (Text-to-Speech or Audio-Only).
-  - Interacts with `speechService.jsx` for TTS generation.
+  - Interacts with `speechServiceAPI.jsx` for TTS generation.
 
-- **`services/speechService.jsx`**:
+- **`services/speechServiceAPI.jsx`**:
   - Abstracts TTS API calls (e.g., Eleven Labs, AWS Polly, gTTS).
   - Handles fallback logic for multiple API keys.
 

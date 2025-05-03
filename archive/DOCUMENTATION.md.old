@@ -178,7 +178,7 @@ Merges multiple audio files into a single audio file.
 
 Extracts text content from a URL.
 
-**Endpoint:** `POST /api/processUrl`
+**Endpoint:** `POST /api/extractTextFromUrl`
 
 ### Request
 

@@ -78,7 +78,7 @@ const ToolsTab = () => {
       
       if (isUrl) {
         // Process URL using API
-        const response = await fetch('/api/processUrl', {
+        const response = await fetch('/api/extractTextFromUrl', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: htmlInput })

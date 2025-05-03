@@ -1,4 +1,4 @@
-import StorageService from '../storageService';
+import storageServiceAPI from '../api/storageServiceAPI';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -43,7 +43,7 @@ const s3Mock = {
 const originalConsoleError = console.error;
 console.error = jest.fn();
 
-describe('StorageService', () => {
+describe('storageServiceAPI', () => {
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks();
@@ -59,7 +59,7 @@ describe('StorageService', () => {
     it('should save and load settings', () => {
       const testSettings = { theme: 'dark', voice: 'en-US' };
       
-      const saveResult = StorageService.saveSettings(testSettings);
+      const saveResult = storageServiceAPI.saveSettings(testSettings);
       
       expect(saveResult).toBe(true);
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
@@ -70,7 +70,7 @@ describe('StorageService', () => {
       // Setup mock for loading
       localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(testSettings));
       
-      const loadedSettings = StorageService.loadSettings();
+      const loadedSettings = storageServiceAPI.loadSettings();
       
       expect(loadedSettings).toEqual(testSettings);
       expect(localStorageMock.getItem).toHaveBeenCalledWith('tts-app-settings');
@@ -82,7 +82,7 @@ describe('StorageService', () => {
         throw new Error('localStorage error');
       });
       
-      const saveResult = StorageService.saveSettings({ test: 'data' });
+      const saveResult = storageServiceAPI.saveSettings({ test: 'data' });
       
       expect(saveResult).toBe(false);
       expect(console.error).toHaveBeenCalled();
@@ -94,7 +94,7 @@ describe('StorageService', () => {
         throw new Error('localStorage error');
       });
       
-      const loadedSettings = StorageService.loadSettings();
+      const loadedSettings = storageServiceAPI.loadSettings();
       
       expect(loadedSettings).toBeNull();
       expect(console.error).toHaveBeenCalled();
@@ -108,7 +108,7 @@ describe('StorageService', () => {
         'existing-template': { name: 'Existing' } 
       }));
       
-      const saveResult = StorageService.saveTemplate('test-template', testTemplate);
+      const saveResult = storageServiceAPI.saveTemplate('test-template', testTemplate);
       
       expect(saveResult).toBe(true);
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
@@ -122,7 +122,7 @@ describe('StorageService', () => {
         'another-template': { name: 'Another' }
       }));
       
-      const allTemplates = StorageService.loadTemplates();
+      const allTemplates = storageServiceAPI.loadTemplates();
       
       expect(allTemplates).toEqual({
         'test-template': testTemplate,
@@ -134,7 +134,7 @@ describe('StorageService', () => {
         'test-template': testTemplate
       }));
       
-      const loadedTemplate = StorageService.loadTemplate('test-template');
+      const loadedTemplate = storageServiceAPI.loadTemplate('test-template');
       
       expect(loadedTemplate).toEqual(testTemplate);
       
@@ -144,7 +144,7 @@ describe('StorageService', () => {
         'other-template': { name: 'Other' }
       }));
       
-      const deleteResult = StorageService.deleteTemplate('test-template');
+      const deleteResult = storageServiceAPI.deleteTemplate('test-template');
       
       expect(deleteResult).toBe(true);
       expect(localStorageMock.setItem).toHaveBeenLastCalledWith(
@@ -159,7 +159,7 @@ describe('StorageService', () => {
         'existing-template': { name: 'Existing' }
       }));
       
-      const deleteResult = StorageService.deleteTemplate('non-existent');
+      const deleteResult = storageServiceAPI.deleteTemplate('non-existent');
       
       expect(deleteResult).toBe(false);
     });
@@ -172,7 +172,7 @@ describe('StorageService', () => {
         'existing-section': { id: 'existing-section' } 
       }));
       
-      const saveResult = StorageService.saveSection('test-section', testSection);
+      const saveResult = storageServiceAPI.saveSection('test-section', testSection);
       
       expect(saveResult).toBe(true);
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
@@ -185,7 +185,7 @@ describe('StorageService', () => {
         'test-section': testSection
       }));
       
-      const loadedSections = StorageService.loadSections();
+      const loadedSections = storageServiceAPI.loadSections();
       
       expect(loadedSections).toEqual({
         'test-section': testSection
@@ -195,7 +195,7 @@ describe('StorageService', () => {
     it('should save and load API keys', () => {
       const testKeys = { openai: 'abc123', elevenlabs: 'def456' };
       
-      const saveResult = StorageService.saveApiKeys(testKeys);
+      const saveResult = storageServiceAPI.saveApiKeys(testKeys);
       
       expect(saveResult).toBe(true);
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
@@ -207,7 +207,7 @@ describe('StorageService', () => {
       const encodedKeys = btoa(JSON.stringify(testKeys));
       localStorageMock.getItem.mockReturnValueOnce(encodedKeys);
       
-      const loadedKeys = StorageService.loadApiKeys();
+      const loadedKeys = storageServiceAPI.loadApiKeys();
       
       expect(loadedKeys).toEqual(testKeys);
     });
@@ -216,7 +216,7 @@ describe('StorageService', () => {
       // Setup mock for missing keys
       localStorageMock.getItem.mockReturnValueOnce(null);
       
-      const loadedKeys = StorageService.loadApiKeys();
+      const loadedKeys = storageServiceAPI.loadApiKeys();
       
       expect(loadedKeys).toBeNull();
     });
@@ -246,7 +246,7 @@ describe('StorageService', () => {
       
       indexedDBMock.open.mockReturnValue(mockIDBOpenRequest);
       
-      const savePromise = StorageService.saveAudio('test-audio-id', mockBlob);
+      const savePromise = storageServiceAPI.saveAudio('test-audio-id', mockBlob);
       
       // Simulate successful indexedDB operations
       setTimeout(() => {
@@ -293,7 +293,7 @@ describe('StorageService', () => {
       
       indexedDBMock.open.mockReturnValue(mockIDBOpenRequest);
       
-      const loadPromise = StorageService.loadAudio('test-audio-id');
+      const loadPromise = storageServiceAPI.loadAudio('test-audio-id');
       
       // Simulate successful indexedDB operations
       setTimeout(() => {
@@ -334,7 +334,7 @@ describe('StorageService', () => {
       
       indexedDBMock.open.mockReturnValue(mockIDBOpenRequest);
       
-      const deletePromise = StorageService.deleteAudio('test-audio-id');
+      const deletePromise = storageServiceAPI.deleteAudio('test-audio-id');
       
       // Simulate successful indexedDB operations
       setTimeout(() => {
@@ -360,7 +360,7 @@ describe('StorageService', () => {
 
   describe('Clear All Data', () => {
     it('should clear all stored data', () => {
-      const result = StorageService.clearAllData();
+      const result = storageServiceAPI.clearAllData();
       
       expect(result).toBe(true);
       expect(localStorageMock.removeItem).toHaveBeenCalledWith('tts-app-settings');
@@ -376,7 +376,7 @@ describe('StorageService', () => {
         throw new Error('localStorage error');
       });
       
-      const result = StorageService.clearAllData();
+      const result = storageServiceAPI.clearAllData();
       
       expect(result).toBe(false);
       expect(console.error).toHaveBeenCalled();
@@ -387,7 +387,7 @@ describe('StorageService', () => {
     it('should upload file to S3', async () => {
       const mockFile = new Blob(['test data'], { type: 'text/plain' });
       
-      const result = await StorageService.upload_file_to_s3(
+      const result = await storageServiceAPI.upload_file_to_s3(
         mockFile, 
         'test-bucket', 
         'test-key.txt'
@@ -405,7 +405,7 @@ describe('StorageService', () => {
     it('should write string data to S3', async () => {
       const testData = 'Hello, world!';
       
-      const result = await StorageService.write_data_to_s3(
+      const result = await storageServiceAPI.write_data_to_s3(
         testData,
         'test-bucket',
         'test-key.txt'
@@ -423,7 +423,7 @@ describe('StorageService', () => {
     it('should write JSON data to S3', async () => {
       const testData = { hello: 'world' };
       
-      const result = await StorageService.write_data_to_s3(
+      const result = await storageServiceAPI.write_data_to_s3(
         testData,
         'test-bucket',
         'test-key.json'
@@ -440,14 +440,14 @@ describe('StorageService', () => {
 
     it('should throw error for unsupported data type in write_data_to_s3', async () => {
       // @ts-ignore - Testing invalid input
-      await expect(StorageService.write_data_to_s3(123, 'test-bucket', 'test-key'))
+      await expect(storageServiceAPI.write_data_to_s3(123, 'test-bucket', 'test-key'))
         .rejects.toThrow('Unsupported data type');
     });
 
     it('should download audio files from S3', async () => {
       const keys = ['file1.mp3', 'file2.mp3'];
       
-      const result = await StorageService.download_audio_files_from_s3('test-bucket', keys);
+      const result = await storageServiceAPI.download_audio_files_from_s3('test-bucket', keys);
       
       expect(result.length).toBe(2);
       expect(result[0]).toBeInstanceOf(Blob);
@@ -459,7 +459,7 @@ describe('StorageService', () => {
     });
 
     it('should create presigned S3 URL', async () => {
-      const result = await StorageService.create_presigned_s3_url(
+      const result = await storageServiceAPI.create_presigned_s3_url(
         'test-bucket',
         'test-key.mp3',
         7200
@@ -476,11 +476,11 @@ describe('StorageService', () => {
 
   describe('Storage Provider Configuration', () => {
     it('should configure storage provider', () => {
-      StorageService.configureProvider({ audio: 's3', settings: 'localstorage' });
+      storageServiceAPI.configureProvider({ audio: 's3', settings: 'localstorage' });
       
       // Check that the provider configuration was updated
       // Note: This is accessing a private property for testing
-      expect((StorageService as any).storageProvider).toEqual({
+      expect((storageServiceAPI as any).storageProvider).toEqual({
         audio: 's3',
         settings: 'localstorage',
         cloud: 's3'

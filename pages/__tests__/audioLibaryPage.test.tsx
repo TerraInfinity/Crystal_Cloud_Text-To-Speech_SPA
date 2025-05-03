@@ -1,7 +1,7 @@
 // pages/__tests__/audio.test.tsx
 
 import { render, screen } from '@testing-library/react';
-import AudioPage from '../audio';
+import AudioLibraryPage from '../audioLibraryPage';
 import { TTSProvider } from '../../context/TTSContext';
 import AudioLibrary from '../../components/AudioLibrary';
 import Link from 'next/link';
@@ -21,7 +21,7 @@ jest.mock('next/link', () => {
 jest.mock('../../styles/globals.css', () => {});
 jest.mock('../../styles/themes.css', () => {});
 
-describe('AudioPage', () => {
+describe('AudioLibraryPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -30,7 +30,7 @@ describe('AudioPage', () => {
     // Wrap AudioPage in TTSProvider manually for the test
     render(
       <TTSProvider>
-        <AudioPage />
+        <AudioLibraryPage />
       </TTSProvider>
     );
 
@@ -61,7 +61,7 @@ describe('AudioPage', () => {
     // But we'll keep a simplified version to ensure the component renders properly
     render(
       <TTSProvider>
-        <AudioPage />
+        <AudioLibraryPage />
       </TTSProvider>
     );
 
@@ -76,7 +76,7 @@ describe('AudioPage', () => {
   test('renders navigation link with SVG icon', () => {
     render(
       <TTSProvider>
-        <AudioPage />
+        <AudioLibraryPage />
       </TTSProvider>
     );
 
@@ -101,7 +101,7 @@ describe('AudioPage', () => {
     
     render(
       <TTSProvider>
-        <AudioPage />
+        <AudioLibraryPage />
       </TTSProvider>
     );
 

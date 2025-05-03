@@ -1,16 +1,16 @@
 import { createMocks } from 'node-mocks-http';
-import handler from '../processUrl';
-import { parseTextFromHtml } from '../../../utils/textUtils';
+import handler from '../api/tools/extractTextFromUrlAPI';
+import { parseTextFromHtml } from '../../utils/textUtils';
 
 // Mock dependencies
-jest.mock('../../../utils/textUtils', () => ({
+jest.mock('../../utils/textUtils', () => ({
   parseTextFromHtml: jest.fn(),
 }));
 
 // Mock fetch globally
 global.fetch = jest.fn();
 
-describe('processUrl API Handler', () => {
+describe('extractTextFromUrlAPI API Handler', () => {
   let req, res;
 
   beforeEach(() => {

@@ -1,4 +1,4 @@
-import storageService from './storageService';
+import storageServiceAPI from './storageServiceAPI';
 
 /**
  * Audio Processing Service
@@ -33,7 +33,7 @@ class AudioProcessingService {
         );
 
         // 2. Download each part as a Blob
-        const blobs = await storageService.download_audio_files_from_s3(bucket, sortedKeys);
+        const blobs = await storageServiceAPI.download_audio_files_from_s3(bucket, sortedKeys);
 
         // 3. Combine into one audio Blob
         const mergedBlob = await this.combine_audio_files(blobs);
@@ -41,7 +41,7 @@ class AudioProcessingService {
         // 4. Upload merged Blob back to S3
         const targetBucket = outputBucket || bucket;
         const targetKey = outputKey || `merged_${Date.now()}.wav`;
-        const url = await storageService.upload_file_to_s3(mergedBlob, targetBucket, targetKey);
+        const url = await storageServiceAPI.upload_file_to_s3(mergedBlob, targetBucket, targetKey);
 
         return url;
     }

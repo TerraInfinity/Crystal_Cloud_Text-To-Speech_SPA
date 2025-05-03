@@ -16,7 +16,7 @@ To begin, navigate to [app URL] in your web browser—no installation is require
 
 ### Template Selection and Creation
 - On the **Templates Tab**, select pre-generated templates or create your own for reusable project setups.
-- Templates can predefine **Section Cards** with text or audio, which populate automatically on the **Main Tab**.
+- Templates can predefine **Section Cards** with text or audio, which populate automatically when selected on the **Main Tab**.
 
 ### Section Cards
 - Organize your content into **Section Cards** within the **Section List** on the **Main Tab**.

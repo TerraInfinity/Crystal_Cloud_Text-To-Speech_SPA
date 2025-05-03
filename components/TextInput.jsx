@@ -179,7 +179,7 @@ const TextInput = () => {
     }
     try {
       sessionActions.setProcessing(true);
-      const response = await fetch('/api/processUrl', {
+      const response = await fetch('/api/extractTextFromUrl', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: urlInput }),

@@ -93,5 +93,24 @@
     "volume": 0.4,
     "placeholder": "whatever1",
     "url": "/audio/whatever1.wav"
+  },
+  {
+    "id": "d87eb0f9-5161-4817-a63f-1af6dc14253a",
+    "name": "okay2",
+    "type": "audio/wav",
+    "size": 133164,
+    "category": "sound_effect",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "okay2.wav",
+        "type": "audio/wav",
+        "size": 133164
+      }
+    },
+    "date": "2025-05-02T22:40:41.856347",
+    "volume": 1.0,
+    "placeholder": "okay2",
+    "url": "/audio/okay2.wav"
   }
 ]

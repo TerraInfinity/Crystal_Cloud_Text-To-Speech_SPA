@@ -12,7 +12,7 @@ javascript
 // config.js
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://default-api.com/api';
 
-// services/speechService.jsx
+// services/speechServiceAPI.jsx
 import { API_BASE_URL } from '../config';
 export const textToSpeech = async (text) => {
   const response = await fetch(`${API_BASE_URL}/textToSpeech`, { /* options */ });

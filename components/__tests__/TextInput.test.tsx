@@ -162,7 +162,7 @@ describe('TextInput', () => {
     fireEvent.click(importButton);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/processUrl', {
+      expect(global.fetch).toHaveBeenCalledWith('/api/extractTextFromUrl', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: 'https://example.com' }),

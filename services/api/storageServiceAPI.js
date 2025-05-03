@@ -5,9 +5,9 @@
  * - IndexedDB for audio files and larger binary data
  * - Amazon S3 for cloud storage and file sharing
  * 
- * @module storageService
+ * @module storageServiceAPI
  */
-class StorageService {
+class storageServiceAPI {
     /**
      * Initializes the storage service with default provider configurations.
      * Sets up storage provider mapping for different data types.
@@ -435,4 +435,4 @@ class StorageService {
 }
 
 // Export a singleton instance
-export default new StorageService();
+export default new storageServiceAPI();

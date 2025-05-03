@@ -18,7 +18,7 @@ const unlinkAsync = promisify(fs.unlink);
  */
 const devLog = (...args) => {
     if (process.env.NODE_ENV !== 'production') {
-        console.log('[mergeAudio API]', ...args);
+        console.log('[mergeAudioAPI ]', ...args);
     }
 };
 
@@ -244,7 +244,7 @@ async function mergeAudioFiles(audioUrls) {
  * @returns {Object} JSON response with the URL to the merged audio file
  */
 export default async function handler(req, res) {
-    devLog('Request received:', req.method, req.body);
+    devLog('Request received:', req.method, { audioUrlsCount: req.body.audioUrls ?.length || 0 });
 
     if (req.method !== 'POST') {
         devLog('Invalid method:', req.method);
@@ -252,8 +252,7 @@ export default async function handler(req, res) {
     }
 
     const { audioUrls } = req.body;
-    devLog('audioUrls:', audioUrls.map(url => url.slice(0, 50) + (url.length > 50 ? '...' : '')));
-
+    devLog('audioUrls:', audioUrls.map(url => url.slice(0, 30) + (url.length > 30 ? '..' : '')));
     if (!audioUrls || !Array.isArray(audioUrls) || audioUrls.length === 0) {
         devLog('Invalid or missing audioUrls');
         return res.status(400).json({ message: 'Audio URLs array is required' });
@@ -284,7 +283,7 @@ export default async function handler(req, res) {
         devLog('Merging successful, URL:', mergedAudioUrl);
         return res.status(200).json({ mergedAudioUrl });
     } catch (error) {
-        devLog('Error merging audio:', error);
+        devLog('Error merging audio:', error.message);
         return res.status(500).json({ message: `Error merging audio: ${error.message}` });
     } finally {
         if (mergedFilePath && fs.existsSync(mergedFilePath)) {

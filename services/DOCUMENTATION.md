@@ -9,9 +9,9 @@ This document provides comprehensive documentation for the service layer of the 
 3. [Audio Processing Service](#audio-processing-service)
 4. [AI Service](#ai-service)
 
-## Speech Service
+## Speech Service API
 
-The Speech Service (`speechService.jsx`) handles text-to-speech conversion using various engines and provides voice management capabilities.
+The Speech Service API (`speechServiceAPI.jsx`) handles text-to-speech conversion using various engines and provides voice management capabilities.
 
 ### Core Methods
 
@@ -157,9 +157,9 @@ Gets available voices for a specified speech engine, prioritizing activeVoices f
 - **Returns**: Promise resolving to an array of available voices
 - **Throws**: Error if API request fails for dynamic fetching
 
-## Storage Service
+## Storage Service API
 
-The Storage Service (`storageService.js`) handles data persistence using localStorage, IndexedDB, and cloud storage providers like Amazon S3.
+The Storage Service API (`storageServiceAPI.js`) handles data persistence using localStorage, IndexedDB, and cloud storage providers like Amazon S3.
 
 ### Local Storage Methods
 
@@ -322,63 +322,6 @@ Configures the storage provider for future extensibility.
 - **Parameters**:
   - `providerConfig` (Object): Configuration object (e.g., { audio: 's3', settings: 'googledrive' })
 
-## Audio Processing Service
-
-The Audio Processing Service (`audioProcessingService.js`) handles audio manipulation, conversion, and merging capabilities.
-
-#### `merge_audio_files_from_s3(bucket, keys, outputBucket, outputKey)`
-
-Orchestrates merging audio files from S3.
-
-- **Parameters**:
-  - `bucket` (string): Source S3 bucket name
-  - `keys` (string[]): Array of S3 object keys to merge
-  - `outputBucket` (string, optional): Destination S3 bucket
-  - `outputKey` (string, optional): Destination key for merged file
-- **Returns**: Promise resolving to URL of the merged audio file on S3
-- **Throws**: Error if keys are invalid
-
-#### `combine_audio_files(blobs)`
-
-Combines multiple audio Blobs into a single WAV Blob.
-
-- **Parameters**:
-  - `blobs` (Blob[]): Array of audio Blobs to combine
-- **Returns**: Promise resolving to the combined WAV Blob
-
-#### `convert_mono_to_stereo_audio(buffer)`
-
-Converts a mono AudioBuffer into a stereo AudioBuffer.
-
-- **Parameters**:
-  - `buffer` (AudioBuffer): The mono AudioBuffer to convert
-- **Returns**: A new stereo AudioBuffer
-
-#### `get_sequence_number_from_filename(filename)`
-
-Extracts the leading numeric sequence from a filename.
-
-- **Parameters**:
-  - `filename` (string): The filename to parse
-- **Returns**: The parsed sequence number or 0 if none is present
-
-#### `_encodeWav(buffer)` (private)
-
-Encodes an AudioBuffer into a WAV Blob using PCM 16-bit format.
-
-- **Parameters**:
-  - `buffer` (AudioBuffer): The AudioBuffer to encode
-- **Returns**: The encoded WAV Blob
-
-#### `create_silent_audio(durationMs, sampleRate, channels)`
-
-Creates a silent audio Blob of the specified duration.
-
-- **Parameters**:
-  - `durationMs` (number): Duration of silence in milliseconds
-  - `sampleRate` (number, optional): Sample rate in Hz (default: 44100)
-  - `channels` (number, optional): Number of channels (default: 2)
-- **Returns**: The silent WAV Blob
 
 ## AI Service
 

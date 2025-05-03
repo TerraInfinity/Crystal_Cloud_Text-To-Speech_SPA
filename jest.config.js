@@ -15,7 +15,7 @@ module.exports = {
         ],
     },
     transformIgnorePatterns: ['/node_modules/(?!@testing-library)'],
-    testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
+    testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/', '<rootDir>/archive/'],
     collectCoverageFrom: [
         'components/**/*.{js,jsx,ts,tsx}',
         'services/**/*.{js,jsx,ts,tsx}',

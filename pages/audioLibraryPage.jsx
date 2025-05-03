@@ -12,7 +12,7 @@ import Link from 'next/link';
  * 
  * @returns {JSX.Element} The rendered Audio Library page
  */
-export default function AudioPage() {
+export default function AudioLibraryPage() {
   return (
       <div id="audio-page-container" className="container mx-auto px-4 py-8">
         <header id="audio-page-header" className="mb-8">

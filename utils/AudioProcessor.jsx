@@ -1,4 +1,4 @@
-import speechService from '../services/speechService';
+import speechServiceAPI from '../services/api/speechEngineAPIs/speechServiceAPI';
 
 /**
  * Development log function that only logs in non-production environments
@@ -95,7 +95,7 @@ const generateAllAudio = async ({
           devLog('Credentials for engine:', credentials);
   
           // Pass activeVoices to the speech service along with existing options
-          const result = await speechService.convert_text_to_speech_and_upload(
+          const result = await speechServiceAPI.convert_text_to_speech_and_upload(
             section.text,
             engine,
             {
