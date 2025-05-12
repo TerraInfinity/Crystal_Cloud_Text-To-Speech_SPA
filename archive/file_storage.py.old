@@ -1,0 +1,1325 @@
+#!/usr/bin/env python3
+"""
+Audio File Storage and Management Module
+
+This module provides a Flask-based API for managing audio files, including:
+1. Uploading audio files with metadata
+2. Retrieving audio file listings with metadata
+3. Serving audio files
+4. Updating audio metadata
+5. Deleting audio files
+
+The module maintains a JSON-based metadata store that tracks:
+- File IDs, names, and locations
+- Audio categories and properties
+- Source information
+- Custom placeholders for text replacement
+- Paths to associated JSON configurations (for merged_audio category)
+
+This can be used as a standalone server or integrated with other Flask applications
+by using the setup_routes() function.
+"""
+import os
+import io
+import json
+import uuid
+import time
+import shutil
+import tempfile
+from flask import Flask, request, jsonify, send_from_directory
+from werkzeug.utils import secure_filename
+from datetime import datetime
+import logging
+import traceback
+
+app = Flask(__name__)
+from flask_cors import CORS
+CORS(app)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s'
+)
+
+# Define paths
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.join(SCRIPT_DIR, "Uploads")
+METADATA_FILE = os.path.join(SCRIPT_DIR, "audio_metadata.json")
+
+# Create uploads directory
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Configure maximum file size
+MAX_CONTENT_LENGTH = 5 * 1024 * 1024 * 1024  # 5GB max file size
+
+# Set Flask max content length
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
+
+def save_metadata(metadata_list):
+    """
+    Save the metadata list to a JSON file
+    
+    Args:
+        metadata_list (list): List of metadata objects to save
+    """
+    try:
+        # Add debug logging for metadata
+        logging.info(f"Saving metadata list with {len(metadata_list)} entries")
+        
+        # Log categories being saved
+        categories = {}
+        for item in metadata_list:
+            cat = item.get('category', 'unknown')
+            if cat not in categories:
+                categories[cat] = 0
+            categories[cat] += 1
+        
+        logging.info(f"Categories in metadata: {categories}")
+        
+        # Ensure the upload directory exists
+        os.makedirs(os.path.dirname(METADATA_FILE), exist_ok=True)
+        
+        with open(METADATA_FILE, 'w') as f:
+            json.dump(metadata_list, f, indent=2)
+            
+        logging.info(f"Metadata saved successfully to {METADATA_FILE}")
+    except Exception as e:
+        logging.error(f"Error saving metadata: {str(e)}")
+        raise e
+
+def load_metadata():
+    """
+    Load the audio metadata list from the JSON metadata file
+    
+    Returns:
+        list: List of metadata dictionaries, with default values added for missing fields
+        
+    Raises:
+        ValueError: If metadata file doesn't contain a list
+        Exception: For other errors reading the metadata file
+    """
+    try:
+        if not os.path.exists(METADATA_FILE):
+            logging.info(f"Metadata file {METADATA_FILE} does not exist. Initializing empty list.")
+            with open(METADATA_FILE, 'w') as f:
+                json.dump([], f)
+            return []
+            
+        with open(METADATA_FILE, 'r') as f:
+            content = f.read().strip()
+            if not content:
+                logging.info(f"Metadata file {METADATA_FILE} is empty. Initializing empty list.")
+                with open(METADATA_FILE, 'w') as f:
+                    json.dump([], f)
+                return []
+
+            f.seek(0)
+            metadata_list = json.load(f)
+            
+        if not isinstance(metadata_list, list):
+            logging.error(f"Metadata file {METADATA_FILE} does not contain a list. Found: {type(metadata_list)}")
+            raise ValueError("Metadata file must contain a list")
+        
+        logging.info(f"Loaded metadata list with {len(metadata_list)} entries")
+        
+        categories = {}
+        for item in metadata_list:
+            cat = item.get('category', 'unknown')
+            if cat not in categories:
+                categories[cat] = 0
+            categories[cat] += 1
+        
+        logging.info(f"Categories in loaded metadata: {categories}")
+        
+        # Process each metadata entry
+        for metadata in metadata_list:
+            if not isinstance(metadata, dict):
+                logging.warning(f"Skipping invalid metadata entry: {metadata}")
+                continue
+                
+            # Set default values for missing fields
+            if 'source' not in metadata:
+                metadata['source'] = {'type': 'unknown'}
+            if 'date' not in metadata:
+                metadata['date'] = datetime.now().isoformat()
+            if 'volume' not in metadata:
+                metadata['volume'] = 1.0
+            if 'placeholder' not in metadata:
+                metadata['placeholder'] = metadata.get('name', 'unknown').lower().replace(' ', '_')
+            if 'category' not in metadata or not metadata['category']:
+                logging.warning(f"Found item with missing category, setting to 'other': {metadata.get('id', 'unknown')}")
+                metadata['category'] = 'other'
+                
+            # Clean up config-related fields to ensure only config_url remains
+            if 'config_path' in metadata:
+                # Log and remove the field
+                logging.info(f"Removing config_path for entry {metadata.get('id')}")
+                del metadata['config_path']
+                
+            if 'config_filename' in metadata:
+                # If we have config_filename but no config_url, create config_url from it
+                if 'config_url' not in metadata and metadata['config_filename']:
+                    metadata['config_url'] = f"/configs/{metadata['config_filename']}"
+                    logging.info(f"Created config_url for entry {metadata.get('id')} from config_filename")
+                # Then remove config_filename
+                del metadata['config_filename']
+                logging.info(f"Removed config_filename for entry {metadata.get('id')}")
+                
+            if 'config_exists' in metadata:
+                # Remove the field
+                logging.info(f"Removing config_exists for entry {metadata.get('id')}")
+                del metadata['config_exists']
+                
+            # Ensure source metadata exists
+            if metadata['source']['type'] == 'local' and 'metadata' not in metadata['source']:
+                metadata['source']['metadata'] = {
+                    'name': metadata.get('name', 'unknown'),
+                    'type': metadata.get('type', 'application/octet-stream'),
+                    'size': metadata.get('size', 0)
+                }
+        
+        # Now save the metadata with the cleaned-up entries
+        save_metadata(metadata_list)
+        logging.info(f"Loaded and cleaned up {len(metadata_list)} metadata entries")
+        return metadata_list
+    except json.JSONDecodeError as e:
+        logging.error(f"Invalid JSON in metadata file {METADATA_FILE}: {str(e)}")
+        raise
+    except Exception as e:
+        logging.error(f"Failed to load metadata: {str(e)}")
+        raise
+
+def get_unique_filename(base_name, extension, directory):
+    """
+    Generate a unique filename by appending a numeric suffix or timestamp if the base name exists.
+    
+    Args:
+        base_name (str): The desired base name (e.g., "bird").
+        extension (str): The file extension (e.g., "wav").
+        directory (str): The directory to check for existing files (e.g., UPLOAD_DIR or CONFIGS_DIR).
+    
+    Returns:
+        str: A unique filename (e.g., "bird.wav", "bird_1.wav", or "bird_1634567890.wav").
+        
+    Raises:
+        OSError: If unable to generate a unique filename after 1000 attempts
+    """
+    # Clean base_name by removing any dots
+    base_name = base_name.replace('.', '')
+    
+    # If extension starts with a dot, remove it
+    if extension.startswith('.'):
+        extension = extension[1:]
+        
+    filename = secure_filename(f"{base_name}.{extension}" if extension else base_name)
+    file_path = os.path.join(directory, filename)
+    
+    if not os.path.exists(file_path):
+        return filename
+    
+    counter = 1
+    while True:
+        new_filename = secure_filename(f"{base_name}_{counter}.{extension}" if extension else f"{base_name}_{counter}")
+        new_file_path = os.path.join(directory, new_filename)
+        if not os.path.exists(new_file_path):
+            return new_filename
+        counter += 1
+        if counter > 1000:
+            timestamp = int(time.time())
+            new_filename = secure_filename(f"{base_name}_{timestamp}.{extension}" if extension else f"{base_name}_{timestamp}")
+            new_file_path = os.path.join(directory, new_filename)
+            if not os.path.exists(new_file_path):
+                return new_filename
+            logging.error(f"Cannot generate unique filename for {base_name}.{extension}")
+            raise OSError(f"Cannot generate unique filename for {base_name}.{extension}")
+
+@app.route('/upload', methods=['POST'])
+def upload_audio():
+    """
+    Handle file upload
+    Store the file in the upload directory and metadata in the metadata file
+    
+    Request:
+        - audio: The audio file
+        - category (optional): Category of the file (default: 'other')
+        - name (optional): Display name for the file
+        - placeholder (optional): Placeholder text to use in templates
+        - volume (optional): Default volume (0-1)
+        - date (optional): Date in ISO format
+    
+    Returns:
+        JSON with file URL
+    """
+    try:
+        if 'audio' not in request.files:
+            logging.error("No audio file provided in request")
+            return jsonify({'error': 'No audio file provided'}), 400
+        file = request.files['audio']
+        if file.filename == '':
+            logging.error("No filename provided for audio file")
+            return jsonify({'error': 'No file selected'}), 400
+
+        category = request.form.get('category', '')
+        custom_name = request.form.get('name')
+        placeholder = request.form.get('placeholder')
+        volume_str = request.form.get('volume', '1')
+        date = request.form.get('date', datetime.now().isoformat())
+
+        logging.info(f"Received upload request with parameters:")
+        logging.info(f"  - filename: {file.filename}")
+        logging.info(f"  - category: '{category}'")
+        logging.info(f"  - name: {custom_name}")
+        logging.info(f"  - placeholder: {placeholder}")
+        logging.info(f"  - volume: {volume_str}")
+        logging.info(f"  - date: {date}")
+
+        # Validate the category - this was the bug!
+        valid_categories = ['sound_effect', 'merged_audio', 'generated_section_audio', 'uploaded_audio', 'binaural', 'music', 'text', 'json', 'other']
+        
+        # Ensure category is trimmed of whitespace
+        if category:
+            category = category.strip()
+        
+        # Check if category is valid
+        if not category or category not in valid_categories:
+            logging.warning(f"Invalid or empty category provided: '{category}'. Defaulting to 'other'.")
+            category = 'other'
+        
+        logging.info(f"Final category after validation: '{category}'")
+
+        try:
+            volume = float(volume_str)
+            if volume < 0 or volume > 1:
+                logging.warning(f"Invalid volume provided: {volume}. Defaulting to 1.0.")
+                volume = 1.0
+        except ValueError:
+            logging.warning(f"Invalid volume format: {volume_str}. Defaulting to 1.0.")
+            volume = 1.0
+
+        # Create a unique filename to avoid overwriting
+        base_name, extension = os.path.splitext(file.filename)
+        if not extension:
+            # Default to .wav if no extension provided
+            extension = '.wav'
+            logging.warning(f"No extension in {file.filename}, defaulting to {extension}")
+            
+        # Generate a unique filename
+        filename = get_unique_filename(base_name, extension, UPLOAD_DIR)
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        
+        # Save the file
+        file.save(file_path)
+        
+        # Validate that the file exists and has content
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'Failed to save file'}), 500
+        if os.path.getsize(file_path) == 0:
+            os.remove(file_path)
+            return jsonify({'error': 'Uploaded file is empty'}), 400
+
+        # Generate a UUID for this file
+        file_id = str(uuid.uuid4())
+        
+        # Create metadata entry
+        file_url = f'/audio/{filename}'
+        
+        metadata_entry = {
+            'id': file_id,
+            'url': file_url,
+            'type': file.content_type,
+            'size': os.path.getsize(file_path),
+            'category': category,
+            'name': custom_name or os.path.splitext(filename)[0],
+            'placeholder': placeholder or (custom_name or os.path.splitext(filename)[0]).lower().replace(' ', '_'),
+            'volume': volume,
+            'date': date,
+            'source': {
+                'type': 'local',
+                'metadata': {
+                    'name': filename,
+                    'type': file.content_type,
+                    'size': os.path.getsize(file_path)
+                }
+            }
+        }
+        
+        # Initialize config_url for merged_audio category (but initially set to null)
+        if category == 'merged_audio':
+            metadata_entry['config_url'] = None
+            logging.info(f"Initialized config_url field for merged_audio file: {filename}")
+        
+        logging.info(f"Generated metadata entry for file: {filename}")
+        logging.info(f"  - ID: {file_id}")
+        logging.info(f"  - Category: {metadata_entry['category']}")
+        
+        # Add to metadata list
+        metadata_list = load_metadata()
+        metadata_list.append(metadata_entry)
+        save_metadata(metadata_list)
+        
+        url = f'/audio/{filename}'
+        logging.info(f"File uploaded successfully: {url} with category: {category}")
+        return jsonify({'url': url, 'id': file_id}), 200
+    except Exception as e:
+        logging.error(f"Error in upload_audio: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to upload audio: {str(e)}'}), 500
+
+@app.route('/audio/<audio_id>', methods=['PATCH'])
+def update_audio_metadata(audio_id):
+    """
+    Update metadata for an audio file
+    
+    Expects JSON with one or more of:
+    - name: New name for the audio
+    - placeholder: New placeholder text
+    - volume: New volume value
+    - date: New date in ISO format
+    - config_url: URL for associated configuration file
+    
+    If name is changed, the file will be renamed
+    
+    Args:
+        audio_id (str): The UUID of the audio file to update
+        
+    Returns:
+        JSON with updated metadata or error
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            logging.error("No JSON data provided in PATCH request")
+            return jsonify({'error': 'No data provided'}), 400
+
+        metadata_list = load_metadata()
+        audio_metadata = next((meta for meta in metadata_list if meta['id'] == audio_id), None)
+        if not audio_metadata:
+            logging.warning(f"Audio not found for ID: {audio_id}")
+            return jsonify({'error': 'Audio not found'}), 404
+
+        current_filename = audio_metadata['url'].split('/')[-1]
+        current_file_path = os.path.join(UPLOAD_DIR, current_filename)
+
+        old_name = audio_metadata['name']
+        if 'name' in data:
+            audio_metadata['name'] = data['name']
+        if 'placeholder' in data:
+            audio_metadata['placeholder'] = data['placeholder']
+        if 'volume' in data:
+            try:
+                volume = float(data['volume'])
+                if volume < 0 or volume > 1:
+                    logging.warning(f"Invalid volume provided: {volume}. Defaulting to 1.0.")
+                    volume = 1.0
+                audio_metadata['volume'] = volume
+            except ValueError:
+                logging.warning(f"Invalid volume format: {data['volume']}. Keeping existing volume.")
+                pass
+        if 'date' in data:
+            audio_metadata['date'] = data['date']
+            
+        # Handle config_url update only
+        if 'config_url' in data:
+            audio_metadata['config_url'] = data['config_url']
+            logging.info(f"Updated config_url for audio ID {audio_id}: {data['config_url']}")
+
+        # If name changed, rename the actual file
+        if 'name' in data and data['name'] != old_name:
+            extension = current_filename.rsplit('.', 1)[-1] if '.' in current_filename else 'wav'
+            new_filename = get_unique_filename(data['name'], extension, UPLOAD_DIR)
+            new_file_path = os.path.join(UPLOAD_DIR, new_filename)
+
+            if os.path.exists(current_file_path):
+                os.rename(current_file_path, new_file_path)
+                logging.info(f"Renamed file from {current_filename} to {new_filename}")
+            else:
+                logging.warning(f"File {current_filename} not found for renaming")
+
+            audio_metadata['url'] = f'/audio/{new_filename}'
+            audio_metadata['source']['metadata']['name'] = new_filename
+
+        save_metadata(metadata_list)
+        logging.info(f"Updated metadata for audio ID: {audio_id}")
+        return jsonify(audio_metadata), 200
+    except Exception as e:
+        logging.error(f"Error updating audio metadata for ID {audio_id}: {str(e)}")
+        return jsonify({'error': f'Failed to update audio metadata: {str(e)}'}), 500
+
+@app.route('/audio/list', methods=['GET'])
+def list_audio():
+    """
+    List all available audio files with their metadata
+    
+    Returns:
+        JSON array of all audio file metadata
+    """
+    try:
+        # Run cleanup to remove stale entries
+        removed_count, metadata_list = cleanup_metadata()
+        
+        if removed_count > 0:
+            logging.info(f"Removed {removed_count} stale entries during /audio/list")
+        
+        # Log category counts before we begin processing
+        category_counts = {}
+        for entry in metadata_list:
+            cat = entry.get('category', 'unknown')
+            if cat not in category_counts:
+                category_counts[cat] = 0
+            category_counts[cat] += 1
+        
+        logging.info(f"Categories in metadata before processing: {category_counts}")
+        
+        # Check audio file existence only
+        for entry in metadata_list:
+            # Verify audio file existence
+            if entry.get('url'):
+                audio_filename = entry['url'].split('/')[-1]
+                audio_path = os.path.join(UPLOAD_DIR, audio_filename)
+                entry['audio_exists'] = os.path.exists(audio_path)
+            
+            # Verify config file existence if config_url is present
+            # But don't add any additional config fields
+            if entry.get('config_url'):
+                config_filename = entry['config_url'].split('/')[-1]
+                config_path = os.path.join(UPLOAD_DIR, "configs", config_filename)
+                
+                # Just add a temporary field to indicate if the file exists
+                # This doesn't get saved to the metadata file
+                entry['config_exists'] = os.path.exists(config_path)
+        
+        return jsonify(metadata_list)
+    except Exception as e:
+        logging.error(f"Error listing audio files: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/audio/<filename>', methods=['GET'])
+def serve_audio(filename):
+    """
+    Serve an audio file by filename
+    
+    Args:
+        filename (str): Name of the file to serve
+        
+    Returns:
+        Audio file or error JSON if file not found
+    """
+    try:
+        logging.info(f"Serving file: {filename}")
+        return send_from_directory(UPLOAD_DIR, filename)
+    except Exception as e:
+        logging.error(f"Error serving file {filename}: {str(e)}")
+        return jsonify({'error': 'File not found'}), 404
+
+@app.route('/audio/<filename>', methods=['DELETE'])
+def delete_audio(filename):
+    """
+    Delete an audio file and optionally its associated JSON config file
+    
+    Args:
+        filename (str): Name of the file to delete
+        
+    Query Parameters:
+        - delete_config (bool): Whether to delete the associated JSON config file (default: false)
+        
+    Returns:
+        JSON with success or error message
+    """
+    try:
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        if not os.path.exists(file_path):
+            logging.warning(f"File not found for deletion: {filename}")
+            return jsonify({'error': 'File not found'}), 404
+
+        # Find the metadata entry for this file
+        metadata_list = load_metadata()
+        deleted_config = False
+        config_url = None
+        file_id = None
+        
+        # Find the entry matching this filename
+        file_entry = None
+        for meta in metadata_list:
+            if meta['url'] == f'/audio/{filename}':
+                file_entry = meta
+                break
+                
+        # Handle associated JSON config file if it exists
+        if file_entry:
+            file_id = file_entry.get('id')
+            is_merged_audio = file_entry.get('category') == 'merged_audio'
+            
+            # Check if we should delete the associated config file
+            delete_config = request.args.get('delete_config', 'false').lower() == 'true'
+            
+            # Extract config info if we have it
+            if is_merged_audio and delete_config and file_entry.get('config_url'):
+                config_url = file_entry.get('config_url')
+                config_filename = config_url.split('/')[-1]
+                config_path = os.path.join(UPLOAD_DIR, "configs", config_filename)
+                
+                # If we have a config file and should delete it
+                if os.path.exists(config_path):
+                    try:
+                        os.remove(config_path)
+                        deleted_config = True
+                        logging.info(f"Deleted associated JSON config file: {config_path}")
+                    except Exception as config_error:
+                        logging.error(f"Error deleting config file {config_path}: {str(config_error)}")
+        
+        # Remove file metadata
+        metadata_list = [meta for meta in metadata_list if meta['url'] != f'/audio/{filename}']
+        save_metadata(metadata_list)
+        
+        # Delete the actual audio file
+        os.remove(file_path)
+        logging.info(f"Deleted file: {filename}")
+        
+        # Return success with additional info about config
+        return jsonify({
+            'message': 'File deleted',
+            'file_id': file_id,
+            'deleted_config': deleted_config,
+            'config_url': config_url
+        }), 200
+    except Exception as e:
+        logging.error(f"Error deleting file {filename}: {str(e)}")
+        return jsonify({'error': f'Failed to delete file: {str(e)}'}), 500
+
+@app.route('/audio/<filename>', methods=['PUT'])
+def replace_audio(filename):
+    """
+    Replace an existing audio file while preserving its URL/ID
+    
+    Args:
+        filename (str): Name of the file to replace
+        
+    Request:
+        - audio: The new audio file
+        - category (optional): New category
+        - name (optional): New name
+        - placeholder (optional): New placeholder
+        - volume (optional): New volume
+        - date (optional): New date in ISO format
+    
+    Returns:
+        JSON with file URL or error
+    """
+    try:
+        if 'audio' not in request.files:
+            logging.error("No audio file provided in replace request")
+            return jsonify({'error': 'No audio file provided'}), 400
+        file = request.files['audio']
+        if file.filename == '':
+            logging.error("No filename provided for audio file in replace request")
+            return jsonify({'error': 'No file selected'}), 400
+
+        # Validate content type
+        if not file.content_type.startswith('audio/'):
+            logging.error(f"Invalid file type: {file.content_type}. Expected audio/*")
+            return jsonify({'error': 'File must be an audio file'}), 400
+        if request.form.get('category') == 'merged_audio' and file.content_type != 'audio/wav':
+            logging.error(f"Invalid file type for merged_audio: {file.content_type}. Expected audio/wav")
+            return jsonify({'error': 'Merged audio must be a WAV file'}), 400
+
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        if not os.path.exists(file_path):
+            logging.warning(f"File not found for replacement: {filename}")
+            return jsonify({'error': 'File not found'}), 404
+
+        file.save(file_path)
+        # Validate file size
+        file_size = os.path.getsize(file_path)
+        if file_size == 0:
+            logging.error("Replaced file is empty")
+            return jsonify({'error': 'Replaced file is empty'}), 400
+
+        category = request.form.get('category', 'other')
+        name = request.form.get('name')
+        placeholder = request.form.get('placeholder')
+        volume_str = request.form.get('volume', '1')
+        date = request.form.get('date', datetime.now().isoformat())
+
+        valid_categories = ['sound_effect', 'merged_audio', 'generated_section_audio', 'binaural', 'music', 'text', 'json', 'other']
+        if category not in valid_categories:
+            logging.warning(f"Invalid category provided: {category}. Defaulting to 'other'.")
+            category = 'other'
+
+        try:
+            volume = float(volume_str)
+            if volume < 0 or volume > 1:
+                logging.warning(f"Invalid volume provided: {volume}. Defaulting to 1.0.")
+                volume = 1.0
+        except ValueError:
+            logging.warning(f"Invalid volume format: {volume_str}. Defaulting to 1.0.")
+            volume = 1.0
+
+        # Log received metadata
+        logging.info(f"Received replace metadata: category={category}, name={name}, placeholder={placeholder}, volume={volume}, date={date}")
+
+        metadata_list = load_metadata()
+        for meta in metadata_list:
+            if meta['url'] == f'/audio/{filename}':
+                meta.update({
+                    'type': file.content_type,
+                    'size': file_size,
+                    'category': category,
+                    'name': name or meta['name'],
+                    'placeholder': placeholder or meta['placeholder'],
+                    'volume': volume,
+                    'date': date,
+                    'source': {
+                        'type': 'local',
+                        'metadata': {
+                            'name': filename,
+                            'type': file.content_type,
+                            'size': file_size
+                        }
+                    }
+                })
+                break
+        save_metadata(metadata_list)
+        logging.info(f"Replaced file: {filename} with category: {category}")
+        return jsonify({'url': f'/audio/{filename}'}), 200
+    except Exception as e:
+        logging.error(f"Error replacing file {filename}: {str(e)}")
+        return jsonify({'error': f'Failed to replace file: {str(e)}'}), 500
+
+@app.route('/api/file-config/<file_id>', methods=['GET'])
+def get_file_config(file_id):
+    """
+    Get configuration data for a file by ID
+    
+    Args:
+        file_id (str): The UUID of the file to get configuration for
+        
+    Returns:
+        JSON with configuration data or error message
+    """
+    try:
+        logging.info(f"Getting configuration for file ID: {file_id}")
+        metadata_list = load_metadata()
+        
+        # Find the file entry by ID
+        file_entry = next((entry for entry in metadata_list if entry['id'] == file_id), None)
+        if not file_entry:
+            logging.warning(f"No file found with ID {file_id}")
+            return jsonify({'error': 'File not found'}), 404
+            
+        logging.info(f"Found file: {file_entry['name']}")
+        
+        # Check if the file has a config_url
+        if file_entry.get('config_url'):
+            # Extract the config filename from the URL
+            config_filename = file_entry['config_url'].split('/')[-1]
+            config_path = os.path.join(UPLOAD_DIR, "configs", config_filename)
+            
+            if os.path.exists(config_path):
+                # Load the config from the file
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                logging.info(f"Loaded config from file: {config_path}")
+                return jsonify(config)
+            else:
+                logging.warning(f"Config file not found: {config_path}")
+        
+        # Check for embedded config in metadata
+        if 'metadata' in file_entry and 'config' in file_entry['metadata']:
+            config_data = file_entry['metadata']['config']
+            if isinstance(config_data, str):
+                try:
+                    config = json.loads(config_data)
+                    logging.info(f"Parsed config from metadata.config string")
+                    return jsonify(config)
+                except json.JSONDecodeError:
+                    logging.error(f"Invalid JSON in metadata.config")
+            else:
+                logging.info(f"Found config in metadata.config object")
+                return jsonify(config_data)
+        
+        # For merged_audio files without config_url, try to find config in the configs directory
+        if file_entry.get('category') == 'merged_audio':
+            configs_dir = os.path.join(UPLOAD_DIR, "configs")
+            if os.path.exists(configs_dir):
+                # Try with naming patterns that might match this file
+                config_base_name = file_entry.get('name') or f"config-{file_id}"
+                potential_paths = [
+                    os.path.join(configs_dir, f"{config_base_name}.json"),
+                    os.path.join(configs_dir, f"config-{file_id}.json")
+                ]
+                
+                for config_path in potential_paths:
+                    if os.path.exists(config_path):
+                        with open(config_path, 'r') as f:
+                            config = json.load(f)
+                        logging.info(f"Found and loaded config from file: {config_path}")
+                        
+                        # Store config URL in metadata for future reference
+                        file_entry['config_url'] = f"/configs/{os.path.basename(config_path)}"
+                        save_metadata(metadata_list)
+                        
+                        return jsonify(config)
+        
+        logging.warning(f"No configuration found for file ID: {file_id}")
+        return jsonify({'error': 'Configuration not found'}), 404
+        
+    except Exception as e:
+        logging.error(f"Error getting file configuration for ID {file_id}: {str(e)}")
+        return jsonify({'error': f'Failed to get file configuration: {str(e)}'}), 500
+
+@app.route('/configs/<filename>', methods=['GET'])
+def serve_config(filename):
+    """
+    Serve a configuration file from the configs directory
+    
+    Args:
+        filename (str): Name of the config file to serve
+        
+    Returns:
+        JSON config file or error response
+    """
+    try:
+        # If filename is an absolute path, extract just the filename
+        if os.path.isabs(filename) or ':\\' in filename or ':/' in filename:
+            filename = os.path.basename(filename)
+            logging.info(f"Extracted filename from absolute path: {filename}")
+            
+        configs_dir = os.path.join(UPLOAD_DIR, "configs")
+        if not os.path.exists(configs_dir):
+            logging.warning(f"Configs directory not found: {configs_dir}")
+            return jsonify({'error': 'Configs directory not found'}), 404
+            
+        config_path = os.path.join(configs_dir, filename)
+        logging.info(f"Looking for config file at: {config_path}")
+        
+        if not os.path.exists(config_path):
+            logging.warning(f"Config file not found: {config_path}")
+            return jsonify({'error': 'Config file not found'}), 404
+            
+        logging.info(f"Serving config file: {filename}")
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        return jsonify(config)
+    except json.JSONDecodeError as e:
+        logging.error(f"Invalid JSON in config file {filename}: {str(e)}")
+        return jsonify({'error': f'Invalid JSON in config file: {str(e)}'}), 500
+    except Exception as e:
+        logging.error(f"Error serving config file {filename}: {str(e)}")
+        return jsonify({'error': f'Failed to serve config file: {str(e)}'}), 500
+
+@app.route('/debug/file/<file_id>', methods=['GET'])
+def debug_file(file_id):
+    """
+    Debug endpoint to get detailed information about a file
+    
+    Args:
+        file_id (str): The UUID of the file to inspect
+        
+    Returns:
+        JSON with detailed debug information
+    """
+    try:
+        logging.info(f"Debug request for file ID: {file_id}")
+        metadata_list = load_metadata()
+        
+        # Find the file entry by ID
+        file_entry = next((entry for entry in metadata_list if entry['id'] == file_id), None)
+        if not file_entry:
+            logging.warning(f"No file found with ID {file_id}")
+            return jsonify({'error': 'File not found'}), 404
+            
+        # Create a debug info object
+        debug_info = {
+            'file': file_entry,
+            'config_info': {}
+        }
+        
+        # Check if the file has a config_url
+        if file_entry.get('config_url'):
+            debug_info['config_info']['config_url'] = file_entry['config_url']
+            
+            # Extract filename from config_url
+            config_filename = file_entry['config_url'].split('/')[-1]
+            config_path = os.path.join(UPLOAD_DIR, "configs", config_filename)
+            
+            debug_info['config_info']['derived_config_path'] = config_path
+            debug_info['config_info']['config_file_exists'] = os.path.exists(config_path)
+            
+            if os.path.exists(config_path):
+                try:
+                    with open(config_path, 'r') as f:
+                        debug_info['config_info']['config_contents'] = json.load(f)
+                except Exception as e:
+                    debug_info['config_info']['read_error'] = str(e)
+        
+        # Check if the file has embedded config in metadata
+        if 'metadata' in file_entry and 'config' in file_entry['metadata']:
+            debug_info['config_info']['has_embedded_config'] = True
+            if isinstance(file_entry['metadata']['config'], str):
+                try:
+                    debug_info['config_info']['embedded_config'] = json.loads(file_entry['metadata']['config'])
+                except:
+                    debug_info['config_info']['embedded_config'] = "Invalid JSON string"
+            else:
+                debug_info['config_info']['embedded_config'] = file_entry['metadata']['config']
+        else:
+            debug_info['config_info']['has_embedded_config'] = False
+        
+        # List the configs directory
+        configs_dir = os.path.join(UPLOAD_DIR, "configs")
+        if os.path.exists(configs_dir):
+            debug_info['configs_directory'] = {
+                'path': configs_dir,
+                'files': os.listdir(configs_dir)
+            }
+        
+        return jsonify(debug_info)
+    except Exception as e:
+        logging.error(f"Error in debug endpoint for file {file_id}: {str(e)}")
+        return jsonify({
+            'error': f'Debug error: {str(e)}',
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/debug/configs', methods=['GET'])
+def debug_configs():
+    """
+    Debug endpoint to check the status of the configs directory and files
+    
+    Returns:
+        JSON with detailed information about configs
+    """
+    try:
+        configs_dir = os.path.join(UPLOAD_DIR, "configs")
+        result = {
+            'upload_dir': UPLOAD_DIR,
+            'configs_dir': configs_dir,
+            'configs_dir_exists': os.path.exists(configs_dir),
+            'configs_dir_is_dir': os.path.isdir(configs_dir) if os.path.exists(configs_dir) else False,
+            'metadata_file': METADATA_FILE,
+            'metadata_file_exists': os.path.exists(METADATA_FILE)
+        }
+        
+        # List files in configs directory
+        if result['configs_dir_exists'] and result['configs_dir_is_dir']:
+            result['config_files'] = []
+            for filename in os.listdir(configs_dir):
+                file_path = os.path.join(configs_dir, filename)
+                file_info = {
+                    'filename': filename,
+                    'path': file_path,
+                    'size': os.path.getsize(file_path) if os.path.exists(file_path) else 0,
+                    'is_file': os.path.isfile(file_path),
+                    'is_valid_json': False
+                }
+                
+                # Check if it's a valid JSON file
+                if file_info['is_file'] and filename.endswith('.json'):
+                    try:
+                        with open(file_path, 'r') as f:
+                            json_content = json.load(f)
+                            file_info['is_valid_json'] = True
+                            if isinstance(json_content, dict):
+                                file_info['has_sections'] = 'sections' in json_content
+                                file_info['sections_count'] = len(json_content.get('sections', [])) if 'sections' in json_content else 0
+                    except:
+                        pass
+                        
+                result['config_files'].append(file_info)
+        
+        # Check metadata for config references
+        if result['metadata_file_exists']:
+            try:
+                metadata_list = load_metadata()
+                config_references = []
+                
+                for entry in metadata_list:
+                    if entry.get('config_url'):
+                        config_filename = entry['config_url'].split('/')[-1]
+                        config_path = os.path.join(configs_dir, config_filename)
+                        
+                        ref_info = {
+                            'file_id': entry.get('id'),
+                            'file_name': entry.get('name'),
+                            'category': entry.get('category'),
+                            'config_url': entry.get('config_url'),
+                            'config_file_exists': os.path.exists(config_path),
+                            'has_embedded_config': 'metadata' in entry and 'config' in entry.get('metadata', {})
+                        }
+                        
+                        config_references.append(ref_info)
+                
+                result['config_references'] = config_references
+                result['config_references_count'] = len(config_references)
+            except Exception as e:
+                result['metadata_parse_error'] = str(e)
+        
+        return jsonify(result)
+    except Exception as e:
+        logging.error(f"Error in debug configs: {str(e)}")
+        return jsonify({
+            'error': f'Debug configs error: {str(e)}',
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/configs/<filename>', methods=['DELETE'])
+def delete_config(filename):
+    """
+    Delete a config JSON file by filename
+    
+    Args:
+        filename (str): Name of the config file to delete
+        
+    Returns:
+        JSON with success or error message
+    """
+    try:
+        configs_dir = os.path.join(UPLOAD_DIR, "configs")
+        config_path = os.path.join(configs_dir, filename)
+        
+        if not os.path.exists(config_path):
+            logging.warning(f"Config file not found for deletion: {filename}")
+            return jsonify({'error': 'Config file not found'}), 404
+            
+        # Check if this config is referenced by any audio files
+        metadata_list = load_metadata()
+        referenced_by = []
+        config_url = f'/configs/{filename}'
+        
+        for meta in metadata_list:
+            if meta.get('config_url') == config_url:
+                referenced_by.append({
+                    'id': meta.get('id'),
+                    'name': meta.get('name'),
+                    'url': meta.get('url')
+                })
+                
+        # Delete the config file
+        os.remove(config_path)
+        logging.info(f"Deleted config file: {filename}")
+        
+        # Update metadata to remove references to this config
+        if referenced_by:
+            updated_metadata = []
+            for meta in metadata_list:
+                if meta.get('config_url') == config_url:
+                    # Clear config reference 
+                    meta['config_url'] = None
+                updated_metadata.append(meta)
+            save_metadata(updated_metadata)
+            logging.info(f"Updated metadata to remove references to deleted config: {filename}")
+            
+        return jsonify({
+            'message': 'Config file deleted',
+            'referenced_by': referenced_by
+        }), 200
+    except Exception as e:
+        logging.error(f"Error deleting config file {filename}: {str(e)}")
+        return jsonify({'error': f'Failed to delete config file: {str(e)}'}), 500
+
+@app.route('/configs', methods=['POST'])
+def save_config():
+    """
+    Save a configuration JSON file to the configs directory
+    
+    Request:
+        - file: The JSON configuration file
+        - is_config: Flag indicating this is a config file (set to 'true')
+        - audioId: Optional ID of the associated audio file
+        - name: Optional display name for the config
+        - category: Optional category (default: 'merged_audio_config')
+        
+    Returns:
+        JSON with file info and path
+    """
+    try:
+        logging.info("Received request to save config file")
+        
+        if 'file' not in request.files:
+            logging.error("No file provided in config save request")
+            return jsonify({'error': 'No file provided'}), 400
+            
+        file = request.files['file']
+        if file.filename == '':
+            logging.error("No filename provided for config file")
+            return jsonify({'error': 'No file selected'}), 400
+            
+        configs_dir = os.path.join(UPLOAD_DIR, "configs")
+        os.makedirs(configs_dir, exist_ok=True)
+        
+        audio_id = request.form.get('audioId')
+        
+        filename = file.filename
+        if not filename.endswith('.json'):
+            filename = f"{filename}.json"
+            
+        if audio_id:
+            metadata_list = load_metadata()
+            audio_entry = next((meta for meta in metadata_list if meta.get('id') == audio_id), None)
+            
+            if audio_entry:
+                audio_name = audio_entry.get('name')
+                if audio_name:
+                    base_name = audio_name.lower().replace(' ', '-')
+                    filename = f"{base_name}.json"
+                    logging.info(f"Using audio name to generate config filename: {filename}")
+            else:
+                logging.warning(f"Audio ID {audio_id} not found in metadata")
+        
+        unique_filename = get_unique_filename(os.path.splitext(filename)[0], 'json', configs_dir)
+        config_path = os.path.join(configs_dir, unique_filename)
+        
+        file.save(config_path)
+        
+        logging.info(f"Config file saved to: {config_path}")
+        
+        config_url = f'/configs/{unique_filename}'
+        
+        if audio_id:
+            metadata_list = load_metadata()
+            updated = False
+            
+            for meta in metadata_list:
+                if meta.get('id') == audio_id:
+                    # Only set config_url, no other config-related fields
+                    meta['config_url'] = config_url
+                    logging.info(f"Updated metadata for audio ID {audio_id} with config URL: {config_url}")
+                    updated = True
+                    break
+            
+            if updated:
+                try:
+                    save_metadata(metadata_list)
+                    logging.info(f"Saved updated metadata with config URL for audio ID {audio_id}")
+                except Exception as e:
+                    logging.error(f"Failed to save metadata for audio ID {audio_id}: {str(e)}")
+                    return jsonify({'error': f'Failed to update metadata: {str(e)}'}), 500
+            else:
+                logging.warning(f"Audio ID {audio_id} not found in metadata, config saved but not linked")
+        
+        return jsonify({
+            'message': 'Config file saved successfully',
+            'config_url': config_url,
+            'audioId': audio_id
+        }), 200
+    except Exception as e:
+        logging.error(f"Error saving config file: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to save config file: {str(e)}'}), 500
+
+@app.route('/file-exists/<filename>', methods=['HEAD'])
+def check_file_exists(filename):
+    """
+    Check if a file exists in storage
+    
+    Args:
+        filename (str): The filename to check (can be audio or config)
+        
+    Returns:
+        200 if file exists, 404 if not found
+    """
+    try:
+        # Try audio files first
+        audio_path = os.path.join(UPLOAD_DIR, filename)
+        if os.path.exists(audio_path):
+            return '', 200
+            
+        # Try config files
+        configs_dir = os.path.join(UPLOAD_DIR, "configs")
+        config_path = os.path.join(configs_dir, filename)
+        if os.path.exists(config_path):
+            return '', 200
+            
+        # File not found in either location
+        logging.warning(f"File not found: {filename}")
+        return jsonify({'error': 'File not found'}), 404
+    except Exception as e:
+        logging.error(f"Error checking file existence: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/entry/<file_id>/check-files', methods=['GET'])
+def check_entry_files(file_id):
+    """
+    Check if a specific entry's files exist and update metadata accordingly
+    
+    Args:
+        file_id (str): The ID of the entry to check
+        
+    Returns:
+        JSON object with existence flags for audio and config files
+    """
+    try:
+        # Load metadata
+        metadata_list = load_metadata()
+        
+        # Find the entry matching the ID
+        entry = next((e for e in metadata_list if e.get('id') == file_id), None)
+        
+        if not entry:
+            return jsonify({'error': 'Entry not found'}), 404
+        
+        # Results dict to track what exists
+        result = {
+            'id': file_id,
+            'audio_exists': False,
+            'config_exists': False
+        }
+        
+        # Check audio file existence
+        if 'url' in entry and entry['url']:
+            audio_filename = entry['url'].split('/')[-1]
+            audio_path = os.path.join(UPLOAD_DIR, audio_filename)
+            result['audio_exists'] = os.path.exists(audio_path)
+        
+        # Check config file existence using only config_url
+        if 'config_url' in entry and entry['config_url']:
+            config_filename = entry['config_url'].split('/')[-1]
+            config_path = os.path.join(UPLOAD_DIR, "configs", config_filename)
+            result['config_exists'] = os.path.exists(config_path)
+        
+        # Update metadata if files are missing
+        updated = False
+        if 'url' in entry and not result['audio_exists']:
+            entry['audio_exists'] = False
+            updated = True
+        if 'config_url' in entry and not result['config_exists']:
+            # We don't store 'config_exists' in the metadata anymore, this is just for the response
+            updated = True
+        
+        # Save updated metadata
+        if updated:
+            save_metadata(metadata_list)
+            
+        return jsonify(result)
+    except Exception as e:
+        logging.error(f"Error checking entry files: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+def cleanup_metadata():
+    metadata_list = load_metadata()
+    original_count = len(metadata_list)
+    
+    id_to_entries = {}
+    for entry in metadata_list:
+        entry_id = entry.get('id')
+        if not entry_id:
+            continue
+            
+        if entry_id not in id_to_entries:
+            id_to_entries[entry_id] = []
+            
+        id_to_entries[entry_id].append(entry)
+    
+    deduped_metadata = []
+    for entry_id, entries in id_to_entries.items():
+        if len(entries) == 1:
+            deduped_metadata.append(entries[0])
+        else:
+            logging.info(f"Found {len(entries)} entries with ID {entry_id}, merging them")
+            sorted_entries = sorted(entries, key=lambda x: x.get('date', ''), reverse=True)
+            merged_entry = dict(sorted_entries[0])
+            
+            for other_entry in sorted_entries[1:]:
+                # Prioritize entries with config information if main entry is missing them
+                if not merged_entry.get('config_url') and other_entry.get('config_url'):
+                    merged_entry['config_url'] = other_entry['config_url']
+                
+                # Prioritize entries with audio information if main entry is missing it
+                if not merged_entry.get('url') and other_entry.get('url'):
+                    merged_entry['url'] = other_entry['url']
+                
+                # General fallback for any missing fields
+                for key, value in other_entry.items():
+                    # Skip config_path, config_filename, config_exists fields
+                    if key in ['config_path', 'config_filename', 'config_exists']:
+                        continue
+                        
+                    if key not in merged_entry or merged_entry[key] is None:
+                        merged_entry[key] = value
+            
+            deduped_metadata.append(merged_entry)
+    
+    updated_metadata = []
+    configs_dir = os.path.join(UPLOAD_DIR, "configs")
+    for entry in deduped_metadata:
+        audio_exists = False
+
+        # Check if audio file exists
+        if 'url' in entry and entry['url']:
+            audio_filename = entry['url'].split('/')[-1]
+            audio_path = os.path.join(UPLOAD_DIR, audio_filename)
+            audio_exists = os.path.exists(audio_path)
+            entry['audio_exists'] = audio_exists
+
+        # Check if config file exists using config_url
+        config_exists = False
+        if 'config_url' in entry and entry['config_url']:
+            config_filename = entry['config_url'].split('/')[-1]
+            config_path = os.path.join(configs_dir, config_filename)
+            config_exists = os.path.exists(config_path)
+            
+            # Only add temporary field for checking, will be removed after
+            entry['config_exists'] = config_exists
+
+        # Remove any other config-related fields that might exist
+        for field in ['config_path', 'config_filename']:
+            if field in entry:
+                del entry[field]
+
+        # Keep entry if either audio or config exists
+        if audio_exists or config_exists:
+            updated_metadata.append(entry)
+        else:
+            logging.info(f"Removing entry {entry.get('id')} - both audio and config files are missing")
+
+    removed_count = original_count - len(updated_metadata)
+    if removed_count > 0:
+        logging.info(f"Cleaned up {removed_count} stale metadata entries")
+        save_metadata(updated_metadata)
+
+    return removed_count, updated_metadata
+
+@app.route('/metadata/backup', methods=['GET'])
+def backup_metadata():
+    try:
+        metadata_list = load_metadata()
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_path = os.path.join(UPLOAD_DIR, f"metadata_backup_{timestamp}.json")
+        with open(backup_path, 'w') as f:
+            json.dump(metadata_list, f, indent=2)
+        logging.info(f"Metadata backed up to {backup_path}")
+        return jsonify({'message': 'Metadata backed up', 'path': backup_path}), 200
+    except Exception as e:
+        logging.error(f"Error backing up metadata: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to backup metadata: {str(e)}'}), 500
+
+def setup_routes(flask_app):
+    """
+    Register all routes to the provided Flask application
+    
+    This allows the file_storage module to be integrated with other Flask apps
+    
+    Args:
+        flask_app: The Flask application to register routes with
+    """
+    flask_app.route('/upload', methods=['POST'])(upload_audio)
+    flask_app.route('/audio/list', methods=['GET'])(list_audio)
+    flask_app.route('/audio/<filename>', methods=['GET'])(serve_audio)
+    flask_app.route('/audio/<filename>', methods=['DELETE'])(delete_audio)
+    flask_app.route('/audio/<filename>', methods=['PUT'])(replace_audio)
+    flask_app.route('/audio/<audio_id>', methods=['PATCH'])(update_audio_metadata)
+    flask_app.route('/api/file-config/<file_id>', methods=['GET'])(get_file_config)
+    flask_app.route('/configs/<filename>', methods=['GET'])(serve_config)
+    flask_app.route('/debug/file/<file_id>', methods=['GET'])(debug_file)
+    flask_app.route('/debug/configs', methods=['GET'])(debug_configs)
+    flask_app.route('/configs/<filename>', methods=['DELETE'])(delete_config)
+    flask_app.route('/configs', methods=['POST'])(save_config)
+    flask_app.route('/file-exists/<filename>', methods=['HEAD'])(check_file_exists)
+    flask_app.route('/entry/<file_id>/check-files', methods=['GET'])(check_entry_files)
+    flask_app.route('/metadata/backup', methods=['GET'])(backup_metadata)
+
+if __name__ == '__main__':
+    logging.info("Starting file storage server on http://127.0.0.1:5000")
+    app.run(host='0.0.0.0', port=5000)

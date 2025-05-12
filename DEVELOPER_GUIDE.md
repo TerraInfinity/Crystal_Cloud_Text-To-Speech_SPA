@@ -77,7 +77,7 @@ The UI is organized into tabs for different functionalities:
 - **`utils/AudioProcessor.jsx`**: Audio generation and merging utilities
 - **`utils/fileUtils.js`**: File handling helpers
 - **`utils/textUtils.js`**: Text processing functions
-- **`utils/logUtils.js`**: Logging utilities for development
+- **`utils/logUtils.js`**: Logging utilities for development (Configure log visibility in there by defining log levels.)
 
 ## Data Flow
 

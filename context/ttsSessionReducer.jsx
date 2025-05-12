@@ -149,17 +149,30 @@ export function ttsSessionReducer(state, action) {
     case 'SET_GENERATED_AUDIO':
       // Set generated audio data for a specific section
       const { sectionId, audioData } = action.payload;
+      
+      // Ensure we only store minimal data (url and essential metadata)
+      const minimalAudioData = {
+        url: audioData.url,
+        contentType: audioData.contentType || 'audio/wav',
+        duration: audioData.duration || null,
+        size: audioData.size || null
+      };
+      
       return {
         ...state,
         generatedTTSAudios: {
           ...state.generatedTTSAudios,
-          [sectionId]: audioData,
+          [sectionId]: minimalAudioData,
         },
       };
 
     case 'SET_MERGED_AUDIO':
-      // Set the merged audio URL for playback
-      const newMergedAudioState = { ...state, mergedAudio: action.payload };
+      // Set the merged audio URL for playback (ensure it's just a string)
+      const mergedAudioUrl = typeof action.payload === 'object' && action.payload?.url
+        ? action.payload.url 
+        : action.payload;
+        
+      const newMergedAudioState = { ...state, mergedAudio: mergedAudioUrl };
       return newMergedAudioState;
 
     case 'SET_PLAYING':
@@ -338,6 +351,40 @@ export function ttsSessionReducer(state, action) {
           editingTemplate: null,
         },
       };
+
+    case 'RESET_SESSION':
+      // Reset the session state to initial values, but keep settings
+      return {
+        ...state,
+        sections: [],
+        inputText: '',
+        selectedInputVoice: null,
+        generatedTTSAudios: {},
+        mergedAudio: null,
+        errorMessage: null,
+        notification: null,
+        isProcessing: false,
+        isPlaying: false
+      };
+
+    case 'SET_DESCRIPTION':
+      // Set the session description
+      return {
+        ...state,
+        description: action.payload
+      };
+
+    case 'SET_TITLE':
+      // Set the session title
+      return {
+        ...state,
+        title: action.payload
+      };
+
+    case 'SET_LAST_AUDIO_INPUT_SELECTION': // Add this
+      devLog('Setting last audio input selection:', action.payload);
+      return { ...state, lastAudioInputSelection: action.payload };
+
 
     default:
       devLog('Unhandled action type in ttsSessionReducer:', action.type, 'Payload:', action.payload);

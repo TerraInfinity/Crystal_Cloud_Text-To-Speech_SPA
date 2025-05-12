@@ -9,8 +9,8 @@
  */
 
 import React, { useState } from 'react';
-import { useTTS } from '../context/TTSContext';
-import { useTTSSession } from '../context/TTSSessionContext';
+import {useTTSContext} from '../context/TTSContext';
+import { useTTSSessionContext  } from '../context/TTSSessionContext';
 import { parseTextFromHtml } from '../utils/textUtils';
 
 /**
@@ -22,8 +22,8 @@ import { parseTextFromHtml } from '../utils/textUtils';
  * @returns {JSX.Element} The rendered ToolsTab component
  */
 const ToolsTab = () => {
-  const { actions, isProcessing } = useTTS();
-  const { actions: sessionActions } = useTTSSession();
+  const { actions, isProcessing } = useTTSContext();
+  const { actions: sessionActions } = useTTSSessionContext ();
   
   // State for HTML/URL parsing
   const [htmlInput, setHtmlInput] = useState('');

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ThemeToggle from '../ThemeToggle';
-import { useTTS } from '../../context/TTSContext';
+import {useTTSContext} from '../../context/TTSContext';
 
 // Mock context hook
 jest.mock('../../context/TTSContext');
@@ -37,7 +37,7 @@ describe('ThemeToggle', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
       actions: mockTTSActions,
     });
@@ -60,7 +60,7 @@ describe('ThemeToggle', () => {
   });
 
   test('renders correct icon for light theme', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { theme: 'light' },
       actions: mockTTSActions,
     });
@@ -69,7 +69,7 @@ describe('ThemeToggle', () => {
   });
 
   test('renders correct icon for dark theme', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { theme: 'dark' },
       actions: mockTTSActions,
     });
@@ -78,7 +78,7 @@ describe('ThemeToggle', () => {
   });
 
   test('renders correct icon for nature theme', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { theme: 'nature' },
       actions: mockTTSActions,
     });
@@ -87,7 +87,7 @@ describe('ThemeToggle', () => {
   });
 
   test('renders correct icon for minimalist theme', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { theme: 'minimalist' },
       actions: mockTTSActions,
     });
@@ -96,7 +96,7 @@ describe('ThemeToggle', () => {
   });
 
   test('renders correct icon for cosmic theme', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { theme: 'cosmic' },
       actions: mockTTSActions,
     });
@@ -106,7 +106,7 @@ describe('ThemeToggle', () => {
 
   test('cycles through all themes', () => {
     // Start with light theme
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { theme: 'light' },
       actions: mockTTSActions,
     });
@@ -123,7 +123,7 @@ describe('ThemeToggle', () => {
     mockTTSActions.setTheme.mockClear();
     
     // Test dark to minimalist transition
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { theme: 'dark' },
       actions: mockTTSActions,
     });
@@ -137,7 +137,7 @@ describe('ThemeToggle', () => {
     mockTTSActions.setTheme.mockClear();
     
     // Test cosmic (last theme) back to light (first theme)
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { theme: 'cosmic' }, // Last theme
       actions: mockTTSActions,
     });
@@ -148,7 +148,7 @@ describe('ThemeToggle', () => {
   });
 
   test('falls back to SunIcon for undefined theme', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { theme: undefined },
       actions: mockTTSActions,
     });
@@ -158,7 +158,7 @@ describe('ThemeToggle', () => {
   });
 
   test('falls back to SunIcon for invalid theme', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { theme: 'invalid-theme' },
       actions: mockTTSActions,
     });

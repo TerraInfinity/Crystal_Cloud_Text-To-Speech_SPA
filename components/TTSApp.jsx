@@ -11,8 +11,8 @@
  */
 
 import React, { useEffect } from 'react';
-import { useTTS } from '../context/TTSContext';
-import { useTTSSession } from '../context/TTSSessionContext';
+import {useTTSContext} from '../context/TTSContext';
+import { useTTSSessionContext  } from '../context/TTSSessionContext';
 import TextInput from './TextInput';
 import TemplateSelector from './TemplateSelector';
 import SectionsList from './SectionsList';
@@ -36,9 +36,15 @@ import { devLog } from '../utils/logUtils';
  */
 export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
   // Access persistent state from TTSContext
-  const { state: persistentState } = useTTS();
+  const { isLoading, state: persistentState, actions: ttsActions } = useTTSContext();
+
+  // Render loading UI if TTSProvider is still loading
+  if (isLoading) {
+    return <div id="tts-app-loading">Loading application...</div>;
+  }
+
   // Access session-specific state and actions from TTSSessionContext
-  const { state: sessionState, actions: sessionActions } = useTTSSession();
+  const { state: sessionState, actions: sessionActions } = useTTSSessionContext ();
 
   // Destructure session-specific state
   const { activeTab, notification, errorMessage, isProcessing } = sessionState || {};
@@ -66,6 +72,15 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
    */
   const handleTabChange = (tab) => {
     sessionActions.setActiveTab(tab);
+    
+    // Refresh file history when that tab is activated
+    if (tab === 'fileHistory' && ttsActions && ttsActions.refreshFileHistory) {
+      // Only refresh if it's not the active tab already
+      if (activeTab !== 'fileHistory') {
+        console.log('Refreshing file history on tab change');
+        ttsActions.refreshFileHistory();
+      }
+    }
   };
 
   return (
@@ -173,7 +188,6 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
               <TextInput />
             </div>
             <div id="sections-container">
-              <h3 className="text-lg font-medium mb-3">Sections</h3>
               <SectionsList />
             </div>
           </div>
@@ -183,7 +197,7 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
         </div>
       )}
 
-      {activeTab === 'fileHistory' && <div id="file-history-container"><FileHistory fileHistory={fileHistory} actions={sessionActions} /></div>}
+      {activeTab === 'fileHistory' && <div id="file-history-container"><FileHistory /></div>}
       {activeTab === 'audio' && <div id="audio-library-container"><AudioLibrary /></div>}
       {activeTab === 'tools' && <div id="tools-container"><ToolsTab /></div>}
       {activeTab === 'settings' && <div id="settings-container"><SettingsTab /></div>}

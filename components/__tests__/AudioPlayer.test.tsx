@@ -2,16 +2,16 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AudioPlayer from '../AudioPlayer';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import {useTTSContext} from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 import { generateAllAudio, mergeAllAudio, downloadAudio } from '../../utils/AudioProcessor';
 
 // Mock the context hooks
 jest.mock('../../context/TTSContext', () => ({
-  useTTS: jest.fn(),
+  useTTSContext: jest.fn(),
 }));
 jest.mock('../../context/TTSSessionContext', () => ({
-  useTTSSession: jest.fn(),
+  useTTSSessionContext : jest.fn(),
 }));
 
 // Mock the utility functions
@@ -52,8 +52,8 @@ describe('AudioPlayer Component', () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue(mockTTS);
-    (useTTSSession as jest.Mock).mockReturnValue(mockTTSSession);
+    (useTTSContext as jest.Mock).mockReturnValue(mockTTS);
+    (useTTSSessionContext  as jest.Mock).mockReturnValue(mockTTSSession);
     // Mock Audio constructor
     global.Audio = jest.fn().mockImplementation(() => ({
       play: jest.fn().mockResolvedValue(undefined),
@@ -75,7 +75,7 @@ describe('AudioPlayer Component', () => {
   });
 
   test('displays message when no valid sections exist', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       ...mockTTSSession,
       state: { ...mockTTSSession.state, sections: [], mergedAudio: null },
     });
@@ -86,7 +86,7 @@ describe('AudioPlayer Component', () => {
   });
 
   test('displays message when audio is generated but not merged', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       ...mockTTSSession,
       state: { ...mockTTSSession.state, mergedAudio: null },
     });
@@ -97,7 +97,7 @@ describe('AudioPlayer Component', () => {
   });
 
   test('generates audio when Generate Audio button is clicked', async () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       ...mockTTSSession,
       state: {
         ...mockTTSSession.state,
@@ -250,7 +250,7 @@ describe('AudioPlayer Component', () => {
   });
 
   test('disables buttons when processing or conditions not met', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       ...mockTTSSession,
       state: {
         ...mockTTSSession.state,

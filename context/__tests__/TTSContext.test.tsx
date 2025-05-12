@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom'; // Import jest-dom for matchers
-import { TTSProvider, useTTS, TTSContext } from '../TTSContext';
+import { TTSProvider, useTTSContext, TTSContext } from '../TTSContext';
 import { initialPersistentState } from '../ttsDefaults';
 import { saveToStorage, loadFromStorage, listFromStorage, setGlobalStorageConfig } from '../storage';
 import { ttsReducer } from '../ttsReducer';
@@ -169,10 +169,10 @@ describe('TTSContext', () => {
     });
   });
 
-  // Test 6: useTTS hook throws error outside provider
+  // Test 6: useTTSContext hook throws error outside provider
   test('useTTS hook throws error when used outside TTSProvider', () => {
     const TestComponent = () => {
-      useTTS();
+      useTTSContext();
       return null;
     };
 

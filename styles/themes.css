@@ -1027,3 +1027,74 @@
         opacity: 1;
     }
 }
+
+
+/* ===========================================================================
+   Theme-Specific Audio Player Styles
+   ---------------------------------------------------------------------------
+   Enhances the audio player controls for specific themes with unique effects
+   like glows, gradients, or animations.
+============================================================================ */
+
+/* Neon Theme: Add glow effect to audio controls */
+[data-theme="neon"] .audio-player {
+    box-shadow: 0 0 8px var(--text-color);
+}
+
+[data-theme="neon"] .audio-player::-webkit-media-controls-play-button {
+    box-shadow: 0 0 5px var(--primary-btn-bg);
+}
+
+[data-theme="neon"] .audio-player::-webkit-media-controls-volume-slider::-webkit-slider-thumb,
+[data-theme="neon"] .audio-player::-moz-range-thumb {
+    box-shadow: 0 0 5px var(--primary-btn-bg);
+}
+
+/* Glitch Theme: Apply glitch animations to audio controls */
+[data-theme="glitch"] .audio-player {
+    position: relative;
+    animation: glitch-border 7s infinite;
+}
+
+[data-theme="glitch"] .audio-player::-webkit-media-controls-play-button {
+    animation: glitch-text 6s infinite;
+}
+
+[data-theme="glitch"] .audio-player::-webkit-media-controls-volume-slider {
+    animation: glitch-skew 8s infinite;
+}
+
+/* Holographic Theme: Apply subtle gradient overlay */
+[data-theme="holographic"] .audio-player::-webkit-media-controls-panel {
+    background: linear-gradient(135deg, rgba(224, 231, 255, 0.8), rgba(240, 171, 252, 0.8));
+}
+
+/* Retro Theme: Add grainy texture to match section-card */
+[data-theme="retro"] .audio-player::-webkit-media-controls-panel {
+    background-image: url('/grain.png'), var(--card-bg);
+    background-blend-mode: overlay;
+}
+
+/* Cosmic Theme: Apply cosmic gradient to panel */
+[data-theme="cosmic"] .audio-player::-webkit-media-controls-panel {
+    background: linear-gradient(145deg, var(--card-bg), #1a1a2e);
+}
+
+/* Steampunk Theme: Add metallic sheen to buttons and sliders */
+[data-theme="steampunk"] .audio-player::-webkit-media-controls-play-button,
+[data-theme="steampunk"] .audio-player::-webkit-media-controls-volume-slider::-webkit-slider-thumb,
+[data-theme="steampunk"] .audio-player::-moz-range-thumb {
+    background: linear-gradient(45deg, var(--primary-btn-bg), #e0c097);
+}
+
+/* Cyberpunk Theme: Add neon outline to controls */
+[data-theme="cyberpunk"] .audio-player {
+    outline: 1px solid var(--card-border);
+    outline-offset: 2px;
+}
+
+[data-theme="cyberpunk"] .audio-player::-webkit-media-controls-play-button {
+    outline: 1px solid var(--primary-btn-bg);
+    outline-offset: 1px;
+}
+

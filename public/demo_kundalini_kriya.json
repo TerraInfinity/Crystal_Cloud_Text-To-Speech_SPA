@@ -34,10 +34,22 @@
             "title": "Meditation",
             "type": "text-to-speech",
             "text": "Now we'll transition into our meditation practice. Slowly come up to a comfortable seated position with your spine straight and shoulders relaxed.\n\nPlace your hands in Gyan Mudra, with the tips of your thumbs and index fingers touching, resting on your knees with palms facing upward.\n\nClose your eyes gently, focusing at your third eye point - the space between your eyebrows.\n\nBegin to focus on your breath. Breathe long, deep, and slow through your nose. Allow each breath to become fuller and more complete than the one before.\n\nAs you inhale, mentally recite the mantra 'Sat' (meaning truth).\nAs you exhale, mentally recite the mantra 'Nam' (meaning identity).\n\nSat Nam is a bij or seed mantra that affirms your true identity.\n\nContinue this breath and mantra meditation, allowing your mind to become still and focused. If thoughts arise, simply notice them without judgment and return your attention to your breath and the mantra.\n\nFeel the space and stillness growing within you with each breath.\n\nWe will meditate in silence for 5-7 minutes.\n\n[Silence for meditation]\n\nSlowly begin to deepen your breath. Gently move your fingers and toes. When you're ready, open your eyes.",
-            "voice": null
+            "voice": {
+                "engine": "gtts",
+                "id": "en-US-Standard-A",
+                "language": "en-US",
+                "name": "English (US) Standard A"
+            },
+            "voiceSettings": {
+                "volume": 1,
+                "rate": 1,
+                "pitch": 1
+            }
         },
         {
             "id": "5",
+            "audioId": "4fdfc095-14bf-46f4-aba8-9f1c4098ca01",
+            "audioSource": "library",
             "title": "Closing",
             "type": "audio-only",
             "text": "",

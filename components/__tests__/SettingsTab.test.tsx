@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SettingsTab from '../SettingsTab';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import {useTTSContext} from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 
 // Mock context hooks
 jest.mock('../../context/TTSContext');
@@ -59,7 +59,7 @@ describe('SettingsTab', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
       actions: mockTTSActions,
       processingMode: 'local',
@@ -67,7 +67,7 @@ describe('SettingsTab', () => {
       remoteEndpoint: 'https://tts.example.com',
       setRemoteEndpoint: jest.fn(),
     });
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       actions: mockSessionActions,
     });
     // Mock window.confirm
@@ -99,8 +99,8 @@ describe('SettingsTab', () => {
 
   test('adds and removes ElevenLabs API key', () => {
     // Mock the component to show ElevenLabs API key section
-    (useTTS as jest.Mock).mockReturnValue({
-      ...useTTS(),
+    (useTTSContext as jest.Mock).mockReturnValue({
+      ...useTTSContext(),
       state: {
         ...mockTTSState,
         settings: {
@@ -133,8 +133,8 @@ describe('SettingsTab', () => {
 
   test('adds and removes AWS Polly credentials', () => {
     // Mock the component to show AWS Polly section
-    (useTTS as jest.Mock).mockReturnValue({
-      ...useTTS(),
+    (useTTSContext as jest.Mock).mockReturnValue({
+      ...useTTSContext(),
       state: {
         ...mockTTSState,
         settings: {
@@ -197,8 +197,8 @@ describe('SettingsTab', () => {
   });
 
   test('shows error for duplicate custom voice ID', () => {
-    (useTTS as jest.Mock).mockReturnValue({
-      ...useTTS(),
+    (useTTSContext as jest.Mock).mockReturnValue({
+      ...useTTSContext(),
       state: {
         ...mockTTSState,
         settings: {
@@ -230,8 +230,8 @@ describe('SettingsTab', () => {
 
   test('adds and removes active voice', () => {
     // Override the mock to ensure the selected voice is correct
-    (useTTS as jest.Mock).mockReturnValue({
-      ...useTTS(),
+    (useTTSContext as jest.Mock).mockReturnValue({
+      ...useTTSContext(),
       state: {
         ...mockTTSState,
         settings: {

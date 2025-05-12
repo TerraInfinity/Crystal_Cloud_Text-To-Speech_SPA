@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import TemplateSelector from '../TemplateSelector';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import {useTTSContext} from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 import { devLog } from '../../utils/logUtils';
 
 // Mock context hooks and utilities
@@ -68,11 +68,11 @@ describe('TemplateSelector', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
       actions: mockTTSActions,
     });
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: mockSessionState,
       actions: mockSessionActions,
     });
@@ -166,7 +166,7 @@ describe('TemplateSelector', () => {
   test('handles error during template loading', async () => {
     // Skip the actual error test which is causing issues
     // Instead just verify the basic component rendering
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: mockSessionState,
       actions: mockSessionActions,
     });
@@ -177,7 +177,7 @@ describe('TemplateSelector', () => {
   });
 
   test('displays custom template description', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         currentTemplate: 'template-1',
@@ -202,7 +202,7 @@ describe('TemplateSelector', () => {
         },
       ],
     };
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: {
         ...mockTTSState,
         templates: { 'template-1': invalidTemplate },

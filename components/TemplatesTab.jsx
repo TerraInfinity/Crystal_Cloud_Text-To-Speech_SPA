@@ -10,9 +10,10 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useTTS } from '../context/TTSContext';
-import { useTTSSession } from '../context/TTSSessionContext';
+import {useTTSContext} from '../context/TTSContext';
+import { useTTSSessionContext  } from '../context/TTSSessionContext';
 import { FaPlus, FaTrash, FaSave, FaRedo, FaEdit, FaTimes, FaChevronUp, FaChevronDown } from 'react-icons/fa';
+import { devLog, devDebug } from '../utils/logUtils';
 
 /**
  * TemplatesTab component for creating and managing templates.
@@ -23,8 +24,8 @@ import { FaPlus, FaTrash, FaSave, FaRedo, FaEdit, FaTimes, FaChevronUp, FaChevro
  * @returns {JSX.Element} The rendered TemplatesTab component
  */
 const TemplatesTab = () => {
-  const { state, actions } = useTTS();
-  const { state: sessionState, actions: sessionActions } = useTTSSession();
+  const { state, actions } = useTTSContext();
+  const { state: sessionState, actions: sessionActions } = useTTSSessionContext ();
 
   const templates = state.templates;
   const audioLibrary = state?.AudioLibrary || {};
@@ -47,20 +48,20 @@ const TemplatesTab = () => {
    * Debug state updates when templates change.
    */
   useEffect(() => {
-    console.log('Templates updated:', templates);
+    devDebug('Templates updated:', templates);
   }, [templates]);
 
   /**
    * Check if voices are loaded for dropdown selection.
    */
   useEffect(() => {
-    console.log('state.settings.activeVoices:', state.settings.activeVoices);
-    console.log('activeVoices:', activeVoices);
+    devDebug('state.settings.activeVoices:', state.settings.activeVoices);
+    devDebug('activeVoices:', activeVoices);
     if (activeVoices.length > 0) {
       setVoicesLoaded(true);
-      console.log('Voices loaded, rendering dropdown');
+      devLog('Voices loaded, rendering dropdown');
     } else {
-      console.log('No voices loaded yet');
+      devDebug('No voices loaded yet');
     }
   }, [state.settings.activeVoices, activeVoices]);
 
@@ -86,10 +87,10 @@ const TemplatesTab = () => {
    * @param {Object} updates - The properties to update
    */
   const updateSection = (index, updates) => {
-    console.log('Updating section at index:', index, 'with updates:', updates);
+    devDebug('Updating section at index:', index, 'with updates:', updates);
     sessionActions.updateTemplateCreationSection(index, updates);
     setTimeout(() => {
-      console.log('Updated templateCreation state after updateSection:', sessionState.templateCreation);
+      devDebug('Updated templateCreation state after updateSection:', sessionState.templateCreation);
     }, 0);
   };
 
@@ -143,7 +144,7 @@ const TemplatesTab = () => {
       // Make sure type is explicitly set
       processedSection.type = section.type || 'text-to-speech';
       
-      console.log('Processing section for template:', processedSection);
+      devDebug('Processing section for template:', processedSection);
       
       if (processedSection.type === 'text-to-speech') {
         // Ensure text-to-speech sections have voice and voiceSettings
@@ -171,9 +172,9 @@ const TemplatesTab = () => {
       sections: processedSections,
     };
     
-    console.log('Saving template with sections:', processedSections);
+    devLog('Saving template with sections:', processedSections);
     actions.saveTemplate(template);
-    console.log('Saved template:', template);
+    devDebug('Saved template:', template);
     handleClearTemplateForm();
     sessionActions.setNotification({ type: 'success', message: 'Template saved successfully!' });
   };

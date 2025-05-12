@@ -11,9 +11,9 @@
  */
 
 import React from 'react';
-import { useTTS } from '../context/TTSContext';
+import {useTTSContext} from '../context/TTSContext';
 import SectionCard from './SectionCard';
-import { useTTSSession } from '../context/TTSSessionContext';
+import { useTTSSessionContext  } from '../context/TTSSessionContext';
 import { devLog } from '../utils/logUtils';
 
 /**
@@ -25,8 +25,8 @@ import { devLog } from '../utils/logUtils';
  * @returns {JSX.Element} The rendered SectionsList component
  */
 const SectionsList = () => {
-  const { state, actions } = useTTS(); 
-  const { state: sessionState, actions: sessionActions } = useTTSSession();
+  const { state, actions } = useTTSContext(); 
+  const { state: sessionState, actions: sessionActions } = useTTSSessionContext ();
 
   const sections = sessionState?.sections || []; // Safely access sections with a fallback
  
@@ -118,6 +118,9 @@ const SectionsList = () => {
 
   return (
     <div id="sections-list-container">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">Sections</h3>
+      </div>
       <div id="sections-wrapper" className="mb-4">
         {sections.map((section, index) => (
           <div key={section.id} id={`section-${section.id}`} className="mb-4">

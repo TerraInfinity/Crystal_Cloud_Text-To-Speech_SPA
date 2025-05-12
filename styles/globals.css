@@ -201,3 +201,101 @@ h1 {
 .button-gradient:hover {
     background-image: linear-gradient(to right, var(--button-gradient-hover-start), var(--button-gradient-hover-end));
 }
+
+/* Audio Player Styles */
+.audio-player {
+    @apply w-full rounded-md mt-2;
+    //background-color: var(--card-bg);
+    color: var(--text-color);
+  }
+  
+  /* WebKit (Chrome, Safari, Edge) */
+  .audio-player::-webkit-media-controls-panel {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-radius: 0.375rem; /* Matches Tailwind's rounded-md */
+    padding: 2px;
+  }
+  
+  .audio-player::-webkit-media-controls-play-button {
+    background-color: var(--card-bg);
+    color: var(--primary-btn-bg);
+    border-radius: 50%;
+    padding: 4px;
+  }
+  
+  .audio-player::-webkit-media-controls-volume-slider,
+  .audio-player::-webkit-media-controls-timeline {
+    background-color: var(--card-bg);
+    border-radius: 4px;
+    height: 6px; /* Thinner track for a subtler look */
+  }
+  
+  
+  /* Progress bar (the green bar in the screenshot) */
+  .audio-player::-webkit-media-controls-timeline::-webkit-media-controls-current-time {
+    background-color: color-mix(in srgb, var(--primary-btn-bg) 50%, transparent);
+    /* Makes the progress bar semi-transparent */
+    opacity: 0.5; /* Additional transparency */
+    border-radius: 4px;
+  }
+  
+  /* Scrubber thumb */
+  .audio-player::-webkit-media-controls-timeline::-webkit-slider-thumb {
+    background-color: var(--primary-btn-bg);
+    border-radius: 50%;
+    border: 2px solid var(--card-bg);
+    width: 12px;
+    height: 12px;
+    -webkit-appearance: none;
+  }
+  
+  .audio-player::-webkit-media-controls-timeline::-webkit-slider-runnable-track {
+    background-color: var(--card-border);
+    height: 6px;
+    border-radius: 4px;
+  }
+  
+  .audio-player::-webkit-media-controls-volume-slider::-webkit-slider-thumb {
+    background-color: var(--primary-btn-bg);
+    border-radius: 50%;
+    border: 2px solid var(--card-bg);
+    width: 12px;
+    height: 12px;
+    -webkit-appearance: none;
+  }
+  
+  .audio-player::-webkit-media-controls-volume-slider::-webkit-slider-runnable-track {
+    background-color: var(--card-border);
+    height: 6px;
+    border-radius: 4px;
+  }
+  
+  .audio-player::-webkit-media-controls-current-time-display,
+  .audio-player::-webkit-media-controls-time-remaining-display {
+    color: var(--text-color);
+    font-size: 0.75rem; /* Matches Tailwind's text-xs */
+  }
+  
+  /* Firefox */
+  .audio-player::-moz-range-track {
+    background-color: var(--card-border);
+    height: 6px;
+    border-radius: 4px;
+  }
+  
+  .audio-player::-moz-range-thumb {
+    background-color: var(--primary-btn-bg);
+    border-radius: 50%;
+    border: 2px solid var(--card-bg);
+    width: 12px;
+    height: 12px;
+  }
+  
+  .audio-player::-moz-range-progress {
+    background-color: color-mix(in srgb, var(--primary-btn-bg) 50%, transparent);
+    /* Makes the progress bar semi-transparent */
+    opacity: 0.5; /* Additional transparency */
+    height: 6px;
+    border-radius: 4px;
+  }

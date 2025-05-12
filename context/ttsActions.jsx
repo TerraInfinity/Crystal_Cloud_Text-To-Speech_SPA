@@ -1,6 +1,7 @@
 // context/ttsActions.jsx
-import { saveToStorage, removeFromStorage, listFromStorage, updateFileMetadata, loadFromStorage } from './storage';
+import { saveToStorage, loadFromStorage } from './storage';
 import { devLog } from '../utils/logUtils';
+import { initialPersistentState } from './ttsDefaults';
 
 /**
  * Creates and returns all TTS-related actions that can be dispatched
@@ -8,184 +9,100 @@ import { devLog } from '../utils/logUtils';
  * @returns {Object} Object containing all TTS action functions
  */
 export function createTtsActions(dispatch) {
+  let currentState = null;
+  const setCurrentState = (state, context = 'tts') => {
+    if (context === 'tts') {
+      currentState = state;
+      devLog('Updated current state reference in ttsActions');
+    }
+  };
+
   return {
     /**
      * Sets the storage configuration for the TTS application
      * @param {Object} config - The storage configuration object
      */
     setStorageConfig: (config) => dispatch({ type: 'SET_STORAGE_CONFIG', payload: config }),
-    
+
     /**
      * Sets the active speech engine
-     * @param {string} engine - The speech engine to use (e.g., 'gtts', 'elevenLabs')
+     * @param {string} engine - The speech engine to use
      */
     setSpeechEngine: (engine) => dispatch({ type: 'SET_SPEECH_ENGINE', payload: engine }),
-    
+
     /**
      * Sets the selected voice for a specific engine
-     * @param {string} engine - The speech engine 
+     * @param {string} engine - The speech engine
      * @param {Object} voice - The voice object to set as selected
      */
     setSelectedVoice: (engine, voice) => dispatch({ type: 'SET_SELECTED_VOICE', payload: { engine, voice } }),
-    
+
     /**
      * Adds a custom voice to the specified engine
      * @param {string} engine - The speech engine
      * @param {Object} voice - The custom voice object to add
      */
     addCustomVoice: (engine, voice) => dispatch({ type: 'ADD_CUSTOM_VOICE', payload: { engine, voice } }),
-    
+
     /**
      * Removes a custom voice from the specified engine
      * @param {string} engine - The speech engine
      * @param {string} voiceId - The ID of the voice to remove
      */
     removeCustomVoice: (engine, voiceId) => dispatch({ type: 'REMOVE_CUSTOM_VOICE', payload: { engine, voiceId } }),
-    
+
     /**
      * Adds a voice to the active voices list for the specified engine
      * @param {string} engine - The speech engine
      * @param {Object} voice - The voice object to add to active voices
      */
     addActiveVoice: (engine, voice) => dispatch({ type: 'ADD_ACTIVE_VOICE', payload: { engine, voice } }),
-    
+
     /**
      * Removes a voice from the active voices list for the specified engine
      * @param {string} engine - The speech engine
      * @param {string} voiceId - The ID of the voice to remove
      */
     removeActiveVoice: (engine, voiceId) => dispatch({ type: 'REMOVE_ACTIVE_VOICE', payload: { engine, voiceId } }),
-    
+
     /**
      * Sets an API key for a specific service
      * @param {string} keyName - The name of the API key to set
      * @param {string} value - The API key value
      */
     setApiKey: (keyName, value) => dispatch({ type: 'SET_API_KEY', payload: { keyName, value } }),
-    
+
     /**
      * Adds an API key to an array of keys
      * @param {string} keyArray - The name of the array to add the key to
      * @param {Object} keyValue - The key value object to add
      */
     addApiKey: (keyArray, keyValue) => dispatch({ type: 'ADD_API_KEY', payload: { keyArray, keyValue } }),
-    
+
     /**
      * Removes an API key from an array of keys
      * @param {string} keyArray - The name of the array to remove from
      * @param {number} index - The index of the key to remove
      */
     removeApiKey: (keyArray, index) => dispatch({ type: 'REMOVE_API_KEY', payload: { keyArray, index } }),
-    
+
     /**
      * Sets the application mode
      * @param {string} mode - The mode to set ('demo' or 'production')
      */
     setMode: (mode) => dispatch({ type: 'SET_MODE', payload: mode }),
-    
+
     /**
      * Sets the application theme
      * @param {string} theme - The theme to apply
      */
-    setTheme: (theme) => dispatch({ type: 'SET_THEME', payload: theme }),
-
-    /**
-     * Uploads an audio file to storage and adds it to state
-     * @param {File} file - The audio file to upload
-     * @param {Object} audioData - Metadata for the audio file
-     * @returns {Promise<void>}
-     */
-    uploadAudio: async (file, audioData) => {
-      try {
-        // Extract metadata to send to the server
-        const metadata = {
-          category: audioData.category || 'sound_effect',
-          name: audioData.name,
-          placeholder: audioData.placeholder,
-          volume: audioData.volume.toString(),
-        };
-        const url = await saveToStorage(file.name, file, 'fileStorage', metadata);
-        const updatedAudioData = { ...audioData, url };
-        dispatch({ type: 'SAVE_AUDIO', payload: updatedAudioData });
-      } catch (error) {
-        devLog('Error uploading audio:', error);
-        throw error;
+    setTheme: (theme) => {
+      dispatch({ type: 'SET_THEME', payload: theme });
+      if (typeof window !== 'undefined') {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
       }
     },
-
-    /**
-     * Deletes an audio file from storage and state
-     * @param {string} audioId - The ID of the audio to delete
-     * @param {string} filename - The filename of the audio file
-     * @returns {Promise<void>}
-     */
-    deleteAudioFromStorage: async (audioId, filename) => {
-      try {
-        await removeFromStorage(filename, 'fileStorage');
-        dispatch({ type: 'DELETE_AUDIO', payload: audioId });
-      } catch (error) {
-        devLog('Error deleting audio:', error);
-        throw error;
-      }
-    },
-
-    /**
-     * Lists all items from the specified storage type
-     * @param {string} storageType - The storage type to list from
-     * @returns {Promise<Array>} A list of items from storage
-     */
-    listFromStorage: async (storageType) => {
-      try {
-        return await listFromStorage(storageType);
-      } catch (error) {
-        devLog('Error listing from storage:', error);
-        throw error;
-      }
-    },
-
-    /**
-     * Updates audio metadata on the server and in state
-     * @param {string} audioId - The ID of the audio to update
-     * @param {Object} updatedAudioData - The updated audio data
-     * @returns {Promise<void>}
-     */
-    updateAudio: async (audioId, updatedAudioData) => {
-      try {
-        devLog('Updating audio with ID:', audioId, 'Data:', updatedAudioData);
-        // Update metadata on server using audioId (UUID)
-        const updatedMetadata = await updateFileMetadata(audioId, {
-          name: updatedAudioData.name || '',
-          placeholder: updatedAudioData.placeholder || '',
-          volume: typeof updatedAudioData.volume === 'number' ? updatedAudioData.volume : 1,
-        });
-        
-        // Update local state with server response
-        dispatch({ type: 'SAVE_AUDIO', payload: { ...updatedAudioData, ...updatedMetadata } });
-      } catch (error) {
-        devLog('Error updating audio metadata:', error);
-        throw error;
-      }
-    },
-
-    /**
-     * Loads the audio library into state
-     * @param {Object} audioLibrary - The audio library to load
-     */
-    loadAudioLibrary: (audioLibrary) => {
-      dispatch({ type: 'LOAD_AUDIO_LIBRARY', payload: audioLibrary });
-    },
-
-    /**
-     * Saves audio data to state
-     * @param {Object} audioData - The audio data to save
-     */
-    saveAudio: (audioData) => dispatch({ type: 'SAVE_AUDIO', payload: audioData }),
-    
-    /**
-     * Deletes audio from state by ID
-     * @param {string} audioId - The ID of the audio to delete
-     */
-    deleteAudio: (audioId) => dispatch({ type: 'DELETE_AUDIO', payload: audioId }),
 
     /**
      * Resets the application state to initial values
@@ -252,7 +169,61 @@ export function createTtsActions(dispatch) {
      */
     setDefaultVoice: (engine, voiceId) =>
       dispatch({ type: 'SET_DEFAULT_VOICE', payload: { engine, voiceId } }),
-    
+
+    /**
+     * Loads a history entry
+     * @param {Object} historyEntry - The history entry to load
+     * @returns {void}
+     */
+    loadHistoryEntry: (historyEntry) => {
+      try {
+        if (historyEntry?.audioUrl) {
+          devLog('Loading history entry with audioUrl:', historyEntry);
+          if (historyEntry.template === 'merged' || !historyEntry.template) {
+            if (historyEntry.config) {
+              const config = typeof historyEntry.config === 'string'
+                ? JSON.parse(historyEntry.config)
+                : historyEntry.config;
+              if (window.ttsSessionDispatch) {
+                window.ttsSessionDispatch({ type: 'RESET_SESSION' });
+                if (Array.isArray(config.sections)) {
+                  window.ttsSessionDispatch({ type: 'SET_SECTIONS', payload: config.sections });
+                }
+                if (config.description) {
+                  window.ttsSessionDispatch({ type: 'SET_DESCRIPTION', payload: config.description });
+                }
+                if (config.title) {
+                  window.ttsSessionDispatch({ type: 'SET_TITLE', payload: config.title });
+                }
+                window.ttsSessionDispatch({
+                  type: 'SET_NOTIFICATION',
+                  payload: { type: 'success', message: 'Configuration loaded successfully' },
+                });
+                window.ttsSessionDispatch({ type: 'SET_ACTIVE_TAB', payload: 'main' });
+              } else {
+                const event = new CustomEvent('load-tts-config', { detail: { config } });
+                window.dispatchEvent(event);
+                setTimeout(() => {
+                  if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+                    window.location.href = '/';
+                  }
+                }, 100);
+              }
+              return;
+            }
+            alert('This file can be played, but its configuration is not available for editing.');
+            return;
+          }
+          alert('This template loading feature is currently being implemented.');
+        } else {
+          alert('This history entry has no associated audio file.');
+        }
+      } catch (error) {
+        devLog('Error loading history entry:', error);
+        alert(`Error loading configuration: ${error.message}`);
+      }
+    },
+
+    updateCurrentState: setCurrentState,
   };
-  
 }

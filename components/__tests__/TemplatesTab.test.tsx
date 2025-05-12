@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import TemplatesTab from '../TemplatesTab';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import {useTTSContext} from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 
 // Mock context hooks
 jest.mock('../../context/TTSContext');
@@ -78,11 +78,11 @@ describe('TemplatesTab', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
       actions: mockTTSActions,
     });
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: mockSessionState,
       actions: mockSessionActions,
     });
@@ -121,7 +121,7 @@ describe('TemplatesTab', () => {
   });
 
   test('updates section title', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         templateCreation: {
@@ -149,7 +149,7 @@ describe('TemplatesTab', () => {
   });
 
   test('removes a section', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         templateCreation: {
@@ -171,7 +171,7 @@ describe('TemplatesTab', () => {
   });
 
   test('prevents removing last section', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         templateCreation: {
@@ -196,7 +196,7 @@ describe('TemplatesTab', () => {
   });
 
   test('moves section up', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         templateCreation: {
@@ -218,7 +218,7 @@ describe('TemplatesTab', () => {
   });
 
   test('moves section down', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         templateCreation: {
@@ -240,7 +240,7 @@ describe('TemplatesTab', () => {
   });
 
   test('saves template with valid name', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         templateCreation: {
@@ -301,7 +301,7 @@ describe('TemplatesTab', () => {
   });
 
   test('selects voice for text-to-speech section', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         templateCreation: {
@@ -327,7 +327,7 @@ describe('TemplatesTab', () => {
   });
 
   test('selects audio for audio-only section', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         templateCreation: {

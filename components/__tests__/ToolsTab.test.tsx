@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ToolsTab from '../ToolsTab.jsx';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import {useTTSContext} from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 import { parseTextFromHtml } from '../../utils/textUtils';
 
 // Mock context hooks and utility
@@ -39,12 +39,12 @@ describe('ToolsTab', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
       actions: mockTTSActions,
       isProcessing: false,
     });
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: mockSessionState,
       actions: mockSessionActions,
     });

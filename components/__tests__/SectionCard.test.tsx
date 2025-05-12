@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SectionCard from '../SectionCard';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 import TTSSection from '../SectionCardTTS';
 import AudioSection from '../SectionCardAudio';
 import { devLog } from '../../utils/logUtils';
@@ -43,7 +43,7 @@ describe('SectionCard', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: mockSessionState,
       actions: mockSessionActions,
     });
@@ -141,7 +141,7 @@ describe('SectionCard', () => {
     };
 
     mockSessionActions.updateSection.mockImplementation(() => {
-      (useTTSSession as jest.Mock).mockReturnValue({
+      (useTTSSessionContext  as jest.Mock).mockReturnValue({
         state: { sections: [updatedSection] },
         actions: mockSessionActions,
       });
@@ -188,7 +188,7 @@ describe('SectionCard', () => {
       voiceSettings: { volume: 1, rate: 1, pitch: 1 },
     };
 
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: { sections: [audioSection] },
       actions: mockSessionActions,
     });
@@ -197,7 +197,7 @@ describe('SectionCard', () => {
     fireEvent.click(screen.getByTitle('Expand'));
 
     mockSessionActions.updateSection.mockImplementation(() => {
-      (useTTSSession as jest.Mock).mockReturnValue({
+      (useTTSSessionContext  as jest.Mock).mockReturnValue({
         state: { sections: [updatedSection] },
         actions: mockSessionActions,
       });
@@ -257,7 +257,7 @@ describe('SectionCard', () => {
         },
       ],
     };
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: updatedState,
       actions: mockSessionActions,
     });

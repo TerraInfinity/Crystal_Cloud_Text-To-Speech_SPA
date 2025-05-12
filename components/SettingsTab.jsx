@@ -11,8 +11,8 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useTTS } from '../context/TTSContext';
-import { useTTSSession } from '../context/TTSSessionContext';
+import {useTTSContext} from '../context/TTSContext';
+import { useTTSSessionContext  } from '../context/TTSSessionContext';
 import { devLog } from '../utils/logUtils';
 
 /**
@@ -31,8 +31,8 @@ const SettingsTab = () => {
     setProcessingMode,
     remoteEndpoint,
     setRemoteEndpoint,
-  } = useTTS();
-  const { actions: sessionActions } = useTTSSession();
+  } = useTTSContext();
+  const { actions: sessionActions } = useTTSSessionContext ();
 
   const {
     settings: {

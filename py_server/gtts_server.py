@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Text-to-Speech Server based on Google TTS (gTTS)
 
@@ -30,8 +31,6 @@ import tempfile
 import os
 from datetime import datetime
 import wave
-
-from matplotlib import colors
 from file_storage import setup_routes  # Import file_storage routes
 
 # Logging configuration
@@ -52,18 +51,20 @@ class Colors:
     YELLOW = '\033[93m'
     RESET = '\033[0m'
 
-
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing for all routes
 
-# Define directories and files
+# Define directories
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(SCRIPT_DIR, "Uploads")  # Directory for storing audio files
-METADATA_FILE = os.path.join(SCRIPT_DIR, "audio_metadata.json")  # File for storing metadata
+CONFIGS_DIR = os.path.join(UPLOAD_DIR, "configs")  # Directory for config files
 
-# Create the uploads directory if it doesn't exist
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR)
+# Create directories if they don't exist
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(CONFIGS_DIR, exist_ok=True)
+
+# Configure maximum file size (5GB)
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024 * 1024  # 5GB max file size
 
 # Consolidated list of supported voices with their configurations
 SUPPORTED_VOICES = {
@@ -215,7 +216,6 @@ def text_to_speech():
         logging.error(f"{Colors.RED}=================={Colors.RESET}")
         return jsonify({'message': str(e)}), 500
 
-
 @app.route('/gtts/voices', methods=['GET'])
 def get_voices():
     """
@@ -246,22 +246,27 @@ def get_voices():
 @app.route('/purge', methods=['POST'])
 def purge_files():
     """
-    Delete all audio files and clear metadata
+    Delete all audio and config files in Uploads/ and Uploads/configs/
     
     Returns:
         JSON with success or error message
     """
     try:
-        # Delete all files in the uploads directory
+        # Delete all audio files in Uploads/
         for filename in os.listdir(UPLOAD_DIR):
-            file_path = os.path.join(UPLOAD_DIR, filename)
+            if filename != "configs":  # Skip the configs directory
+                file_path = os.path.join(UPLOAD_DIR, filename)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                    logging.info(f"Deleted audio file: {filename}")
+
+        # Delete all config files in Uploads/configs/
+        for filename in os.listdir(CONFIGS_DIR):
+            file_path = os.path.join(CONFIGS_DIR, filename)
             if os.path.isfile(file_path):
                 os.remove(file_path)
-        
-        # Clear the metadata file
-        with open(METADATA_FILE, 'w') as f:
-            pass  # Truncates the file
-        
+                logging.info(f"Deleted config file: {filename}")
+
         logging.info("All files purged successfully.")
         return jsonify({'message': 'All files purged successfully'}), 200
     except Exception as e:
@@ -270,4 +275,4 @@ def purge_files():
 
 if __name__ == '__main__':
     logging.info("\n=== Starting Flask server on http://127.0.0.1:5000 ===")
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)

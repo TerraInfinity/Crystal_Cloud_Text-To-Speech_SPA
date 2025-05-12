@@ -7,7 +7,7 @@
  * @requires react-icons/ti
  */
 
-import { useTTS } from '../context/TTSContext'; // Adjust path as needed
+import {useTTSContext} from '../context/TTSContext'; // Adjust path as needed
 import {
   SunIcon,
   MoonIcon,
@@ -100,7 +100,7 @@ const themeIcons = {
  * @returns {JSX.Element} The rendered ThemeToggle button
  */
 export default function ThemeToggle() {
-  const { state, actions } = useTTS();
+  const { state, actions } = useTTSContext();
   const { theme } = state;
 
   /**

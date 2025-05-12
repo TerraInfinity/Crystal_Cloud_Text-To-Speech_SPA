@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SectionsList from '../SectionsList';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import {useTTSContext} from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 import SectionCard from '../SectionCard';
 import { devLog } from '../../utils/logUtils';
 
@@ -49,11 +49,11 @@ describe('SectionsList', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
       actions: mockTTSActions,
     });
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: mockSessionState,
       actions: mockSessionActions,
     });
@@ -67,7 +67,7 @@ describe('SectionsList', () => {
   });
 
   test('renders empty state with create button when no sections exist', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: { sections: [] },
       actions: mockSessionActions,
     });
@@ -79,7 +79,7 @@ describe('SectionsList', () => {
   });
 
   test('creates a new section', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: { sections: [] },
       actions: mockSessionActions,
     });

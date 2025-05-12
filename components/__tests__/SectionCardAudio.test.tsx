@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SectionCardAudio from '../SectionCardAudio';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import {useTTSContext} from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 
 // Mock context hooks
 jest.mock('../../context/TTSContext');
@@ -58,11 +58,11 @@ describe('SectionCardAudio', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
       isProcessing: false,
     });
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: mockSessionState,
       actions: mockSessionActions,
     });
@@ -117,7 +117,7 @@ describe('SectionCardAudio', () => {
     const invalidLibrary = {
       'audio-1': { id: 'audio-1', name: 'Invalid Audio', url: null },
     };
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { ...mockTTSState, AudioLibrary: invalidLibrary },
       isProcessing: false,
     });
@@ -199,7 +199,7 @@ describe('SectionCardAudio', () => {
       },
     };
     
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: sessionStateWithAudio,
       actions: mockSessionActions,
     });
@@ -224,7 +224,7 @@ describe('SectionCardAudio', () => {
         'section-1': { url: 'http://example.com/audio.mp3', source: 'library', name: 'Test Audio' },
       },
     };
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: sessionStateWithAudio,
       actions: mockSessionActions,
     });
@@ -246,7 +246,7 @@ describe('SectionCardAudio', () => {
   });
 
   test('disables inputs when processing', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
       isProcessing: true,
     });
@@ -269,7 +269,7 @@ describe('SectionCardAudio', () => {
         'section-1': { url: 'http://example.com/audio.mp3', source: 'library', name: 'Test Audio' },
       },
     };
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: sessionStateWithAudio,
       actions: mockSessionActions,
     });
@@ -288,7 +288,7 @@ describe('SectionCardAudio', () => {
         'section-1': { url: 'http://example.com/audio.mp3', source: 'library', name: 'Test Audio' },
       },
     };
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: sessionStateWithAudio,
       actions: mockSessionActions,
     });

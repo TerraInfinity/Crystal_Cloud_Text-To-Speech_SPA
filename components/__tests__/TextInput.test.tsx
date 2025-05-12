@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import TextInput from '../TextInput';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import {useTTSContext} from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 import { devLog } from '../../utils/logUtils';
 import Link from 'next/link';
 
@@ -73,12 +73,12 @@ describe('TextInput', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
       actions: mockTTSActions,
       isProcessing: false,
     });
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: mockSessionState,
       actions: mockSessionActions,
     });
@@ -208,7 +208,7 @@ describe('TextInput', () => {
   });
 
   test('creates text section', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         inputText: 'Sample text',
@@ -264,7 +264,7 @@ describe('TextInput', () => {
 
   test('uploads audio file', async () => {
     // Mock the component rendering in audio mode
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         inputType: 'audio',
@@ -299,7 +299,7 @@ describe('TextInput', () => {
 
   test('creates audio section from library', async () => {
     // Mock TTS context with audio library
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: {
         ...mockTTSState,
         AudioLibrary: {
@@ -311,7 +311,7 @@ describe('TextInput', () => {
     });
     
     // Mock session context to be in audio mode
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         inputType: 'audio',
@@ -343,7 +343,7 @@ describe('TextInput', () => {
 
   test('creates audio section from upload', async () => {
     // Mock session context to be in audio mode
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         inputType: 'audio',
@@ -391,7 +391,7 @@ describe('TextInput', () => {
   });
 
   test('fetches audio library when empty', async () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { ...mockTTSState, AudioLibrary: {} },
       actions: mockTTSActions,
       isProcessing: false,
@@ -414,7 +414,7 @@ describe('TextInput', () => {
   });
 
   test('handles error when fetching audio library', async () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: { ...mockTTSState, AudioLibrary: {} },
       actions: mockTTSActions,
       isProcessing: false,

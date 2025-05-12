@@ -123,11 +123,21 @@ export function createSessionActions(sessionDispatch, loadDemoContent) {
         devLog('Invalid audio data for setGeneratedAudio:', { sectionId, audioData });
         return;
       }
+      
+      // Only store the URL and minimal metadata to prevent storage quota issues
+      const minimalAudioData = {
+        url: audioData.url,
+        // Add other essential metadata if needed
+        contentType: audioData.contentType || 'audio/wav',
+        duration: audioData.duration || null,
+        size: audioData.size || null,
+      };
+      
       sessionDispatch({
         type: 'SET_GENERATED_AUDIO',
-        payload: { sectionId, audioData },
+        payload: { sectionId, audioData: minimalAudioData },
       });
-      devLog(`Set generated audio for section ${sectionId}:`, audioData);
+      devLog(`Set generated audio for section ${sectionId}:`, minimalAudioData);
     },
 
     /**
@@ -135,7 +145,9 @@ export function createSessionActions(sessionDispatch, loadDemoContent) {
      * @param {string} audioUrl - The URL to the merged audio file
      */
     setMergedAudio: (audioUrl) => {
-      sessionDispatch({ type: 'SET_MERGED_AUDIO', payload: audioUrl });
+      // Ensure we're only storing the URL string, not a complex object
+      const url = typeof audioUrl === 'object' && audioUrl.url ? audioUrl.url : audioUrl;
+      sessionDispatch({ type: 'SET_MERGED_AUDIO', payload: url });
     },
 
     /**
@@ -178,6 +190,15 @@ export function createSessionActions(sessionDispatch, loadDemoContent) {
         payload: { sectionId, settings },
       });
       devLog(`Set voice settings for section ${sectionId}:`, settings);
+    },
+    
+    /**
+     * Sets the last audio input selection
+     * @param {Object} selection - The selection object { audioId, audioCategory }
+     */
+    setLastAudioInputSelection: (selection) => {
+      sessionDispatch({ type: 'SET_LAST_AUDIO_INPUT_SELECTION', payload: selection });
+      devLog('Dispatched setLastAudioInputSelection:', selection);
     },
 
     /**

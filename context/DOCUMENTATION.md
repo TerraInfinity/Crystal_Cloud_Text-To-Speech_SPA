@@ -192,7 +192,7 @@ And provides hooks to access them:
  * Custom hook to access the TTS context
  * @returns {Object} The TTS context object containing state, dispatch, and actions
  */
-export const useTTS = () => {
+export const useTTSContext = () => {
   const context = useContext(TTSContext);
   if (context === undefined) {
     throw new Error('useTTS must be used within a TTSProvider');

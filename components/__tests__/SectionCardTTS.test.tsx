@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SectionCardTTS from '../SectionCardTTS';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import {useTTSContext} from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 import { devLog } from '../../utils/logUtils';
 
 // Mock context hooks and utilities
@@ -82,10 +82,10 @@ describe('SectionCardTTS', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
     });
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: mockSessionState,
       actions: mockSessionActions,
     });
@@ -197,7 +197,7 @@ describe('SectionCardTTS', () => {
         'section-1': { url: 'http://example.com/audio.wav', source: 'generated', name: 'Test Audio' },
       },
     };
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: sessionStateWithAudio,
       actions: mockSessionActions,
     });
@@ -223,7 +223,7 @@ describe('SectionCardTTS', () => {
         'section-1': { url: 'http://example.com/audio.wav', source: 'generated', name: 'Test Audio' },
       },
     };
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: sessionStateWithAudio,
       actions: mockSessionActions,
     });
@@ -257,7 +257,7 @@ describe('SectionCardTTS', () => {
       ],
     };
     
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: updatedState,
       actions: mockSessionActions,
     });
@@ -287,7 +287,7 @@ describe('SectionCardTTS', () => {
       voice: undefined,
     };
     
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: { ...mockSessionState, sections: [sectionNoVoice] },
       actions: mockSessionActions,
     });
@@ -323,7 +323,7 @@ describe('SectionCardTTS', () => {
       ...mockSection,
       voiceSettings: undefined,
     };
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: { ...mockSessionState, sections: [sectionNoSettings] },
       actions: mockSessionActions,
     });
@@ -340,7 +340,7 @@ describe('SectionCardTTS', () => {
         'section-1': { url: 'http://example.com/audio.wav', source: 'generated', name: 'Test Audio' },
       },
     };
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: sessionStateWithAudio,
       actions: mockSessionActions,
     });

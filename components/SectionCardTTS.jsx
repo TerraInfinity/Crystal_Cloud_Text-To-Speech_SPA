@@ -10,9 +10,9 @@
  */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useTTS } from '../context/TTSContext';
-import { useTTSSession } from '../context/TTSSessionContext';
-import { devLog } from '../utils/logUtils';
+import {useTTSContext} from '../context/TTSContext';
+import { useTTSSessionContext  } from '../context/TTSSessionContext';
+import { devLog, devError, devWarn } from '../utils/logUtils';
 
 /**
  * SectionCardTTS component for handling text-to-speech section content.
@@ -43,8 +43,8 @@ const SectionCardTTS = ({
   voiceSettings,
   setVoiceSettings,
 }) => {
-  const { state } = useTTS();
-  const { state: sessionState, actions } = useTTSSession();
+  const { state } = useTTSContext();
+  const { state: sessionState, actions } = useTTSSessionContext ();
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
@@ -97,7 +97,7 @@ const SectionCardTTS = ({
       devLog('Saving voiceSettings:', voiceSettings);
       actions.setVoiceSettings(section.id, voiceSettings);
     } else {
-      console.warn('actions.setVoiceSettings is not defined');
+      devWarn('actions.setVoiceSettings is not defined');
     }
   }, [voiceSettings, section.id, section.type, actions]);
 
@@ -177,7 +177,7 @@ const SectionCardTTS = ({
       audioRef.current = new Audio(audioData.url);
       audioRef.current.addEventListener('ended', () => setIsPlaying(false));
       audioRef.current.addEventListener('error', () => {
-        console.error(`Audio load error for section ${section.id}`);
+        devError(`Audio load error for section ${section.id}`);
         setIsPlaying(false);
       });
       return () => {
@@ -190,7 +190,7 @@ const SectionCardTTS = ({
               audioRef.current.removeEventListener('error', () => {});
             }
           } catch (e) {
-            console.warn('Could not remove event listeners from audio element', e);
+            devWarn('Could not remove event listeners from audio element', e);
           }
           audioRef.current = null;
         }
@@ -208,7 +208,7 @@ const SectionCardTTS = ({
       audioRef.current.currentTime = 0;
       setIsPlaying(false);
     } else {
-      audioRef.current.play().catch((error) => console.error(`Playback error for section ${section.id}:`, error));
+      audioRef.current.play().catch((error) => devError(`Playback error for section ${section.id}:`, error));
       setIsPlaying(true);
     }
   };
@@ -253,7 +253,7 @@ const SectionCardTTS = ({
                     actions.setSectionVoice(section.id, selectedVoiceObj);
                     devLog('Selected voice:', selectedVoiceObj);
                   } else {
-                    console.warn('Voice not found for engine:', engine, 'id:', id);
+                    devWarn('Voice not found for engine:', engine, 'id:', id);
                   }
                 }
               }}
@@ -302,7 +302,7 @@ const SectionCardTTS = ({
                       actions.setSectionVoice(section.id, selectedVoiceObj);
                       devLog('Selected voice:', selectedVoiceObj);
                     } else {
-                      console.warn('Voice not found for engine:', engine, 'id:', id);
+                      devWarn('Voice not found for engine:', engine, 'id:', id);
                     }
                   }
                 }}

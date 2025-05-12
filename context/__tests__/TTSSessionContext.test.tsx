@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { TTSSessionProvider, useTTSSession } from '../TTSSessionContext';
+import { TTSSessionProvider, useTTSSessionContext  } from '../TTSSessionContext';
 import { initialSessionState } from '../ttsDefaults';
 import { saveToStorage, loadFromStorage } from '../storage';
 import { ttsSessionReducer } from '../ttsSessionReducer';
@@ -150,13 +150,13 @@ describe('TTSSessionContext', () => {
     jest.useRealTimers();
   });
 
-  test('useTTSSession throws error outside provider', () => {
+  test('useTTSSessionContext  throws error outside provider', () => {
     const TestComponent = () => {
-      useTTSSession();
+      useTTSSessionContext ();
       return null;
     };
 
-    expect(() => render(<TestComponent />)).toThrow('useTTSSession must be used within a TTSSessionProvider');
+    expect(() => render(<TestComponent />)).toThrow('useTTSSessionContext  must be used within a TTSSessionProvider');
   });
 
   test('provides correct context value', async () => {
@@ -171,7 +171,7 @@ describe('TTSSessionContext', () => {
     mockUseReducer.mockImplementationOnce(() => [mockState, mockDispatch]);
     
     const TestComponent = () => {
-      const { state, actions } = useTTSSession();
+      const { state, actions } = useTTSSessionContext();
       return (
         <div>
           <div id="inputText">{state.inputText}</div>

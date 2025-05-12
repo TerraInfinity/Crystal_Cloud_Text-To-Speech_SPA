@@ -1,14 +1,11 @@
+import { devLog } from '../../../utils/logUtils';
 /**
  * Speech service to handle different text-to-speech engines.
  * Supports gTTS, ElevenLabs, AWS Polly, Google Cloud TTS, Azure TTS, and IBM Watson TTS for text-to-speech conversion.
  * Provides a unified interface for converting text to speech, managing voices, and generating audio segments.
  * @module speechServiceAPI
  */
-const devLog = (...args) => {
-    if (process.env.NODE_ENV !== 'production') {
-        console.log('[speechServiceAPI]', ...args);
-    }
-};
+
 
 class speechServiceAPI {
     /**

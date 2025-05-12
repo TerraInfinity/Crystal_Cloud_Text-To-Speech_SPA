@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useTTSSession } from '../context/TTSSessionContext';
+import { useTTSSessionContext  } from '../context/TTSSessionContext';
 import AudioSection from './SectionCardAudio';
 import TTSSection from './SectionCardTTS';
 import { devLog } from '../utils/logUtils';
@@ -29,7 +29,7 @@ import { devLog } from '../utils/logUtils';
  * @returns {JSX.Element} The rendered SectionCard component
  */
 const SectionCard = ({ section, index, moveUp, moveDown }) => {
-  const { state: sessionState, actions: sessionActions } = useTTSSession();
+  const { state: sessionState, actions: sessionActions } = useTTSSessionContext ();
 
   // Component state
   const [isExpanded, setIsExpanded] = useState(false);

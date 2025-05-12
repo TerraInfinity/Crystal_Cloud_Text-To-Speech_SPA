@@ -10,8 +10,8 @@
  */
 
 import React, { useCallback } from 'react';
-import { useTTS } from '../context/TTSContext';
-import { useTTSSession } from '../context/TTSSessionContext';
+import {useTTSContext} from '../context/TTSContext';
+import { useTTSSessionContext  } from '../context/TTSSessionContext';
 import { devLog } from '../utils/logUtils';
 
 /**
@@ -22,8 +22,8 @@ import { devLog } from '../utils/logUtils';
  * @returns {JSX.Element} The rendered TemplateSelector component
  */
 const TemplateSelector = () => {
-  const { state } = useTTS(); // Destructure state and actions
-  const { state: sessionState, actions: sessionActions } = useTTSSession();
+  const { state } = useTTSContext(); // Destructure state and actions
+  const { state: sessionState, actions: sessionActions } = useTTSSessionContext ();
 
   const currentTemplate = sessionState.currentTemplate; // Access from state
   const templates = state.templates; // Access from state
@@ -145,20 +145,43 @@ const TemplateSelector = () => {
     sessionActions.loadDemoContent();
   }, [sessionActions]);
 
+  /**
+   * Resets all sections, clearing the current sections list.
+   */
+  const resetSections = useCallback(() => {
+    sessionActions.reorderSections([]);
+    sessionActions.setNotification({
+      type: 'info',
+      message: 'All sections have been reset',
+    });
+  }, [sessionActions]);
+
   return (
     <div
       id="template-selector-container"
-      className="mb-6 p-4 rounded-lg"
+      className="mb-6 p-4 rounded-lg relative"
       style={{
         backgroundColor: 'var(--card-bg)',
         borderColor: 'var(--card-border)',
         borderWidth: '1px',
       }}
     >
-      <h3 id="template-selector-title" className="text-lg font-medium mb-3">Template Selection</h3>
+      <div className="flex justify-between items-center mb-3">
+        <h3 id="template-selector-title" className="text-lg font-medium">Template Selection</h3>
+        <button
+          id="reset-sections-button"
+          onClick={resetSections}
+          className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+          title="Reset all sections"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+        </button>
+      </div>
 
-      <div id="template-selector-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div id="template-selector-dropdown-container">
+      <div id="template-selector-grid" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div id="template-selector-dropdown-container" className="md:col-span-2">
           <label 
             id="template-selector-label"
             htmlFor="template-selector-dropdown"
@@ -188,9 +211,9 @@ const TemplateSelector = () => {
           <button
             id="load-demo-content-button"
             onClick={loadDemoContent}
-            className="btn btn-secondary w-full"
+            className="btn btn-primary w-full text-sm py-2"
           >
-            Load Demo Content
+            Demo Content
           </button>
         </div>
       </div>

@@ -2,15 +2,15 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AudioFilesTab from '../AudioFilesTab';
-import { useTTS } from '../../context/TTSContext';
+import {useTTSContext} from '../../context/TTSContext';
 import { configure } from '@testing-library/react';
 
 // Configure Testing Library to use 'id' as testIdAttribute
 configure({ testIdAttribute: 'id' });
 
-// Mock the useTTS context hook
+// Mock theuseTTSContextcontext hook
 jest.mock('../../context/TTSContext', () => ({
-  useTTS: jest.fn(),
+  useTTSContext: jest.fn(),
 }));
 
 // Mock sessionActions
@@ -50,7 +50,7 @@ describe('AudioFilesTab Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue(mockTTS);
+    (useTTSContext as jest.Mock).mockReturnValue(mockTTS);
     global.URL.createObjectURL = mockCreateObjectURL;
     // Mock window.confirm
     Object.defineProperty(window, 'confirm', {
@@ -214,7 +214,7 @@ describe('AudioFilesTab Component', () => {
   });
 
   test('displays no audio message when savedAudios is empty', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       ...mockTTS,
       state: { savedAudios: {} },
     });

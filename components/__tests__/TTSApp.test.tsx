@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { TTSApp } from '../TTSApp';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import { useTTSContext } from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 import TextInput from '../TextInput';
 import TemplateSelector from '../TemplateSelector';
 import SectionsList from '../SectionsList';
@@ -58,11 +58,11 @@ describe('TTSApp', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       state: mockTTSState,
       actions: mockTTSActions,
     });
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: mockSessionState,
       actions: mockSessionActions,
     });
@@ -90,7 +90,7 @@ describe('TTSApp', () => {
   });
 
   test('displays notification when present', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         notification: { type: 'success', message: 'Success message' },
@@ -104,7 +104,7 @@ describe('TTSApp', () => {
   });
 
   test('closes notification when close button is clicked', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         notification: { type: 'success', message: 'Success message' },
@@ -119,7 +119,7 @@ describe('TTSApp', () => {
   });
 
   test('displays error message when present', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         errorMessage: 'Error occurred',
@@ -133,7 +133,7 @@ describe('TTSApp', () => {
   });
 
   test('closes error message when close button is clicked', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         errorMessage: 'Error occurred',
@@ -148,7 +148,7 @@ describe('TTSApp', () => {
   });
 
   test('displays processing indicator when isProcessing is true', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         isProcessing: true,
@@ -193,7 +193,7 @@ describe('TTSApp', () => {
   });
 
   test('renders TemplatesTab when templates tab is active', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         activeTab: 'templates',
@@ -206,7 +206,7 @@ describe('TTSApp', () => {
   });
 
   test('renders FileHistory when fileHistory tab is active', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         activeTab: 'fileHistory',
@@ -219,7 +219,7 @@ describe('TTSApp', () => {
   });
 
   test('renders AudioLibrary when audio tab is active', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         activeTab: 'audio',
@@ -232,7 +232,7 @@ describe('TTSApp', () => {
   });
 
   test('renders ToolsTab when tools tab is active', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         activeTab: 'tools',
@@ -245,7 +245,7 @@ describe('TTSApp', () => {
   });
 
   test('renders SettingsTab when settings tab is active', () => {
-    (useTTSSession as jest.Mock).mockReturnValue({
+    (useTTSSessionContext  as jest.Mock).mockReturnValue({
       state: {
         ...mockSessionState,
         activeTab: 'settings',

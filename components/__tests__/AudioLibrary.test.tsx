@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AudioLibrary from '../AudioLibrary';
-import { useTTS } from '../../context/TTSContext';
-import { useTTSSession } from '../../context/TTSSessionContext';
+import {useTTSContext} from '../../context/TTSContext';
+import { useTTSSessionContext  } from '../../context/TTSSessionContext';
 import { configure } from '@testing-library/react';
 
 // Configure Testing Library to use 'id' as testIdAttribute
@@ -11,10 +11,10 @@ configure({ testIdAttribute: 'id' });
 
 // Mock the context hooks
 jest.mock('../../context/TTSContext', () => ({
-  useTTS: jest.fn(),
+  useTTSContext: jest.fn(),
 }));
 jest.mock('../../context/TTSSessionContext', () => ({
-  useTTSSession: jest.fn(),
+  useTTSSessionContext : jest.fn(),
 }));
 
 // Mock URL.createObjectURL
@@ -73,8 +73,8 @@ describe('AudioLibrary Component', () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue(mockTTS);
-    (useTTSSession as jest.Mock).mockReturnValue(mockTTSSession);
+    (useTTSContext as jest.Mock).mockReturnValue(mockTTS);
+    (useTTSSessionContext  as jest.Mock).mockReturnValue(mockTTSSession);
     global.URL.createObjectURL = mockCreateObjectURL;
 
     // Mock window.confirm
@@ -282,7 +282,7 @@ describe('AudioLibrary Component', () => {
   });
 
   test('displays no audio message when savedAudios is empty', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       ...mockTTS,
       state: { AudioLibrary: {} },
     });

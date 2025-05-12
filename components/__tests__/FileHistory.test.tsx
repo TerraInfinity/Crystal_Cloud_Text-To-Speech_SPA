@@ -4,11 +4,11 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import FileHistory from '../FileHistory';
-import { useTTS } from '../../context/TTSContext';
+import { useTTSContext } from '../../context/TTSContext';
 
-// Mock the useTTS context hook
+// Mock theuseTTSContextcontext hook
 jest.mock('../../context/TTSContext', () => ({
-  useTTS: jest.fn(),
+  useTTSContext: jest.fn(),
 }));
 
 // Mock sessionActions (since it is referenced but not defined in the component)
@@ -45,7 +45,7 @@ describe('FileHistory Component', () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-    (useTTS as jest.Mock).mockReturnValue(mockTTS);
+    (useTTSContext as jest.Mock).mockReturnValue(mockTTS);
     // Mock sessionActions globally as it is used in handleLoadConfig
     (global as any).sessionActions = mockSessionActions;
   });
@@ -67,7 +67,7 @@ describe('FileHistory Component', () => {
   });
 
   test('displays no history message when fileHistory is empty', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       ...mockTTS,
       state: { fileHistory: [] },
     });
@@ -123,7 +123,7 @@ describe('FileHistory Component', () => {
   });
 
   test('disables buttons when isProcessing is true', () => {
-    (useTTS as jest.Mock).mockReturnValue({
+    (useTTSContext as jest.Mock).mockReturnValue({
       ...mockTTS,
       isProcessing: true,
     });
