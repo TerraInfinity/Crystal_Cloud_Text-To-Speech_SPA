@@ -14,7 +14,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTTSContext, useFileStorage } from '../context/TTSContext';
 import { useTTSSessionContext } from '../context/TTSSessionContext';
 import Link from 'next/link';
-import { devLog, devDebug } from '../utils/logUtils';
+import { devLog, devDebug, devError } from '../utils/logUtils';
 
 /**
  * Text and audio input component for TTS processing.
@@ -399,44 +399,45 @@ const TextInput = () => {
    */
   const handleAudioUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) {
+    if (!file) return;
+
+    if (!file.type.startsWith('audio/')) {
       sessionActions.setNotification({
         type: 'error',
-        message: 'No file selected.',
+        message: 'Please upload an audio file',
       });
       return;
     }
-    if (!file.type.startsWith('audio/')) {
-      sessionActions.setError('Please upload an audio file');
-      return;
-    }
+
     try {
-      const audioUrl = URL.createObjectURL(file);
-      if (!audioUrl) {
-        throw new Error('Failed to generate audio URL');
-      }
-      const uploadedAudioData = {
-        url: audioUrl,
+      const audioData = {
         name: file.name,
-        type: file.type,
-        format: file.type.split('/')[1] || 'wav',
+        category: audioCategory,
+        config_url: null,
+        audioMetadata: {
+          duration: 0,
+          format: file.name.split('.').pop().toLowerCase(),
+          placeholder: file.name.toLowerCase().replace(/\s+/g, '_'),
+          volume: 1,
+        },
       };
-      setUploadedAudio(uploadedAudioData);
-      setSelectedAudioId('');
-      setAudioSource('upload');
+
+      await fileStorageActions.addToAudioLibrary(file, audioData);
+      await fileStorageActions.fetchAudioLibrary();
+
+      setUploadedAudio({
+        name: file.name,
+        url: URL.createObjectURL(file),
+        category: audioCategory,
+      });
+
       setShowPlayAudioItems(true);
-      sessionActions.setLastAudioInputSelection({
-        audioId: null,
-        audioCategory: audioCategory,
-        uploadedAudio: uploadedAudioData
-      });
-      sessionActions.setNotification({
-        type: 'success',
-        message: `Audio file "${file.name}" uploaded successfully`,
-      });
     } catch (error) {
-      console.error('Error uploading audio:', error);
-      sessionActions.setError(`Error uploading audio: ${error.message}`);
+      devError('Error uploading audio:', error);
+      sessionActions.setNotification({
+        type: 'error',
+        message: `Error uploading audio: ${error.message}`,
+      });
     }
   };
 

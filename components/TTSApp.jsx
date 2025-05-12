@@ -77,7 +77,7 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
     if (tab === 'fileHistory' && ttsActions && ttsActions.refreshFileHistory) {
       // Only refresh if it's not the active tab already
       if (activeTab !== 'fileHistory') {
-        console.log('Refreshing file history on tab change');
+        devLog('Refreshing file history on tab change');
         ttsActions.refreshFileHistory();
       }
     }

@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { devError } from '../../../utils/logUtils';
 
 /**
  * Helper function to handle AWS Polly text-to-speech conversion
@@ -75,7 +76,7 @@ export default async function handler(req, res) {
         res.setHeader('Content-Type', 'application/json');
         return res.status(200).json(result);
     } catch (error) {
-        console.error('AWS Polly error:', error);
+        devError('AWS Polly error:', error);
         return res.status(400).json({ message: error.message });
     }
 }

@@ -1,5 +1,6 @@
 // services/api/s3StorageServiceAPI.tsx
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { devWarn } from '../../utils/logUtils';
 
 /**
  * @module S3StorageService
@@ -155,7 +156,7 @@ class S3StorageService {
             // Config doesn't exist, ignore
           }
         } catch (configDeleteError) {
-          console.warn(`Failed to delete config for ${key}:`, configDeleteError);
+          devWarn(`Failed to delete config for ${key}:`, configDeleteError);
         }
       }
       return {

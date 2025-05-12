@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {useTTSContext} from '../context/TTSContext';
 import { useTTSSessionContext  } from '../context/TTSSessionContext';
-import { devLog } from '../utils/logUtils';
+import { devLog, devWarn } from '../utils/logUtils';
 
 /**
  * Settings management component with comprehensive configuration options
@@ -77,7 +77,7 @@ const SettingsTab = () => {
   const availableVoices = useMemo(() => {
     const engineDefaultVoices = defaultVoices[speechEngine] || [];
     if (!defaultVoices[speechEngine]) {
-      console.warn(`No default voices defined for ${speechEngine}`);
+      devWarn(`No default voices defined for ${speechEngine}`);
     }
     return [
       ...engineDefaultVoices,

@@ -17,7 +17,6 @@
  * @requires ../../services/api/speechEngineAPIs/speechServiceAPI
  * @requires ../../services/api/tools/aiServiceAPI
  * @requires ../../services/api/storageServiceAPI
- * @requires ../../services/api/fileConfigAPI
  * @requires ../../utils/logUtils
  */
 
@@ -28,7 +27,6 @@ import elevenLabsHandler from '../../services/api/speechEngineAPIs/elevenLabsAPI
 import speechServiceHandler from '../../services/api/speechEngineAPIs/speechServiceAPI';
 import aiServiceHandler from '../../services/api/tools/aiServiceAPI';
 import storageServiceHandler from '../../services/api/storageServiceAPI';
-import fileConfigHandler from '../../services/api/fileConfigAPI';
 import { devLog, devError } from '../../utils/logUtils';
 import getRawBody from 'raw-body'; // For manual body parsing
 
@@ -41,7 +39,6 @@ const apiRoutes = {
     speechService: speechServiceHandler,
     aiService: aiServiceHandler,
     storageService: storageServiceHandler,
-    config: fileConfigHandler,
 };
 
 // Simple in-memory cache system for API responses

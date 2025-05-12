@@ -12,7 +12,7 @@
 import React, { useCallback } from 'react';
 import {useTTSContext} from '../context/TTSContext';
 import { useTTSSessionContext  } from '../context/TTSSessionContext';
-import { devLog } from '../utils/logUtils';
+import { devLog, devError, devWarn } from '../utils/logUtils';
 
 /**
  * TemplateSelector component for selecting and loading TTS templates.
@@ -118,7 +118,7 @@ const TemplateSelector = () => {
                   name: audio.name,
                 });
               } else {
-                console.warn(`Audio with id ${section.audioId} not found in library`);
+                devWarn(`Audio with id ${section.audioId} not found in library`);
               }
             }
           });
@@ -131,7 +131,7 @@ const TemplateSelector = () => {
       }
     } catch (error) {
       sessionActions.setError('Error loading template');
-      console.error('Template loading error:', error);
+      devError('Template loading error:', error);
     } finally {
       sessionActions.setProcessing(false);
     }

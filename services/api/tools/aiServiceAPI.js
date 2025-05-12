@@ -11,6 +11,9 @@
  * 
  * @module aiServiceAPI
  */
+
+import { devError } from '../../../utils/logUtils';
+
 class aiServiceAPI {
     /**
      * Transform text using OpenAI (ChatGPT)
@@ -160,7 +163,7 @@ class aiServiceAPI {
             return JSON.parse(jsonStr);
         } catch (error) {
             // If parsing fails, return the raw result
-            console.error('Error parsing AI response as JSON:', error);
+            devError('Error parsing AI response as JSON:', error);
             return { 'Extracted Text': result };
         }
     }

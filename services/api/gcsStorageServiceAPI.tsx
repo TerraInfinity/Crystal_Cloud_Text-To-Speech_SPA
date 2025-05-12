@@ -1,4 +1,5 @@
 // services/api/gcsStorageServiceAPI.tsx
+import { devWarn } from '../../utils/logUtils';
 
 /**
  * @module GcsStorageService
@@ -162,7 +163,7 @@ interface GcsStorageConfig {
               deletedConfig = true;
             }
           } catch (configDeleteError) {
-            console.warn(`Failed to delete config for ${key}:`, configDeleteError);
+            devWarn(`Failed to delete config for ${key}:`, configDeleteError);
           }
         }
         return {

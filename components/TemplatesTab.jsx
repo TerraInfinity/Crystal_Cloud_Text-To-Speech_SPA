@@ -231,7 +231,7 @@ const TemplatesTab = () => {
     }, 0);
   };
 
-  console.log('Rendering saved templates:', Object.values(templates || {}));
+  devLog('Rendering saved templates:', Object.values(templates || {}));
 
   return (
     <div className="templates-tab p-4">
