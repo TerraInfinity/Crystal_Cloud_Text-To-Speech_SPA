@@ -561,4 +561,33 @@ const AudioFilesTab: React.FC = () => {
                       Volume
                     </label>
                     <input
-                      id={`
+                      id={`volume-${audio.id}`}
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={audio.audioMetadata?.volume ?? 1}
+                      onChange={(e) =>
+                        updateAudioMetadata(audio.id, {
+                          audioMetadata: {
+                            duration: audio.audioMetadata?.duration ?? 0,
+                            format: audio.audioMetadata?.format ?? 'wav',
+                            placeholder: audio.audioMetadata?.placeholder,
+                            volume: parseFloat(e.target.value),
+                          },
+                        })
+                      }
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AudioFilesTab;

@@ -1,5 +1,25 @@
 [
   {
+    "id": "88c6de7c-38f5-442d-b2de-d40bfcfad4d0",
+    "audio_url": "/audio/inhale123.wav",
+    "type": "audio/wav",
+    "size": 878244,
+    "category": "merged_audio",
+    "name": "Inhale123",
+    "placeholder": "inhale123",
+    "volume": 1,
+    "date": "2025-05-17T08:40:13.413Z",
+    "config_url": "/configs/inhale123.json",
+    "source": {
+      "type": "merged",
+      "metadata": {
+        "name": "inhale123.wav",
+        "type": "audio/wav",
+        "size": 878244
+      }
+    }
+  },
+  {
     "id": "cef823fe-f4ac-4137-b805-c8890fc5d464",
     "audio_url": "/audio/130.wav",
     "type": "audio/wav",
@@ -248,6 +268,44 @@
         "name": "DUCKSQUEAK",
         "type": "audio/wav",
         "size": 0
+      }
+    }
+  },
+  {
+    "id": "1eac45a4-8958-4cc6-82af-9f9bd8a18e8c",
+    "name": "generated_Section 1_001_hellofriends_gtts.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T08:40:08.329Z",
+    "audio_url": "/audio/generated_section-1_001_hellofriends_gtts_c4607548.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "Hello friends",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 1_001_hellofriends_gtts.mp3",
+        "type": "audio/mpeg",
+        "size": 130048
+      }
+    }
+  },
+  {
+    "id": "263a3361-3b41-43b4-ba8a-ce19a64a79d5",
+    "name": "generated_Section 3_001_c_elevenlabs.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T08:40:10.438Z",
+    "audio_url": "/audio/generated_section-3_001_c_elevenlabs_e4c9cf31.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "c",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 3_001_c_elevenlabs.mp3",
+        "type": "audio/mpeg",
+        "size": 11264
       }
     }
   }
