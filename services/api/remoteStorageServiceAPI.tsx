@@ -186,19 +186,35 @@ class RemoteStorageService {
   async deleteRemote(key: string, options: { deleteConfig?: boolean } = {}): Promise<DeleteResponse> {
     try {
       const deleteConfig = options.deleteConfig === true;
+      
+      // Clean up the key - ensure we only have the filename without path or URL parts
+      let filename = key;
+      
+      // Remove any URL parameters
+      filename = filename.split('?')[0];
+      
+      // If it's a full path or URL, extract just the filename
+      if (filename.includes('/')) {
+        filename = filename.split('/').pop() || filename;
+      }
+      
+      devLog(`Preparing to delete ${deleteConfig ? 'config' : 'audio'} file: ${filename}`, 'info');
+      
       // Use /configs endpoint for config files, /audio for audio files
       const endpoint = deleteConfig ? 'configs' : 'audio';
-      const url = `${this.serverUrl}/${endpoint}/${key}${deleteConfig ? '?delete_config=true' : ''}`;
-      devLog(`Deleting file from server: ${url}`);
+      const url = `${this.serverUrl}/${endpoint}/${filename}${deleteConfig ? '?delete_config=true' : ''}`;
+      
+      devLog(`Sending DELETE request to: ${url}`, 'info');
       const response = await axios.delete(url);
+      
       devLog(`Delete response:`, response.data);
       return response.data || { success: true, deletedConfig: deleteConfig };
     } catch (error: any) {
       if (error.response && error.response.status === 404) {
-        devLog(`File ${key} not found on server, treating as already deleted`);
+        devLog(`File ${key} not found on server, treating as already deleted`, 'warn');
         return { success: true, deletedConfig: options.deleteConfig || false };
       }
-      devLog('Error in deleteRemote:', error);
+      devLog(`Error in deleteRemote: ${error.message}`, 'error');
       throw new Error(`Failed to delete file from remote: ${error.response ? JSON.stringify(error.response.data) : error.message}`);
     }
   }

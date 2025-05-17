@@ -9,7 +9,7 @@
     "placeholder": "test2",
     "volume": 1,
     "date": "2025-05-17T07:22:43.076Z",
-    "config_url": "/configs/test2.json",
+    "config_url": null,
     "source": {
       "type": "merged",
       "metadata": {
@@ -21,7 +21,7 @@
   },
   {
     "id": "09ddf924-aaf6-4ccd-84f1-e3f22d92a220",
-    "audio_url": "/audio/test.wav",
+    "audio_url": "",
     "type": "audio/wav",
     "size": 813188,
     "category": "merged_audio",
@@ -83,7 +83,7 @@
     "name": "generated_Section 1_001_ghj_gtts.mp3",
     "type": "audio/mpeg",
     "date": "2025-05-17T06:53:18.152Z",
-    "audio_url": "/audio/generated_section-1_001_ghj_gtts_4541bcc7.mp3",
+    "audio_url": "null",
     "config_url": null,
     "volume": 1,
     "placeholder": "ghj",
@@ -102,7 +102,7 @@
     "name": "generated_Section 3_001_c_elevenlabs.mp3",
     "type": "audio/mpeg",
     "date": "2025-05-17T06:53:20.316Z",
-    "audio_url": "/audio/generated_section-3_001_c_elevenlabs_f4015703.mp3",
+    "audio_url": "null",
     "config_url": null,
     "volume": 1,
     "placeholder": "c",
@@ -121,7 +121,7 @@
     "name": "generated_Section 1_001_ghj_gtts.mp3",
     "type": "audio/mpeg",
     "date": "2025-05-17T06:56:11.048Z",
-    "audio_url": "/audio/generated_section-1_001_ghj_gtts_133773e7.mp3",
+    "audio_url": "null",
     "config_url": null,
     "volume": 1,
     "placeholder": "ghj",
@@ -132,25 +132,6 @@
         "name": "generated_Section 1_001_ghj_gtts.mp3",
         "type": "audio/mpeg",
         "size": 122880
-      }
-    }
-  },
-  {
-    "id": "fbd70990-1b5e-42c6-8cab-f04ac63137e7",
-    "name": "generated_Section 3_001_c_elevenlabs.mp3",
-    "type": "audio/mpeg",
-    "date": "2025-05-17T06:56:13.240Z",
-    "audio_url": "/audio/generated_section-3_001_c_elevenlabs_9ed2f97d.mp3",
-    "config_url": null,
-    "volume": 1,
-    "placeholder": "c",
-    "category": "generated_audio",
-    "source": {
-      "type": "local",
-      "metadata": {
-        "name": "generated_Section 3_001_c_elevenlabs.mp3",
-        "type": "audio/mpeg",
-        "size": 14336
       }
     }
   },
@@ -170,25 +151,6 @@
         "name": "GLAUM.wav",
         "type": "audio/wav",
         "size": 0
-      }
-    }
-  },
-  {
-    "id": "84c68793-beb6-4e87-81d9-298c5669ba7f",
-    "name": "generated_Section 1_001_ghj_gtts.mp3",
-    "type": "audio/mpeg",
-    "date": "2025-05-17T07:07:18.427Z",
-    "audio_url": "/audio/generated_section-1_001_ghj_gtts_1a0b54dd.mp3",
-    "config_url": null,
-    "volume": 1,
-    "placeholder": "ghj",
-    "category": "generated_audio",
-    "source": {
-      "type": "local",
-      "metadata": {
-        "name": "generated_Section 1_001_ghj_gtts.mp3",
-        "type": "audio/mpeg",
-        "size": 122880
       }
     }
   },

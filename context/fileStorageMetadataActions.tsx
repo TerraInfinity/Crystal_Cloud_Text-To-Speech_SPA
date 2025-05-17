@@ -186,10 +186,23 @@ export async function removeMetadataEntry(
   id: string
 ): Promise<AudioFileMetaDataEntry[]> {
   try {
+    // Log the original metadata count
+    const originalCount = metadata.length;
+    devLog(`Removing entry with ID: ${id} from metadata (current count: ${originalCount})`, 'info');
+    
+    // Filter out the entry with the matching id
     const filteredMetadata = metadata.filter(entry => entry.id !== id);
+    
+    // Check if the entry was actually removed
+    if (filteredMetadata.length === originalCount) {
+      devLog(`Warning: Entry with ID: ${id} was not found in metadata`, 'warn');
+    } else {
+      devLog(`Successfully filtered out entry with ID: ${id}. New count: ${filteredMetadata.length}`, 'info');
+    }
+    
     return filteredMetadata;
   } catch (error) {
-    devLog(`Error in removeMetadataEntry: ${error.message}`, 'error');
+    devLog(`Error in removeMetadataEntry for ID ${id}: ${error.message}`, 'error');
     throw new Error(`Failed to remove metadata entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -201,18 +214,22 @@ export async function updateMetadataEntry(
   serverUrl: string = 'http://localhost:5000'
 ): Promise<AudioFileMetaDataEntry[]> {
   try {
+    // Log what we're updating
+    devLog(`Updating metadata entry ${id} with properties: ${JSON.stringify(field_property)}`, 'info');
+    
+    // Special handling for null values to ensure consistency
     const normalizedFieldProperty: Partial<AudioFileMetaDataEntry> = {
       ...field_property,
       audio_url: field_property.audio_url !== undefined
         ? field_property.audio_url === null
-          ? "null"
+          ? null  // Keep as null, not "null" string
           : field_property.audio_url.startsWith(serverUrl)
             ? field_property.audio_url.replace(serverUrl, '')
             : field_property.audio_url || ''
         : undefined,
       config_url: field_property.config_url !== undefined
         ? field_property.config_url === null
-          ? "null"
+          ? null  // Keep as null, not "null" string
           : field_property.config_url.startsWith(serverUrl)
             ? field_property.config_url.replace(serverUrl, '')
             : field_property.config_url || null
@@ -221,11 +238,28 @@ export async function updateMetadataEntry(
       volume: field_property.volume ?? undefined,
       category: field_property.category || undefined,
     };
+    
+    // Filter out undefined values
     const cleanedFieldProperty = Object.fromEntries(
       Object.entries(normalizedFieldProperty).filter(([_, value]) => value !== undefined)
     );
+    
     const existingEntry = metadata.find(entry => entry.id === id);
     if (existingEntry) {
+      // Check if the update would result in an invalid entry
+      const willHaveAudio = normalizedFieldProperty.audio_url !== null ? true : 
+        (normalizedFieldProperty.audio_url === undefined && existingEntry.audio_url !== null && existingEntry.audio_url !== "null");
+      
+      const willHaveConfig = normalizedFieldProperty.config_url !== null ? true :
+        (normalizedFieldProperty.config_url === undefined && existingEntry.config_url !== null && existingEntry.config_url !== "null");
+      
+      // If neither audio nor config will remain, the entry should be removed
+      if (!willHaveAudio && !willHaveConfig) {
+        devLog(`Update would remove both audio and config, removing entry ${id} completely`, 'info');
+        return metadata.filter(entry => entry.id !== id);
+      }
+      
+      // Normal update case
       const updatedEntry = {
         ...existingEntry,
         ...cleanedFieldProperty,
@@ -237,6 +271,13 @@ export async function updateMetadataEntry(
       );
       return updatedMetadata;
     } else {
+      // Skip adding new entries that would have null URLs
+      if (normalizedFieldProperty.audio_url === null && normalizedFieldProperty.config_url === null) {
+        devLog(`Not creating new entry with ID ${id} since both audio_url and config_url are null`, 'info');
+        return metadata;
+      }
+      
+      // Create new entry case
       const newEntry: AudioFileMetaDataEntry = {
         id,
         name: normalizedFieldProperty.name || 'Unnamed Audio',
@@ -244,8 +285,8 @@ export async function updateMetadataEntry(
         size: normalizedFieldProperty.size || 0,
         date: normalizedFieldProperty.date || new Date().toISOString(),
         volume: normalizedFieldProperty.volume || 1,
-        audio_url: normalizedFieldProperty.audio_url || "null",
-        config_url: normalizedFieldProperty.config_url || "null",
+        audio_url: normalizedFieldProperty.audio_url || null,
+        config_url: normalizedFieldProperty.config_url || null,
         category: normalizedFieldProperty.category || 'sound_effect',
         placeholder: normalizedFieldProperty.placeholder || 'unnamed_audio',
         source: normalizedFieldProperty.source || { type: 'unknown', metadata: {} },
@@ -254,7 +295,7 @@ export async function updateMetadataEntry(
       return updatedMetadata;
     }
   } catch (error) {
-    devLog(`Error in updateMetadataEntry: ${error.message}`, 'error');
+    devLog(`Error in updateMetadataEntry for ID ${id}: ${error.message}`, 'error');
     throw new Error(`Failed to update metadata entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

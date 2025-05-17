@@ -295,17 +295,49 @@ export function createFileStorageActions(dispatch: React.Dispatch<any>) {
         }
 
         const serverUrl = currentState?.settings?.storageConfig?.serverUrl ?? 'http://localhost:5000';
+        devLog(`Deleting entry: ${entry.id} with option: ${deleteOption}`, 'info');
 
+        // Get the entry type to make smart decisions
+        const hasAudio = entry.audio_url && entry.audio_url !== 'null';
+        const hasConfig = entry.config_url && entry.config_url !== 'null';
+        const entryType = hasAudio && hasConfig ? 'audio_and_config' : 
+                         hasAudio ? 'audio_only' : 
+                         hasConfig ? 'config_only' : 'unknown';
+
+        // If deleting the only component of the entry, we should delete the whole entry
+        const shouldDeleteEntireEntry = 
+          (entryType === 'audio_only' && deleteOption === 'audio_only') ||
+          (entryType === 'config_only' && deleteOption === 'config_only') ||
+          deleteOption === 'audio_and_config';
+
+        devLog(`Entry type: ${entryType}, Delete option: ${deleteOption}, Should delete entire entry: ${shouldDeleteEntireEntry}`, 'info');
+        
         // Step 1: Delete files from server
         if (deleteOption === 'audio_only' || deleteOption === 'audio_and_config') {
           if (entry.audio_url && entry.audio_url !== 'null') {
-            const filename = entry.audio_url.split('/').pop();
-            if (filename) {
+            // Extract the filename properly from the URL
+            let audioFilename = entry.audio_url;
+            
+            // Remove serverUrl prefix if present
+            if (audioFilename.startsWith(serverUrl)) {
+              audioFilename = audioFilename.replace(serverUrl, '');
+            }
+            
+            // Extract just the filename for API calls
+            const parsedFilename = audioFilename.split('/').pop();
+            
+            if (parsedFilename) {
+              devLog(`Attempting to delete audio file: ${parsedFilename}`, 'info');
               try {
-                await removeFromStorage(filename, 'fileStorage', { deleteConfig: false });
+                await removeFromStorage(parsedFilename, 'fileStorage', { deleteConfig: false });
+                devLog(`Successfully deleted audio file: ${parsedFilename}`, 'info');
               } catch (error) {
-                if (!(error as Error).message?.includes('not found')) {
-                  throw new Error(`Failed to delete audio file: ${(error as Error).message}`);
+                const errorMsg = (error as Error).message || 'Unknown error';
+                if (!errorMsg.includes('not found')) {
+                  devLog(`Error deleting audio file: ${errorMsg}`, 'error');
+                  throw new Error(`Failed to delete audio file: ${errorMsg}`);
+                } else {
+                  devLog(`Audio file not found, continuing: ${parsedFilename}`, 'warn');
                 }
               }
             }
@@ -314,13 +346,29 @@ export function createFileStorageActions(dispatch: React.Dispatch<any>) {
 
         if (deleteOption === 'config_only' || deleteOption === 'audio_and_config') {
           if (entry.config_url && entry.config_url !== 'null') {
-            const filename = entry.config_url.split('/').pop();
-            if (filename) {
+            // Extract the filename properly from the URL
+            let configFilename = entry.config_url;
+            
+            // Remove serverUrl prefix if present
+            if (configFilename.startsWith(serverUrl)) {
+              configFilename = configFilename.replace(serverUrl, '');
+            }
+            
+            // Extract just the filename for API calls
+            const parsedFilename = configFilename.split('/').pop();
+            
+            if (parsedFilename) {
+              devLog(`Attempting to delete config file: ${parsedFilename}`, 'info');
               try {
-                await removeFromStorage(filename, 'fileStorage', { deleteConfig: true });
+                await removeFromStorage(parsedFilename, 'fileStorage', { deleteConfig: true });
+                devLog(`Successfully deleted config file: ${parsedFilename}`, 'info');
               } catch (error) {
-                if (!(error as Error).message?.includes('not found')) {
-                  throw new Error(`Failed to delete config file: ${(error as Error).message}`);
+                const errorMsg = (error as Error).message || 'Unknown error';
+                if (!errorMsg.includes('not found')) {
+                  devLog(`Error deleting config file: ${errorMsg}`, 'error');
+                  throw new Error(`Failed to delete config file: ${errorMsg}`);
+                } else {
+                  devLog(`Config file not found, continuing: ${parsedFilename}`, 'warn');
                 }
               }
             }
@@ -328,16 +376,21 @@ export function createFileStorageActions(dispatch: React.Dispatch<any>) {
         }
 
         // Step 2: Update metadata and state
-        if (deleteOption === 'audio_and_config') {
+        if (shouldDeleteEntireEntry) {
+          // Delete the entire entry if we're deleting the only component that exists
           try {
+            devLog(`Removing entire metadata entry: ${entry.id}`, 'info');
             await syncMetadata(serverUrl, { type: 'remove', payload: { id: entry.id } });
             dispatch({ type: 'REMOVE_HISTORY_ENTRY', payload: entry.id });
             dispatch({ type: 'REMOVE_FROM_AUDIO_LIBRARY', payload: entry.id });
+            devLog(`Metadata entry completely removed: ${entry.id}`, 'info');
           } catch (error) {
-            devLog(`Failed to remove metadata entry: ${error.message}`, 'error');
-            throw new Error(`Failed to remove metadata entry: ${(error as Error).message}`);
+            const errorMsg = (error as Error).message || 'Unknown error';
+            devLog(`Failed to remove metadata entry: ${errorMsg}`, 'error');
+            throw new Error(`Failed to remove metadata entry: ${errorMsg}`);
           }
         } else {
+          // We're only partially updating the entry (e.g., removing audio but keeping config)
           const updatedFields: Partial<AudioFileMetaDataEntry> = {};
           if (deleteOption === 'audio_only') {
             updatedFields.audio_url = null;
@@ -346,13 +399,16 @@ export function createFileStorageActions(dispatch: React.Dispatch<any>) {
           }
 
           try {
+            devLog(`Updating metadata entry: ${entry.id} with fields: ${JSON.stringify(updatedFields)}`, 'info');
             await syncMetadata(serverUrl, {
               type: 'update',
               payload: { id: entry.id, field_property: updatedFields },
             });
+            devLog(`Metadata entry updated: ${entry.id}`, 'info');
           } catch (error) {
-            devLog(`Failed to update metadata entry: ${error.message}`, 'error');
-            throw new Error(`Failed to update metadata entry: ${(error as Error).message}`);
+            const errorMsg = (error as Error).message || 'Unknown error';
+            devLog(`Failed to update metadata entry: ${errorMsg}`, 'error');
+            throw new Error(`Failed to update metadata entry: ${errorMsg}`);
           }
 
           const updatedEntry: FileHistoryItem = {
@@ -366,30 +422,22 @@ export function createFileStorageActions(dispatch: React.Dispatch<any>) {
             type: 'ADD_TO_AUDIO_LIBRARY',
             payload: convertFileHistoryItemToAudioLibraryItem(updatedEntry),
           });
-
-          if (updatedEntry.audio_url === 'null' && updatedEntry.config_url === 'null') {
-            try {
-              await syncMetadata(serverUrl, { type: 'remove', payload: { id: entry.id } });
-              dispatch({ type: 'REMOVE_HISTORY_ENTRY', payload: entry.id });
-              dispatch({ type: 'REMOVE_FROM_AUDIO_LIBRARY', payload: entry.id });
-            } catch (error) {
-              devLog(`Failed to remove metadata entry after partial deletion: ${error.message}`, 'error');
-              throw new Error(`Failed to remove metadata entry after partial deletion: ${(error as Error).message}`);
-            }
-          }
         }
 
         // Step 3: Update sessionStorage
         try {
           const metadata = await loadCurrentMetadata(serverUrl);
           sessionStorage.setItem('file_server_audio_metadata', JSON.stringify(metadata));
+          devLog(`Updated sessionStorage with latest metadata (${metadata.length} entries)`, 'info');
         } catch (error) {
-          devLog(`Error updating sessionStorage: ${error.message}`, 'error');
+          const errorMsg = (error as Error).message || 'Unknown error';
+          devLog(`Error updating sessionStorage: ${errorMsg}`, 'error');
+          // Don't throw here as this is not a critical error
         }
 
         return { success: true };
       } catch (error) {
-        devLog(`Error in deleteHistoryEntry: ${error.message}`, 'error');
+        devLog(`Error in deleteHistoryEntry: ${(error as Error).message}`, 'error');
         throw new Error(`Deletion failed: ${(error as Error).message}`);
       }
     },

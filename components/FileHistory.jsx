@@ -12,9 +12,11 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useFileStorage } from '../context/TTSContext.tsx';
 import { devLog } from '../utils/logUtils';
 import FileHistoryButtons from './FileHistoryButtons';
+import { useNotification } from '../context/notificationContext';
 
 const FileHistory = () => {
   const { state, actions } = useFileStorage();
+  const { addNotification } = useNotification();
   const [playingEntryId, setPlayingEntryId] = useState(null);
   const [error, setError] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -155,16 +157,45 @@ const FileHistory = () => {
     const title = getEntryTitle(selectedEntry);
     setIsDeleting(true);
     setError(null);
+    
     try {
+      // Determine if the entry has only audio, only config, or both
+      const hasAudio = selectedEntry.audio_url && selectedEntry.audio_url !== 'null';
+      const hasConfig = selectedEntry.config_url && selectedEntry.config_url !== 'null';
+      const entryType = hasAudio && hasConfig ? 'audio_and_config' : 
+                        hasAudio ? 'audio_only' : 
+                        hasConfig ? 'config_only' : 'unknown';
+      
+      // If deleting the only component of the entry, set proper expectations
+      const shouldDeleteEntireEntry = 
+        (entryType === 'audio_only' && deleteOption === 'audio_only') ||
+        (entryType === 'config_only' && deleteOption === 'config_only') ||
+        deleteOption === 'audio_and_config';
+      
+      devLog(`[FileHistory] Deleting ${title} (ID: ${selectedEntry.id}), Type: ${entryType}, Delete option: ${deleteOption}, Should delete entire entry: ${shouldDeleteEntireEntry}`, 'info');
+
       const result = await actions.deleteHistoryEntry(selectedEntry, { deleteOption });
       if (!result || !result.success) {
         throw new Error('Failed to delete the entry');
       }
+      
       if (playingEntryId === selectedEntry.id) {
         setPlayingEntryId(null);
       }
+      
+      // Refresh file history to update the UI
       await actions.refreshFileHistory();
+      
+      // Close the dialog
       handleCloseDeleteDialog();
+      
+      // If entry was completely deleted, show a brief success message
+      if (shouldDeleteEntireEntry && addNotification) {
+        addNotification({
+          type: 'success',
+          message: `Entry "${title}" deleted successfully`,
+        });
+      }
     } catch (err) {
       devLog(`[FileHistory] Error deleting ${title} (ID: ${selectedEntry.id}): ${err.message}`, 'error');
       setError(`Failed to delete entry: ${err.message || 'Unknown error occurred'}`);
@@ -219,15 +250,19 @@ const FileHistory = () => {
                 'audio_only' : (entryType === 'audio_only' || entryType === 'config_only' ? 
                   entryType : defaultDeleteOption);
               
+              devLog(`[FileHistory] Batch deleting ${entry.id} with option ${deleteOption}`, 'info');
               const result = await actions.deleteHistoryEntry(entry, { deleteOption });
               if (result && result.success) {
                 deleteCount++;
+                devLog(`[FileHistory] Successfully deleted ${entry.id}`, 'info');
               } else {
                 errorCount++;
+                devLog(`[FileHistory] Failed to delete ${entry.id}`, 'error');
               }
               resolve({ success: true });
             } catch (err) {
               console.error(`Error deleting entry ${entry.id}: ${err.message}`);
+              devLog(`[FileHistory] Error deleting entry ${entry.id}: ${err.message}`, 'error');
               errorCount++;
               resolve({ success: false, error: err.message });
             }
@@ -246,12 +281,52 @@ const FileHistory = () => {
       
       // Show result message
       if (errorCount > 0) {
-        setError(`Deleted ${deleteCount} files. ${errorCount} files could not be deleted.`);
+        if (deleteCount > 0) {
+          // Some succeeded, some failed
+          if (addNotification) {
+            addNotification({
+              type: 'warning',
+              message: `Deleted ${deleteCount} files. ${errorCount} files could not be deleted.`
+            });
+          } else {
+            setError(`Deleted ${deleteCount} files. ${errorCount} files could not be deleted.`);
+          }
+        } else {
+          // All failed
+          if (addNotification) {
+            addNotification({
+              type: 'error',
+              message: `Failed to delete all ${errorCount} files.`
+            });
+          } else {
+            setError(`Failed to delete all ${errorCount} files.`);
+          }
+        }
+      } else if (deleteCount > 0) {
+        // All succeeded
+        if (addNotification) {
+          addNotification({
+            type: 'success',
+            message: `Successfully deleted all ${deleteCount} files.`
+          });
+        }
       }
     } catch (err) {
       devLog(`[FileHistory] Error during batch deletion: ${err.message}`, 'error');
-      setError(`Failed to delete files: ${err.message || 'Unknown error occurred'}`);
+      
+      // Close dialog and show error
+      setDeleteAllDialogOpen(false);
       setIsDeleting(false);
+      
+      // Use notification if available, otherwise set error
+      if (addNotification) {
+        addNotification({
+          type: 'error',
+          message: `Failed to delete files: ${err.message || 'Unknown error occurred'}`
+        });
+      } else {
+        setError(`Failed to delete files: ${err.message || 'Unknown error occurred'}`);
+      }
     }
   };
 
@@ -263,9 +338,24 @@ const FileHistory = () => {
 
   // Memoize filtered and deduplicated history
   const uniqueAudioHistory = useMemo(() => {
-    const audioHistory = state.fileHistory.filter((entry) => entry.category === historyView);
+    // Filter by category first
+    const categoryFiltered = state.fileHistory.filter((entry) => entry.category === historyView);
+    
+    // Then ensure entries have valid URLs (not null/"null")
+    const validEntries = categoryFiltered.filter(entry => {
+      // If audio_url is valid
+      const hasValidAudio = entry.audio_url && entry.audio_url !== 'null';
+      
+      // If config_url is valid
+      const hasValidConfig = entry.config_url && entry.config_url !== 'null';
+      
+      // Keep only entries that have at least one valid URL
+      return hasValidAudio || hasValidConfig;
+    });
+    
+    // Finally deduplicate by ID
     return Array.from(
-      new Map(audioHistory.map((entry) => [entry.id, entry])).values()
+      new Map(validEntries.map((entry) => [entry.id, entry])).values()
     );
   }, [state.fileHistory, historyView]);
 
