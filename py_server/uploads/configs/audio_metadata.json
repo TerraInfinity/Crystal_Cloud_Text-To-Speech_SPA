@@ -1,178 +1,422 @@
 [
   {
-    "id": "f65cbfec-ca8c-4d41-8d21-05cc4df64c85",
-    "audio_url": "/audio/merged-20c57df6.wav",
+    "id": "c8737960-08fe-4498-b586-fe1d80aa38da",
+    "audio_url": "/audio/test2.wav",
     "type": "audio/wav",
-    "size": 152488,
+    "size": 817796,
     "category": "merged_audio",
-    "name": "Merged-20c57df6",
-    "placeholder": "merged-20c57df6",
+    "name": "test2",
+    "placeholder": "test2",
     "volume": 1,
-    "date": "2025-05-12T16:21:21.854Z",
-    "config_url": "/configs/merged-20c57df6.json",
+    "date": "2025-05-17T07:22:43.076Z",
+    "config_url": "/configs/test2.json",
     "source": {
       "type": "merged",
       "metadata": {
-        "name": "merged-20c57df6.wav",
+        "name": "test2.wav",
         "type": "audio/wav",
-        "size": 152488
+        "size": 817796
       }
     }
   },
   {
-    "id": "44889f94-1c6f-4456-be14-0b927a4577e7",
-    "audio_url": "/audio/dsf.wav",
+    "id": "09ddf924-aaf6-4ccd-84f1-e3f22d92a220",
+    "audio_url": "/audio/test.wav",
     "type": "audio/wav",
-    "size": 139788,
+    "size": 813188,
     "category": "merged_audio",
-    "name": "dsf",
-    "placeholder": "dsf",
+    "name": "Test",
+    "placeholder": "test",
     "volume": 1,
-    "date": "2025-05-12T16:16:54.780Z",
-    "config_url": "/configs/dsf.json",
+    "date": "2025-05-17T07:21:49.881Z",
+    "config_url": "/configs/test.json",
     "source": {
       "type": "merged",
       "metadata": {
-        "name": "dsf",
+        "name": "test.wav",
         "type": "audio/wav",
-        "size": 0
+        "size": 813188
       }
     }
   },
   {
-    "id": "cec07c6e-f07b-4af8-ac55-d67cad8c9a84",
-    "audio_url": "/audio/merged-eb5a0f2a.wav",
+    "id": "c8f62be6-88b2-41cd-ad81-1c07b23cc9e9",
+    "audio_url": "/audio/apple.wav",
     "type": "audio/wav",
-    "size": 243512,
+    "size": 1046662,
     "category": "merged_audio",
-    "name": "Merged-eb5a0f2a",
-    "placeholder": "Merged-eb5a0f2a",
+    "name": "apple",
+    "placeholder": "apple",
     "volume": 1,
-    "date": "2025-05-12T16:15:39.901Z",
-    "config_url": "/configs/merged-eb5a0f2a.json",
+    "date": "2025-05-17T06:56:15.331Z",
+    "config_url": "/configs/apple.json",
     "source": {
       "type": "merged",
       "metadata": {
-        "name": "Merged-eb5a0f2a",
+        "name": "apple.wav",
         "type": "audio/wav",
-        "size": 0
+        "size": 1046662
       }
     }
   },
   {
-    "id": "821beb30-916a-465b-90b7-155e77520635",
-    "audio_url": "/audio/merged-f6bc46f6.wav",
+    "id": "0c90f4d1-6f37-4694-a6d7-9088cf7de665",
+    "name": "FREEZE",
     "type": "audio/wav",
-    "size": 243512,
-    "category": "merged_audio",
-    "name": "Merged-f6bc46f6",
-    "placeholder": "Merged-f6bc46f6",
+    "date": "2025-05-17T06:53:07.751Z",
+    "audio_url": "/audio/freeze.wav",
+    "config_url": null,
     "volume": 1,
-    "date": "2025-05-12T16:14:35.911Z",
-    "config_url": "/configs/merged-f6bc46f6.json",
-    "source": {
-      "type": "merged",
-      "metadata": {
-        "name": "Merged-f6bc46f6",
-        "type": "audio/wav",
-        "size": 0
-      }
-    }
-  },
-  {
-    "id": "bc8197d1-dddd-4dda-85ed-0391a4e855a6",
-    "audio_url": "/audio/fff.wav",
-    "type": "audio/wav",
-    "size": 243512,
-    "category": "merged_audio",
-    "name": "fff",
-    "placeholder": "fff",
-    "volume": 1,
-    "date": "2025-05-12T16:12:07.558Z",
-    "config_url": "/configs/fff.json",
-    "source": {
-      "type": "merged",
-      "metadata": {
-        "name": "fff",
-        "type": "audio/wav",
-        "size": 0
-      }
-    }
-  },
-  {
-    "id": "c7366bf3-8e44-4ddf-bbf5-44678d3d541e",
-    "audio_url": "/audio/hh.wav",
-    "type": "audio/wav",
-    "size": 152488,
-    "category": "merged_audio",
-    "name": "hh",
-    "placeholder": "hh",
-    "volume": 1,
-    "date": "2025-05-12T16:11:29.489Z",
-    "config_url": "/configs/hh.json",
-    "source": {
-      "type": "merged",
-      "metadata": {
-        "name": "hh",
-        "type": "audio/wav",
-        "size": 0
-      }
-    }
-  },
-  {
-    "id": "613d3b90-dbbc-4e37-808f-5c70e90cf739",
-    "name": "hhfd1_combined.wav",
-    "type": "audio/wav",
-    "date": "2025-05-12T16:08:22.909Z",
-    "audio_url": "/audio/hhfd1_combined.wav",
-    "config_url": "null",
-    "volume": 1,
-    "placeholder": "hhfd1_combined.wav",
+    "placeholder": "freeze",
     "category": "sound_effect",
     "source": {
       "type": "local",
       "metadata": {
-        "name": "hhfd1_combined.wav",
+        "name": "FREEZE",
         "type": "audio/wav",
         "size": 0
       }
     }
   },
   {
-    "id": "51d52419-502a-43a0-bcb8-e417568d9fb7",
-    "name": "CHIME",
+    "id": "d54a86b7-6080-46c0-a60b-cee3723bb0df",
+    "name": "generated_Section 1_001_ghj_gtts.mp3",
     "type": "audio/mpeg",
-    "date": "2025-05-12T16:19:20.420Z",
-    "audio_url": "/audio/chime_80218ba4.mp3",
-    "config_url": "null",
+    "date": "2025-05-17T06:53:18.152Z",
+    "audio_url": "/audio/generated_section-1_001_ghj_gtts_4541bcc7.mp3",
+    "config_url": null,
     "volume": 1,
-    "placeholder": "CHIME",
+    "placeholder": "ghj",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 1_001_ghj_gtts.mp3",
+        "type": "audio/mpeg",
+        "size": 122880
+      }
+    }
+  },
+  {
+    "id": "ac2e5a56-55c5-4b65-a0ec-47ff86b1e489",
+    "name": "generated_Section 3_001_c_elevenlabs.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T06:53:20.316Z",
+    "audio_url": "/audio/generated_section-3_001_c_elevenlabs_f4015703.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "c",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 3_001_c_elevenlabs.mp3",
+        "type": "audio/mpeg",
+        "size": 18432
+      }
+    }
+  },
+  {
+    "id": "3b56ea82-3385-4ca3-90de-a7b5d48287bb",
+    "name": "generated_Section 1_001_ghj_gtts.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T06:56:11.048Z",
+    "audio_url": "/audio/generated_section-1_001_ghj_gtts_133773e7.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "ghj",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 1_001_ghj_gtts.mp3",
+        "type": "audio/mpeg",
+        "size": 122880
+      }
+    }
+  },
+  {
+    "id": "fbd70990-1b5e-42c6-8cab-f04ac63137e7",
+    "name": "generated_Section 3_001_c_elevenlabs.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T06:56:13.240Z",
+    "audio_url": "/audio/generated_section-3_001_c_elevenlabs_9ed2f97d.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "c",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 3_001_c_elevenlabs.mp3",
+        "type": "audio/mpeg",
+        "size": 14336
+      }
+    }
+  },
+  {
+    "id": "b9cc24a8-42bc-417f-939f-271556b5a3ed",
+    "name": "GLAUM.wav",
+    "type": "audio/wav",
+    "date": "2025-05-17T07:06:22.099Z",
+    "audio_url": "/audio/glaum.wav",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "glaum.wav",
     "category": "sound_effect",
     "source": {
       "type": "local",
       "metadata": {
-        "name": "CHIME",
-        "type": "audio/mpeg",
+        "name": "GLAUM.wav",
+        "type": "audio/wav",
         "size": 0
       }
     }
   },
   {
-    "id": "d1479459-addf-4da7-9054-5608882738f4",
-    "name": "B-E-A-utiful",
-    "type": "audio/wav",
-    "date": "2025-05-12T16:20:05.832Z",
-    "audio_url": "/audio/b-e-a-utiful.wav",
-    "config_url": "null",
+    "id": "84c68793-beb6-4e87-81d9-298c5669ba7f",
+    "name": "generated_Section 1_001_ghj_gtts.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T07:07:18.427Z",
+    "audio_url": "/audio/generated_section-1_001_ghj_gtts_1a0b54dd.mp3",
+    "config_url": null,
     "volume": 1,
-    "placeholder": "B-E-A-utiful",
+    "placeholder": "ghj",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 1_001_ghj_gtts.mp3",
+        "type": "audio/mpeg",
+        "size": 122880
+      }
+    }
+  },
+  {
+    "id": "98a2862f-f43f-4cc9-914d-0ce17b0ca483",
+    "name": "generated_Section 3_001_c_elevenlabs.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T07:07:20.517Z",
+    "audio_url": "/audio/generated_section-3_001_c_elevenlabs_438871ec.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "c",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 3_001_c_elevenlabs.mp3",
+        "type": "audio/mpeg",
+        "size": 17408
+      }
+    }
+  },
+  {
+    "id": "14bcd898-c968-4aae-bd40-93c84afcf24b",
+    "name": "generated_Section 1_001_ghj_gtts.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T07:16:15.035Z",
+    "audio_url": "/audio/generated_section-1_001_ghj_gtts_05b853e4.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "ghj",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 1_001_ghj_gtts.mp3",
+        "type": "audio/mpeg",
+        "size": 122880
+      }
+    }
+  },
+  {
+    "id": "ce394cbc-b782-4aae-baf5-8f2e5f7cb028",
+    "name": "generated_Section 3_001_c_elevenlabs.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T07:16:17.213Z",
+    "audio_url": "/audio/generated_section-3_001_c_elevenlabs_ad38b021.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "c",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 3_001_c_elevenlabs.mp3",
+        "type": "audio/mpeg",
+        "size": 14336
+      }
+    }
+  },
+  {
+    "id": "26ba3e95-e8a8-437b-b83a-fff3dce233ab",
+    "name": "generated_Section 1_001_ghj_gtts.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T07:17:07.415Z",
+    "audio_url": "/audio/generated_section-1_001_ghj_gtts_868ffb81.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "ghj",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 1_001_ghj_gtts.mp3",
+        "type": "audio/mpeg",
+        "size": 122880
+      }
+    }
+  },
+  {
+    "id": "48072d3f-5b08-47a7-a16e-97717e728ab9",
+    "name": "generated_Section 3_001_c_elevenlabs.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T07:17:09.483Z",
+    "audio_url": "/audio/generated_section-3_001_c_elevenlabs_dcdb5964.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "c",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 3_001_c_elevenlabs.mp3",
+        "type": "audio/mpeg",
+        "size": 15360
+      }
+    }
+  },
+  {
+    "id": "eaf08367-978a-4e86-8aed-052e02c2f8bf",
+    "name": "Okay1",
+    "type": "audio/wav",
+    "date": "2025-05-17T07:18:19.920Z",
+    "audio_url": "/audio/okay1.wav",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "okay1",
     "category": "sound_effect",
     "source": {
       "type": "local",
       "metadata": {
-        "name": "B-E-A-utiful",
+        "name": "Okay1",
         "type": "audio/wav",
         "size": 0
+      }
+    }
+  },
+  {
+    "id": "b5e89e83-11e6-4a53-aa6e-ece397126331",
+    "name": "okay2.wav",
+    "type": "audio/wav",
+    "date": "2025-05-17T07:18:52.176Z",
+    "audio_url": "/audio/okay2.wav",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "okay2.wav",
+    "category": "sound_effect",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "okay2.wav",
+        "type": "audio/wav",
+        "size": 0
+      }
+    }
+  },
+  {
+    "id": "f2e07a9b-6291-4496-ad78-a7fd41ae9813",
+    "name": "DUCKSQUEAK",
+    "type": "audio/wav",
+    "date": "2025-05-17T07:19:34.147Z",
+    "audio_url": "/audio/ducksqueak.wav",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "ducksqueak",
+    "category": "uploaded_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "DUCKSQUEAK",
+        "type": "audio/wav",
+        "size": 0
+      }
+    }
+  },
+  {
+    "id": "3dde8e20-47d1-430c-bf39-a51a96f49084",
+    "name": "generated_Section 1_001_hellofriends_gtts.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T07:21:20.034Z",
+    "audio_url": "/audio/generated_section-1_001_hellofriends_gtts.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "Hello friends",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 1_001_hellofriends_gtts.mp3",
+        "type": "audio/mpeg",
+        "size": 130048
+      }
+    }
+  },
+  {
+    "id": "b344c648-0923-4fe4-90a5-a8d953a49220",
+    "name": "generated_Section 3_001_c_elevenlabs.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T07:21:22.209Z",
+    "audio_url": "/audio/generated_section-3_001_c_elevenlabs_6edcc1d3.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "c",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 3_001_c_elevenlabs.mp3",
+        "type": "audio/mpeg",
+        "size": 12288
+      }
+    }
+  },
+  {
+    "id": "b1f0d5ca-7345-4f3d-bdea-35923aa72607",
+    "name": "generated_Section 1_001_hellofriends_gtts.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T07:22:38.332Z",
+    "audio_url": "/audio/generated_section-1_001_hellofriends_gtts_9b8889f1.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "Hello friends",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 1_001_hellofriends_gtts.mp3",
+        "type": "audio/mpeg",
+        "size": 130048
+      }
+    }
+  },
+  {
+    "id": "8c459571-270f-42d4-aa83-3f4efe997421",
+    "name": "generated_Section 3_001_c_elevenlabs.mp3",
+    "type": "audio/mpeg",
+    "date": "2025-05-17T07:22:40.405Z",
+    "audio_url": "/audio/generated_section-3_001_c_elevenlabs_5b12958f.mp3",
+    "config_url": null,
+    "volume": 1,
+    "placeholder": "c",
+    "category": "generated_audio",
+    "source": {
+      "type": "local",
+      "metadata": {
+        "name": "generated_Section 3_001_c_elevenlabs.mp3",
+        "type": "audio/mpeg",
+        "size": 13312
       }
     }
   }

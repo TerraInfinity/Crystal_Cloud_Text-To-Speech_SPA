@@ -8,10 +8,12 @@
  * - Using processed content in the main application
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {useTTSContext} from '../context/TTSContext';
 import { useTTSSessionContext  } from '../context/TTSSessionContext';
 import { parseTextFromHtml } from '../utils/textUtils';
+import { devLog, devError } from '../utils/logUtils';
+import { useNotification } from '../context/notificationContext';
 
 /**
  * ToolsTab component providing utilities for HTML/URL parsing and AI transformations.
@@ -24,6 +26,7 @@ import { parseTextFromHtml } from '../utils/textUtils';
 const ToolsTab = () => {
   const { actions, isProcessing } = useTTSContext();
   const { actions: sessionActions } = useTTSSessionContext ();
+  const { addNotification } = useNotification();
   
   // State for HTML/URL parsing
   const [htmlInput, setHtmlInput] = useState('');
@@ -97,9 +100,10 @@ const ToolsTab = () => {
         setParseResult(plainText);
       }
       
-      sessionActions.setNotification({
+      // Display notification about successful parsing
+      addNotification({
         type: 'success',
-        message: 'Text extracted successfully'
+        message: `Successfully parsed ${isUrl ? 'URL' : 'HTML'} content`,
       });
     } catch (error) {
       sessionActions.setError(`Error parsing content: ${error.message}`);
@@ -113,14 +117,17 @@ const ToolsTab = () => {
    * Sets the active tab to main and shows success notification
    */
   const applyParsedResult = () => {
-    if (parseResult) {
-      sessionActions.setInputText(parseResult);
-      sessionActions.setActiveTab('main');
-      sessionActions.setNotification({
-        type: 'success',
-        message: 'Text applied to input area'
-      });
+    if (!parseResult.trim()) {
+      sessionActions.setError('No parsed content to apply');
+      return;
     }
+
+    sessionActions.setInputText(parseResult);
+    addNotification({
+      type: 'success',
+      message: 'Parsed content applied to input text',
+    });
+    sessionActions.setActiveTab('main');
   };
   
   /**
@@ -181,10 +188,14 @@ const ToolsTab = () => {
       const data = await response.json();
       setAiResult(data.result);
       
-      sessionActions.setNotification({
-        type: 'success',
-        message: 'AI processing completed'
-      });
+      if (data.result && data.result.trim()) {
+        addNotification({
+          type: 'success',
+          message: 'AI processing completed',
+        });
+      } else {
+        throw new Error('AI returned empty result');
+      }
     } catch (error) {
       sessionActions.setError(`Error processing with AI: ${error.message}`);
     } finally {
@@ -197,14 +208,17 @@ const ToolsTab = () => {
    * Sets the active tab to main and shows success notification
    */
   const applyAiResult = () => {
-    if (aiResult) {
-      sessionActions.setInputText(aiResult);
-      sessionActions.setActiveTab('main');
-      sessionActions.setNotification({
-        type: 'success',
-        message: 'AI processed text applied to input area'
-      });
+    if (!aiResult.trim()) {
+      sessionActions.setError('No AI processed content to apply');
+      return;
     }
+
+    sessionActions.setInputText(aiResult);
+    addNotification({
+      type: 'success',
+      message: 'AI processed content applied to input text',
+    });
+    sessionActions.setActiveTab('main');
   };
   
   return (

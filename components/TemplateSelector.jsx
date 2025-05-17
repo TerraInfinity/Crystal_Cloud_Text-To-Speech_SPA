@@ -10,9 +10,11 @@
  */
 
 import React, { useCallback } from 'react';
-import {useTTSContext} from '../context/TTSContext';
-import { useTTSSessionContext  } from '../context/TTSSessionContext';
+import { useTTSContext, useFileStorage } from '../context/TTSContext';
+import { useTTSSessionContext } from '../context/TTSSessionContext';
 import { devLog, devError, devWarn } from '../utils/logUtils';
+import { useNotification } from '../context/notificationContext';
+import { validateVoiceObject } from '../utils/voiceUtils';
 
 /**
  * TemplateSelector component for selecting and loading TTS templates.
@@ -22,13 +24,14 @@ import { devLog, devError, devWarn } from '../utils/logUtils';
  * @returns {JSX.Element} The rendered TemplateSelector component
  */
 const TemplateSelector = () => {
-  const { state } = useTTSContext(); // Destructure state and actions
-  const { state: sessionState, actions: sessionActions } = useTTSSessionContext ();
+  const { state } = useTTSContext();
+  const { state: fileStorageState } = useFileStorage();
+  const { state: sessionState, actions: sessionActions } = useTTSSessionContext();
+  const { addNotification } = useNotification();
 
-  const currentTemplate = sessionState.currentTemplate; // Access from state
-  const templates = state.templates; // Access from state
+  const currentTemplate = sessionState.currentTemplate;
+  const templates = state.templates;
 
-  // Default voice to use when no voice is specified
   const defaultVoice = {
     engine: 'gtts',
     id: 'en-US-Standard-A',
@@ -46,12 +49,6 @@ const TemplateSelector = () => {
     sessionActions.setTemplate(templateName);
     sessionActions.setProcessing(true);
   
-    const defaultVoice = {
-      engine: 'gtts',
-      id: 'en-US-Standard-A',
-      name: 'English (US) Standard A',
-      language: 'en-US',
-    };
     const defaultVoiceSettings = { volume: 1, rate: 1, pitch: 1 };
   
     try {
@@ -67,7 +64,7 @@ const TemplateSelector = () => {
   
         devLog('Loading general template section:', newSection);
         sessionActions.reorderSections([newSection]);
-        sessionActions.setNotification({
+        addNotification({
           type: 'success',
           message: 'General template loaded',
         });
@@ -77,25 +74,26 @@ const TemplateSelector = () => {
           devLog('Original template sections:', selectedTemplate.sections);
           
           const templateSections = selectedTemplate.sections.map((section) => {
-            // Make sure we explicitly preserve the section type
             const sectionType = section.type || 'text-to-speech';
             
             const normalizedSection = {
               ...section,
               id: `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              // Explicitly set the type to ensure it's preserved
               type: sectionType
             };
             
-            // Handle each section type appropriately
             if (sectionType === 'text-to-speech') {
-              normalizedSection.voice = section.voice || defaultVoice;
+              if (section.voice) {
+                normalizedSection.voice = validateVoiceObject(section.voice);
+                devLog('Template section with specified voice:', normalizedSection.voice);
+              } else {
+                normalizedSection.voice = defaultVoice;
+                devLog('Template section using default voice:', defaultVoice);
+              }
               normalizedSection.voiceSettings = section.voiceSettings || defaultVoiceSettings;
             } else if (sectionType === 'audio-only') {
-              // For audio-only, make sure to explicitly remove voice-related properties
               normalizedSection.voice = undefined;
               normalizedSection.voiceSettings = undefined;
-              // Preserve audio properties
               normalizedSection.audioId = section.audioId;
               normalizedSection.audioSource = section.audioSource || 'library';
             }
@@ -107,15 +105,14 @@ const TemplateSelector = () => {
           devLog('Loading template sections with types:', templateSections.map(s => s.type));
           sessionActions.reorderSections(templateSections);
   
-          // Initialize generatedTTSAudios for audio-only sections
           templateSections.forEach((section) => {
             if (section.type === 'audio-only' && section.audioId) {
-              const audio = state.AudioLibrary[section.audioId];
-              if (audio && audio.url) {
+              const audioItem = fileStorageState.audioLibrary.find(audio => audio.id === section.audioId);
+              if (audioItem && audioItem.audio_url) {
                 sessionActions.setGeneratedAudio(section.id, {
-                  url: audio.url,
+                  url: audioItem.audio_url,
                   source: 'library',
-                  name: audio.name,
+                  name: audioItem.name,
                 });
               } else {
                 devWarn(`Audio with id ${section.audioId} not found in library`);
@@ -123,12 +120,17 @@ const TemplateSelector = () => {
             }
           });
   
-          sessionActions.setNotification({
+          addNotification({
             type: 'success',
             message: `${selectedTemplate.name} template loaded`,
           });
         }
       }
+      
+      // Reset the loading flag after a short delay to prevent infinite loops
+      setTimeout(() => {
+        sessionActions.resetLoadingFlag();
+      }, 200);
     } catch (error) {
       sessionActions.setError('Error loading template');
       devError('Template loading error:', error);
@@ -139,7 +141,6 @@ const TemplateSelector = () => {
 
   /**
    * Loads demo content with pre-defined sections and content.
-   * This is a convenience function for users to see a working example.
    */
   const loadDemoContent = useCallback(() => {
     sessionActions.loadDemoContent();
@@ -147,14 +148,32 @@ const TemplateSelector = () => {
 
   /**
    * Resets all sections, clearing the current sections list.
+   * Also resets the audio workflow by triggering the refresh-workflow-btn.
    */
   const resetSections = useCallback(() => {
-    sessionActions.reorderSections([]);
-    sessionActions.setNotification({
+    // First reset the session data
+    sessionActions.resetSession();
+    
+    // Then also refresh the audio workflow UI
+    try {
+      // Find and click the refresh-workflow-btn to reset audio workflow state
+      const refreshButton = document.getElementById('refresh-workflow-btn');
+      if (refreshButton) {
+        devLog('Triggering audio workflow refresh');
+        refreshButton.click();
+      } else {
+        devWarn('refresh-workflow-btn not found in the DOM');
+      }
+    } catch (error) {
+      devError('Error triggering audio workflow refresh:', error);
+    }
+    
+    // Send notification
+    addNotification({
       type: 'info',
-      message: 'All sections have been reset',
+      message: 'All sections and workflow have been reset',
     });
-  }, [sessionActions]);
+  }, [sessionActions, addNotification]);
 
   return (
     <div

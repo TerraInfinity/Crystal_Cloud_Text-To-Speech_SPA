@@ -48,6 +48,18 @@
     /* Black for light background */
     --h1-color: #111827;
     /* H1: Deep gray */
+    --success-bg: #d4edda;
+    --success-border: #28a745;
+    --success-text: #234d20;
+    --warning-bg: #fff3cd;
+    --warning-border: #ffc107;
+    --warning-text: #856404;
+    --error-bg: #f8d7da;
+    --error-border: #dc3545;
+    --error-text: #721c24;
+    --info-bg: #cce5ff;
+    --info-border: #007bff;
+    --info-text: #004085;
 }
 
 
@@ -101,6 +113,18 @@
     /* White for dark background */
     --h1-color: #f9fafb;
     /* H1: Near white */
+    --success-bg: #2b4b35;
+    --success-border: #28a745;
+    --success-text: #d4edda;
+    --warning-bg: #4b3f1f;
+    --warning-border: #ffc107;
+    --warning-text: #fff3cd;
+    --error-bg: #4b2b2f;
+    --error-border: #dc3545;
+    --error-text: #f8d7da;
+    --info-bg: #2b3f4b;
+    --info-border: #007bff;
+    --info-text: #cce5ff;
 }
 
 
@@ -154,6 +178,18 @@
     /* Black */
     --h1-color: #000000;
     /* H1: Pure black */
+    --success-bg: #e6f4ea;
+    --success-border: #6b8e6e;
+    --success-text: #222;
+    --warning-bg: #fff3cd;
+    --warning-border: #888;
+    --warning-text: #222;
+    --error-bg: #f8d7da;
+    --error-border: #888;
+    --error-text: #222;
+    --info-bg: #f0f0f0;
+    --info-border: #888;
+    --info-text: #222;
 }
 
 
@@ -207,6 +243,18 @@
     /* Black */
     --h1-color: #ffb8ff;
     /* H1: Bright pink */
+    --success-bg: #b8b8ff;
+    --success-border: #00f0ff;
+    --success-text: #2d1b4f;
+    --warning-bg: #ffb8ff;
+    --warning-border: #ff8ae2;
+    --warning-text: #2d1b4f;
+    --error-bg: #ff8ae2;
+    --error-border: #ffb8ff;
+    --error-text: #2d1b4f;
+    --info-bg: #00f0ff;
+    --info-border: #b8b8ff;
+    --info-text: #2d1b4f;
 }
 
 [data-theme="retro"] .section-card {
@@ -266,6 +314,18 @@
     /* White */
     --h1-color: #ff00ea;
     /* H1: Neon pink */
+    --success-bg: #00fff7;
+    --success-border: #00fff7;
+    --success-text: #18181b;
+    --warning-bg: #ff00ea;
+    --warning-border: #ff00ea;
+    --warning-text: #18181b;
+    --error-bg: #ff00ea;
+    --error-border: #ff00ea;
+    --error-text: #18181b;
+    --info-bg: #00fff7;
+    --info-border: #00fff7;
+    --info-text: #18181b;
 }
 
 
@@ -319,6 +379,18 @@
     /* Black */
     --h1-color: #1e3921;
     /* H1: Deep forest green */
+    --success-bg: #d0e6df;
+    --success-border: #3ca374;
+    --success-text: #234d20;
+    --warning-bg: #fff3cd;
+    --warning-border: #6b8e6e;
+    --warning-text: #234d20;
+    --error-bg: #f8d7da;
+    --error-border: #3ca374;
+    --error-text: #234d20;
+    --info-bg: #b2d8c5;
+    --info-border: #3ca374;
+    --info-text: #234d20;
 }
 
 
@@ -372,6 +444,18 @@
     /* Black for consistency */
     --h1-color: #ffd700;
     /* H1: Gold */
+    --success-bg: #222;
+    --success-border: #ffd700;
+    --success-text: #ffd700;
+    --warning-bg: #222;
+    --warning-border: #ffd700;
+    --warning-text: #ffd700;
+    --error-bg: #222;
+    --error-border: #ffd700;
+    --error-text: #ffd700;
+    --info-bg: #222;
+    --info-border: #ffd700;
+    --info-text: #ffd700;
 }
 
 
@@ -425,6 +509,18 @@
     /* Black */
     --h1-color: #a78bfa;
     /* H1: Pastel purple */
+    --success-bg: #a7f3d0;
+    --success-border: #a7f3d0;
+    --success-text: #a78bfa;
+    --warning-bg: #fbcfe8;
+    --warning-border: #f472b6;
+    --warning-text: #a78bfa;
+    --error-bg: #f472b6;
+    --error-border: #f472b6;
+    --error-text: #fff;
+    --info-bg: #f3e8ff;
+    --info-border: #a7f3d0;
+    --info-text: #a78bfa;
 }
 
 
@@ -478,6 +574,18 @@
     /* Black */
     --h1-color: #7f9cf5;
     /* H1: Holographic blue */
+    --success-bg: linear-gradient(135deg, #a7f3d0, #f0abfc);
+    --success-border: #a7f3d0;
+    --success-text: #7f9cf5;
+    --warning-bg: linear-gradient(135deg, #f0abfc, #e0e7ff);
+    --warning-border: #f0abfc;
+    --warning-text: #7f9cf5;
+    --error-bg: linear-gradient(135deg, #f472b6, #f0abfc);
+    --error-border: #f472b6;
+    --error-text: #7f9cf5;
+    --info-bg: linear-gradient(135deg, #e0e7ff, #a7f3d0);
+    --info-border: #e0e7ff;
+    --info-text: #7f9cf5;
 }
 
 
@@ -531,6 +639,18 @@
     /* Black */
     --h1-color: #e0c097;
     /* H1: Brass */
+    --success-bg: #3e2723;
+    --success-border: #e0c097;
+    --success-text: #e0c097;
+    --warning-bg: #3e2723;
+    --warning-border: #b87333;
+    --warning-text: #e0c097;
+    --error-bg: #3e2723;
+    --error-border: #b87333;
+    --error-text: #e0c097;
+    --info-bg: #3e2723;
+    --info-border: #e0c097;
+    --info-text: #e0c097;
 }
 
 
@@ -584,6 +704,18 @@
     /* Black */
     --h1-color: #ff00c8;
     /* H1: Magenta */
+    --success-bg: #111;
+    --success-border: #00fff7;
+    --success-text: #00fff7;
+    --warning-bg: #111;
+    --warning-border: #ff00c8;
+    --warning-text: #ff00c8;
+    --error-bg: #111;
+    --error-border: #ff00c8;
+    --error-text: #ff00c8;
+    --info-bg: #111;
+    --info-border: #00fff7;
+    --info-text: #00fff7;
 }
 
 [data-theme="glitch"] .section-card {
@@ -687,6 +819,18 @@
     /* Black */
     --h1-color: #e63946;
     /* H1: Bold red */
+    --success-bg: #f1faee;
+    --success-border: #457b9d;
+    --success-text: #222;
+    --warning-bg: #f1faee;
+    --warning-border: #e63946;
+    --warning-text: #222;
+    --error-bg: #f1faee;
+    --error-border: #e63946;
+    --error-text: #222;
+    --info-bg: #f1faee;
+    --info-border: #457b9d;
+    --info-text: #222;
 }
 
 
@@ -740,6 +884,18 @@
     /* White */
     --h1-color: #39ff14;
     /* H1: Neon green */
+    --success-bg: #1a3c34;
+    --success-border: #39ff14;
+    --success-text: #39ff14;
+    --warning-bg: #1a3c34;
+    --warning-border: #ccff00;
+    --warning-text: #ccff00;
+    --error-bg: #1a3c34;
+    --error-border: #ff00ff;
+    --error-text: #ff00ff;
+    --info-bg: #1a3c34;
+    --info-border: #00ffaa;
+    --info-text: #00ffaa;
 }
 
 [data-theme="neon"] .section-card {
@@ -804,6 +960,18 @@
     /* White */
     --h1-color: #a5b4fc;
     /* H1: Indigo */
+    --success-bg: #24243e;
+    --success-border: #a5b4fc;
+    --success-text: #a5b4fc;
+    --warning-bg: #24243e;
+    --warning-border: #6b46c1;
+    --warning-text: #d1d5db;
+    --error-bg: #24243e;
+    --error-border: #6b46c1;
+    --error-text: #d1d5db;
+    --info-bg: #24243e;
+    --info-border: #a5b4fc;
+    --info-text: #a5b4fc;
 }
 
 [data-theme="cosmic"] .section-card {

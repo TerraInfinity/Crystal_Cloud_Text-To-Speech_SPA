@@ -10,11 +10,32 @@
  * @requires ../utils/logUtils
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTTSSessionContext  } from '../context/TTSSessionContext';
 import AudioSection from './SectionCardAudio';
 import TTSSection from './SectionCardTTS';
-import { devLog } from '../utils/logUtils';
+import { devLog, devWarn } from '../utils/logUtils';
+import { useNotification } from '../context/notificationContext';
+
+/**
+ * Validates an audio URL to ensure it's in a proper format
+ * @param {string} url - The URL to validate
+ * @returns {boolean} Whether the URL is valid
+ */
+const isValidAudioUrl = (url) => {
+  if (!url) return false;
+  
+  // Allow blob and data URLs
+  if (url.startsWith('blob:') || url.startsWith('data:')) return true;
+  
+  // Validate URL format and ensure it's HTTP/HTTPS
+  try {
+    const urlObj = new URL(url);
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
 /**
  * SectionCard component for rendering and managing individual TTS or audio-only sections.
@@ -30,6 +51,7 @@ import { devLog } from '../utils/logUtils';
  */
 const SectionCard = ({ section, index, moveUp, moveDown }) => {
   const { state: sessionState, actions: sessionActions } = useTTSSessionContext ();
+  const { addNotification } = useNotification();
 
   // Component state
   const [isExpanded, setIsExpanded] = useState(false);
@@ -48,6 +70,38 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
         }
       : null
   );
+  
+  // Store previous voice when toggling to audio-only
+  const previousVoiceRef = useRef(null);
+
+  /**
+   * Attempt to restore saved voice preference from localStorage on component mount
+   */
+  useEffect(() => {
+    if (section.type === 'text-to-speech' && !previousVoiceRef.current) {
+      try {
+        // Check if we have a saved voice preference in localStorage
+        const voiceStorage = JSON.parse(localStorage.getItem('voice_selections') || '{}');
+        if (voiceStorage[section.id]) {
+          previousVoiceRef.current = voiceStorage[section.id];
+          devLog('Restored voice from localStorage for section:', section.id, previousVoiceRef.current);
+          
+          // If section doesn't already have a voice, apply the stored one
+          if (!section.voice) {
+            const updatedSection = {
+              ...section,
+              voice: previousVoiceRef.current
+            };
+            sessionActions.updateSection(updatedSection);
+            setEditedVoice(previousVoiceRef.current);
+            devLog('Applied restored voice to section:', section.id);
+          }
+        }
+      } catch (e) {
+        devLog('Error restoring voice from localStorage:', e);
+      }
+    }
+  }, [section.id, section.type]);
 
   /**
    * Syncs voice and voice settings with sessionState.
@@ -56,6 +110,12 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
   useEffect(() => {
     const sectionData = sessionState.sections.find((s) => s.id === section.id);
     if (!sectionData) return;
+
+    // Check if we need to update voice or voice settings by comparing stringified values
+    const sessionVoice = sectionData.voice ? JSON.stringify(sectionData.voice) : null;
+    const localVoice = editedVoice ? JSON.stringify(editedVoice) : null;
+    const sessionSettings = sectionData.voiceSettings ? JSON.stringify(sectionData.voiceSettings) : null;
+    const localSettings = voiceSettings ? JSON.stringify(voiceSettings) : null;
 
     // Debug section data type
     devLog(`Section ${section.id} type from sessionState:`, sectionData.type);
@@ -77,29 +137,45 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
       // through props when the parent component re-renders
     }
 
+    // Only perform updates if there's an actual change needed
+    let voiceUpdated = false;
+    let settingsUpdated = false;
+
     if (sectionData.type === 'text-to-speech') {
-      // For text-to-speech, sync voice and voiceSettings
-      if (sectionData?.voice && JSON.stringify(sectionData.voice) !== JSON.stringify(editedVoice)) {
+      // For text-to-speech, sync voice and voiceSettings only when different
+      if (sectionData?.voice && sessionVoice !== localVoice) {
         devLog('Syncing editedVoice with session state:', sectionData.voice);
         setEditedVoice(sectionData.voice);
-      } else if (!editedVoice) {
+        previousVoiceRef.current = sectionData.voice;
+        voiceUpdated = true;
+      } else if (!editedVoice && !voiceUpdated) {
         devLog('Setting default voice for editedVoice:', defaultVoice);
         setEditedVoice(defaultVoice);
-        sessionActions.setSectionVoice(section.id, defaultVoice);
+        previousVoiceRef.current = defaultVoice;
+        // Only dispatch if this is a brand new section (no voice yet in session)
+        if (!sectionData.voice) {
+          sessionActions.setSectionVoice(section.id, defaultVoice);
+        }
       }
 
-      if (sectionData?.voiceSettings && JSON.stringify(sectionData.voiceSettings) !== JSON.stringify(voiceSettings)) {
+      if (sectionData?.voiceSettings && sessionSettings !== localSettings) {
         devLog('Syncing voiceSettings with session state:', sectionData.voiceSettings);
         setVoiceSettings(sectionData.voiceSettings);
-      } else if (!voiceSettings) {
+        settingsUpdated = true;
+      } else if (!voiceSettings && !settingsUpdated) {
         devLog('Setting default voiceSettings:', defaultVoiceSettings);
         setVoiceSettings(defaultVoiceSettings);
-        sessionActions.setVoiceSettings(section.id, defaultVoiceSettings);
+        // Only dispatch if this is a brand new section (no settings yet in session)
+        if (!sectionData.voiceSettings) {
+          sessionActions.setVoiceSettings(section.id, defaultVoiceSettings);
+        }
       }
     } else {
-      // For audio-only, ensure voice and voiceSettings are null
-      if (editedVoice !== null) {
-        devLog('Clearing editedVoice for audio-only section');
+      // For audio-only, ensure voice and voiceSettings are null in component state
+      // but preserve them for possible restoration
+      if (editedVoice !== null && !previousVoiceRef.current) {
+        previousVoiceRef.current = editedVoice;
+        devLog('Storing voice for audio-only section:', previousVoiceRef.current);
         setEditedVoice(null);
       }
       if (voiceSettings !== null) {
@@ -122,33 +198,91 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
       language: 'en-US',
     };
     const defaultVoiceSettings = { volume: 1, rate: 1, pitch: 1 };
+    
+    // Validate audioUrl
+    const isValid = section.audioUrl ? isValidAudioUrl(section.audioUrl) : true;
+    
+    devLog('Toggling section type:', {
+      id: section.id,
+      fromType: section.type,
+      toType: newType,
+      audioUrl: section.audioUrl,
+      isValidAudioUrl: isValid
+    });
+    
+    if (section.audioUrl && !isValid) {
+      devWarn(`Invalid audioUrl detected in section ${section.id} during type toggle: ${section.audioUrl}`);
+    }
+
+    // Store current voice settings before changing type
+    const currentVoice = section.voice || editedVoice;
+    const currentVoiceSettings = section.voiceSettings || voiceSettings;
+
+    if (section.type === 'text-to-speech') {
+      // When switching to audio-only, save the current voice
+      if (currentVoice) {
+        previousVoiceRef.current = { ...currentVoice }; // Create a new object to avoid reference issues
+        devLog('Switching to audio-only, storing voice:', previousVoiceRef.current);
+      }
+    }
 
     let updatedSection;
     if (newType === 'text-to-speech') {
       // Switching to text-to-speech: Add voice and voiceSettings
+      // Restore previously saved voice if available
+      const voiceToUse = previousVoiceRef.current || currentVoice || defaultVoice;
       updatedSection = {
         ...section,
         type: newType,
-        voice: editedVoice || defaultVoice,
-        voiceSettings: voiceSettings || defaultVoiceSettings,
+        voice: voiceToUse,
+        voiceSettings: currentVoiceSettings || defaultVoiceSettings,
+        audioUrl: isValid ? section.audioUrl : undefined // Clear invalid audioUrl when switching types
       };
-      setEditedVoice(editedVoice || defaultVoice);
-      setVoiceSettings(voiceSettings || defaultVoiceSettings);
-      devLog('Switching to text-to-speech, setting voice and voiceSettings:', updatedSection);
+      setEditedVoice(voiceToUse);
+      setVoiceSettings(currentVoiceSettings || defaultVoiceSettings);
+      devLog('Switching to text-to-speech, restoring voice:', voiceToUse);
     } else {
-      // Switching to audio-only: Remove voice and voiceSettings
+      // Switching to audio-only: Store voice and settings but remove from section
       updatedSection = {
         ...section,
         type: newType,
-        voice: undefined, // Remove voice
-        voiceSettings: undefined, // Remove voiceSettings
+        voice: undefined, // Remove voice from section object
+        voiceSettings: undefined, // Remove voiceSettings from section object
+        audioUrl: isValid ? section.audioUrl : undefined // Clear invalid audioUrl when switching types
       };
-      setEditedVoice(null);
-      setVoiceSettings(null);
-      devLog('Switching to audio-only, removing voice and voiceSettings:', updatedSection);
+      
+      // Make sure to store the current voice for possible toggle back
+      if (currentVoice && !previousVoiceRef.current) {
+        previousVoiceRef.current = { ...currentVoice };
+        devLog('Switching to audio-only, saving voice for later use:', currentVoice);
+      }
     }
 
+    // Update the section in session state
     sessionActions.updateSection(updatedSection);
+    
+    // Persist current voice selection in session storage
+    if (currentVoice) {
+      try {
+        const voiceStorage = JSON.parse(localStorage.getItem('voice_selections') || '{}');
+        voiceStorage[section.id] = currentVoice;
+        localStorage.setItem('voice_selections', JSON.stringify(voiceStorage));
+        devLog('Stored voice selection for section:', section.id);
+      } catch (e) {
+        devLog('Could not store voice selection in localStorage:', e);
+      }
+    }
+    
+    // Log the stored section after toggling
+    setTimeout(() => {
+      const storedState = JSON.parse(sessionStorage.getItem('tts_session_state') || '{}');
+      const storedSection = storedState.sections?.find(s => s.id === section.id);
+      devLog('Stored tts_session_state after type toggle:', {
+        sectionId: section.id,
+        newType,
+        audioUrl: storedSection?.audioUrl
+      });
+    }, 100);
   };
 
   /**
@@ -156,6 +290,8 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
    * Updates the section with edited values for title, text, voice, and voiceSettings.
    */
   const saveSection = () => {
+    const isValid = section.audioUrl ? isValidAudioUrl(section.audioUrl) : true;
+    
     // Debug: Log the state before saving
     devLog('Current editedVoice before save:', editedVoice);
     devLog('Saving section:', {
@@ -163,18 +299,37 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
       title: editedTitle,
       text: editedText,
       voice: section.type === 'text-to-speech' ? editedVoice : undefined,
-      voiceSettings: section.type === 'text-to-speech' ? voiceSettings : undefined,
+      audioUrl: section.audioUrl,
+      isValidAudioUrl: isValid
     });
+    
+    if (section.audioUrl && !isValid) {
+      devWarn(`Invalid audioUrl detected in section ${section.id}: ${section.audioUrl}`);
+    }
 
     const updatedSection = {
       ...section,
       title: editedTitle,
       text: editedText,
+      audioUrl: isValid ? section.audioUrl : undefined // Clear invalid audioUrl
     };
 
     if (section.type === 'text-to-speech') {
       updatedSection.voice = editedVoice;
       updatedSection.voiceSettings = voiceSettings;
+      // Also save to ref for possible type toggling
+      if (editedVoice) {
+        previousVoiceRef.current = { ...editedVoice };
+        
+        // Also persist to localStorage as a backup
+        try {
+          const voiceStorage = JSON.parse(localStorage.getItem('voice_selections') || '{}');
+          voiceStorage[section.id] = editedVoice;
+          localStorage.setItem('voice_selections', JSON.stringify(voiceStorage));
+        } catch (e) {
+          devLog('Could not store voice selection in localStorage:', e);
+        }
+      }
     } else {
       updatedSection.voice = undefined;
       updatedSection.voiceSettings = undefined;
@@ -182,7 +337,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
 
     sessionActions.updateSection(updatedSection);
     setIsEditing(false);
-    sessionActions.setNotification({
+    addNotification({
       type: 'success',
       message: 'Section updated successfully',
     });
@@ -190,7 +345,11 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
     // Debug: Log the stored sections after saving
     setTimeout(() => {
       const storedState = JSON.parse(sessionStorage.getItem('tts_session_state') || '{}');
-      devLog('Stored tts_session_state:', storedState);
+      const storedSection = storedState.sections?.find(s => s.id === section.id);
+      devLog('Stored tts_session_state after save:', {
+        sectionId: section.id,
+        audioUrl: storedSection?.audioUrl
+      });
     }, 100); // Delay to ensure storage is updated
   };
 
@@ -201,7 +360,7 @@ const SectionCard = ({ section, index, moveUp, moveDown }) => {
   const deleteSection = () => {
     if (window.confirm(`Are you sure you want to delete "${section.title}"?`)) {
       sessionActions.removeSection(section.id);
-      sessionActions.setNotification({
+      addNotification({
         type: 'success',
         message: 'Section deleted successfully',
       });

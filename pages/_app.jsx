@@ -1,7 +1,11 @@
 import '../styles/globals.css';
-import '../styles/themes.css'; // Add this line
+import '../styles/themes.css';
 
 import { TTSProvider } from '../context/TTSContext';
+import { NotificationProvider } from '../context/notificationContext';
+import { TTSSessionProvider } from '../context/TTSSessionContext';
+import { ApiKeyConfirmProvider } from '../context/apiKeyConfirmContext';
+import ApiKeyConfirmModal from '../components/modals/ApiKeyConfirmModal';
 
 /**
  * Custom Next.js App component
@@ -17,9 +21,16 @@ import { TTSProvider } from '../context/TTSContext';
  */
 function MyApp({ Component, pageProps }) {
   return (
-    <TTSProvider>
-      <Component {...pageProps} />
-    </TTSProvider>
+    <NotificationProvider>
+      <TTSProvider>
+        <TTSSessionProvider>
+          <ApiKeyConfirmProvider>
+            <Component {...pageProps} />
+            <ApiKeyConfirmModal />
+          </ApiKeyConfirmProvider>
+        </TTSSessionProvider>
+      </TTSProvider>
+    </NotificationProvider>
   );
 }
 

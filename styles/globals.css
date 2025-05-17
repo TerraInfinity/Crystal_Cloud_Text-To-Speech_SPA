@@ -299,3 +299,410 @@ h1 {
     height: 6px;
     border-radius: 4px;
   }
+
+:root {
+  --progress-bg: #f3f3f3;
+  --progress-fill: #3498db;
+}
+
+#tts-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+  font-size: 16px;
+  color: var(--text-color);
+}
+
+/* Ensure spinner is centered and visible in modal */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--progress-bg, #f3f3f3);
+  border-top: 3px solid var(--progress-fill, #3498db);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Modal-specific processing overlay */
+.modal-content .spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+
+/* Ensure processing-container is hidden by default */
+#processing-container {
+  display: none;
+}
+
+/* Show processing-container only when explicitly active */
+#processing-container.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
+
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.progress-bar {
+  width: 80%;
+  max-width: 300px;
+  height: 20px;
+  background-color: var(--progress-bg);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: var(--progress-fill);
+  transition: width 0.5s ease-in-out; /* Smoother transition */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+}
+
+.progress-text {
+  text-align: center;
+  width: 100%;
+}
+
+/* ===========================================================================
+   Notification Styles
+   ---------------------------------------------------------------------------
+   Theme-aware notification styles with dynamic colors for success, warning,
+   error, and info types. Includes animations, theme-specific effects, and a
+   progress bar indicating the 3-second lifespan.
+============================================================================ */
+
+/* Base Notification Container */
+.notification-container {
+  position: fixed;
+  top: 20px; /* Move a bit down from the very top */
+  left: 50%;
+  transform: translateX(-50%); /* Center horizontally */
+  width: 350px; /* Fixed width for consistency */
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Slightly more spacing between notifications */
+  pointer-events: none; /* Allow clicking through the container */
+}
+
+/* Base Notification */
+.notification {
+  pointer-events: auto;
+  @apply rounded-md shadow-md;
+  padding: 12px 32px 12px 12px; /* Slightly more padding */
+  position: relative;
+  color: var(--text-color);
+  border: 1px solid var(--card-border);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  will-change: transform, opacity;
+  backdrop-filter: blur(4px); /* Subtle blur effect */
+  opacity: 0.65; /* More transparency - 15% transparent */
+}
+
+/* Independent Progress Bar */
+.notification-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background-color: var(--primary-btn-bg);
+  animation: notification-progress 3s linear forwards;
+  transform-origin: left;
+}
+
+@keyframes notification-progress {
+  0% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}
+
+/* Animation classes */
+.notification-enter {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.notification-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
+}
+
+.notification-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.notification-exit-active {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: opacity 300ms ease-in, transform 300ms ease-in;
+}
+
+/* Close Button */
+.notification .close-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  color: var(--text-color, #333);
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.notification .close-button:hover {
+  opacity: 1;
+}
+
+/* Remove the ::after progress bar since we're using a dedicated element now */
+.notification::after {
+  content: none;
+}
+
+/* Notification Types with transparency */
+.notification-success {
+  background-color: color-mix(in srgb, var(--success-bg, #d4edda) 85%, transparent); /* More transparent green */
+  border-color: var(--success-border, #28a745);
+  color: var(--success-text, var(--text-color));
+}
+
+.notification-warning {
+  background-color: color-mix(in srgb, var(--warning-bg, #fff3cd) 85%, transparent); /* More transparent yellow */
+  border-color: var(--warning-border, #ffc107);
+  color: var(--warning-text, var(--text-color));
+}
+
+.notification-error {
+  background-color: color-mix(in srgb, var(--error-bg, #f8d7da) 85%, transparent); /* More transparent red */
+  border-color: var(--error-border, #dc3545);
+  color: var(--error-text, var(--text-color));
+}
+
+.notification-info {
+  background-color: color-mix(in srgb, var(--info-bg, #cce5ff) 85%, transparent); /* More transparent blue */
+  border-color: var(--info-border, #007bff);
+  color: var(--info-text, var(--text-color));
+}
+
+/* Theme-Specific Notification Effects */
+
+/* Neon Theme: Add glow effect */
+[data-theme="neon"] .notification {
+  box-shadow: 0 0 8px var(--text-color);
+}
+
+[data-theme="neon"] .notification .close-button {
+  box-shadow: 0 0 5px var(--primary-btn-bg);
+}
+
+/* Glitch Theme: Apply glitch animations */
+@keyframes glitch-border {
+  0% { border-color: var(--card-border); transform: translate(0); }
+  20% { border-color: #ff00ff; transform: translate(-2px, 2px); }
+  40% { border-color: #00ff00; transform: translate(2px, -2px); }
+  60% { border-color: #ff0000; transform: translate(-2px, 2px); }
+  80% { border-color: #00ffff; transform: translate(2px, -2px); }
+  100% { border-color: var(--card-border); transform: translate(0); }
+}
+
+@keyframes glitch-text {
+  0% { color: var(--text-color); transform: translate(0); }
+  20% { color: #ff00ff; transform: translate(-1px, 1px); }
+  40% { color: #00ff00; transform: translate(1px, -1px); }
+  60% { color: #ff0000; transform: translate(-1px, 1px); }
+  80% { color: #00ffff; transform: translate(1px, -1px); }
+  100% { color: var(--text-color); transform: translate(0); }
+}
+
+[data-theme="glitch"] .notification {
+  position: relative;
+  animation: glitch-border 7s infinite;
+}
+
+[data-theme="glitch"] .notification .close-button {
+  animation: glitch-text 6s infinite;
+}
+
+/* Holographic Theme: Apply gradient background */
+[data-theme="holographic"] .notification {
+  background: linear-gradient(135deg, var(--card-bg), #f0abfc);
+}
+
+/* Retro Theme: Add grainy texture */
+[data-theme="retro"] .notification {
+  background-image: url('/grain.png'), var(--card-bg);
+  background-blend-mode: overlay;
+}
+
+/* Cosmic Theme: Apply cosmic gradient */
+[data-theme="cosmic"] .notification {
+  background: linear-gradient(145deg, var(--card-bg), #1a1a2e);
+}
+
+/* Steampunk Theme: Add metallic sheen */
+[data-theme="steampunk"] .notification .close-button {
+  background: linear-gradient(45deg, var(--primary-btn-bg), #e0c097);
+}
+
+/* Cyberpunk Theme: Add neon outline */
+[data-theme="cyberpunk"] .notification {
+  outline: 1px solid var(--card-border);
+  outline-offset: 2px;
+}
+
+/* Minimalist Theme: Simplify with subtle shadow */
+[data-theme="minimalist"] .notification {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Pastel Theme: Softer animations */
+[data-theme="pastel"] .notification-enter {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+[data-theme="pastel"] .notification-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 500ms, transform 500ms ease-out;
+}
+
+[data-theme="pastel"] .notification-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+[data-theme="pastel"] .notification-exit-active {
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 500ms, transform 500ms ease-in;
+}
+
+/* Nature Theme: Organic fade */
+[data-theme="nature"] .notification-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+[data-theme="nature"] .notification-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 500ms, transform 500ms ease-out;
+}
+
+[data-theme="nature"] .notification-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-theme="nature"] .notification-exit-active {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 500ms, transform 500ms ease-in;
+}
+
+/* Art Deco Theme: Gold border accent */
+[data-theme="artdeco"] .notification {
+  border: 2px solid var(--accent-color);
+}
+
+/* Bauhaus Theme: Geometric animation */
+[data-theme="bauhaus"] .notification-enter {
+  opacity: 0;
+  transform: rotate(-10deg) translateX(100%);
+}
+
+[data-theme="bauhaus"] .notification-enter-active {
+  opacity: 1;
+  transform: rotate(0) translateX(0);
+  transition: opacity 500ms, transform 500ms ease-out;
+}
+
+[data-theme="bauhaus"] .notification-exit {
+  opacity: 1;
+  transform: rotate(0) translateX(0);
+}
+
+[data-theme="bauhaus"] .notification-exit-active {
+  opacity: 0;
+  transform: rotate(10deg) translateX(100%);
+  transition: opacity 500ms, transform 500ms ease-in;
+}
+
+/* Theme-specific transparency adjustments */
+[data-theme="dark"] .notification,
+[data-theme="cyberpunk"] .notification,
+[data-theme="neon"] .notification,
+[data-theme="glitch"] .notification,
+[data-theme="steampunk"] .notification,
+[data-theme="cosmic"] .notification {
+  /* For dark themes, we need to make the text more opaque to ensure readability */
+  color: rgba(255, 255, 255, 0.95);
+  /* Add a subtle shadow to improve text readability on transparent backgrounds */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* For light themes, ensure contrast */
+[data-theme="light"] .notification,
+[data-theme="minimalist"] .notification,
+[data-theme="pastel"] .notification {
+  /* Ensure text is readable against transparent light backgrounds */
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+
+/* Modal Styles */
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 transition-opacity duration-300;
+}
+
+.modal-content {
+  @apply section-card w-full max-w-lg mx-4 p-6 transform transition-all duration-300 scale-100 hover:scale-[1.01];
+}
+
+/* Enhance notification styles for error within modal */
+.notification-error {
+  background-color: color-mix(in srgb, var(--error-bg, #f8d7da) 85%, transparent);
+  border-color: var(--error-border, #dc3545);
+  color: var(--error-text, var(--text-color));
+}
+
+/* Improve details/summary for collapsible sections */
+details > summary {
+  @apply cursor-pointer select-none;
+}
+
+details[open] > summary {
+  @apply text-gray-900;
+}
+
+/* Smooth transition for collapsible content */
+details > * {
+  transition: all 0.3s ease;
+}

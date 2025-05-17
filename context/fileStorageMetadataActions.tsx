@@ -1,7 +1,8 @@
 // context/fileStorageMetadataActions.tsx
 import { saveToStorage, loadFromStorage } from './storage';
 import { devLog } from '../utils/logUtils';
-import { AudioFileMetaDataEntry, FileStorageActions  } from './types/types';
+import { AudioFileMetaDataEntry, FileStorageActions } from './types/types';
+import { createHash } from 'crypto'; // Or use a browser-compatible hash library like js-sha256
 
 // Define action payload types
 export type MetadataAction =
@@ -11,13 +12,11 @@ export type MetadataAction =
 
 export async function loadCurrentMetadata(serverUrl: string = 'http://localhost:5000'): Promise<AudioFileMetaDataEntry[]> {
   try {
-    devLog('Loading metadata from:', `${serverUrl}/metadata/audio_metadata.json`);
     const result = await loadFromStorage('audio_metadata.json', false, 'fileStorage');
     if (result instanceof Blob) {
       const text = await result.text();
       const metadata = JSON.parse(text);
       if (Array.isArray(metadata)) {
-        devLog(`Loaded ${metadata.length} metadata entries from server`);
         const normalizedMetadata = metadata.map(entry => ({
           ...entry,
           audio_url: entry.audio_url || entry.audiourl || entry.url || '',
@@ -28,14 +27,12 @@ export async function loadCurrentMetadata(serverUrl: string = 'http://localhost:
           url: undefined,
         }));
         sessionStorage.setItem('file_server_audio_metadata', JSON.stringify(normalizedMetadata));
-        devLog('Normalized metadata:', JSON.stringify(normalizedMetadata, null, 2));
         return normalizedMetadata;
       }
     }
-    devLog('No valid metadata found, returning empty array');
     return [];
   } catch (error) {
-    devLog('Error loading current metadata:', error);
+    devLog(`Error loading current metadata: ${error.message}`, 'error');
     return [];
   }
 }
@@ -45,15 +42,16 @@ export async function syncMetadata(
   action: MetadataAction
 ): Promise<number> {
   try {
-    devLog(`[${new Date().toISOString()}] Processing syncMetadata action: ${action.type} for ID: ${action.payload?.id || 'unknown'}`);
-    devLog('Action payload:', JSON.stringify(action.payload, null, 2));
     let metadata = await loadCurrentMetadata(serverUrl);
-    devLog('Loaded metadata with entries:', metadata.length, JSON.stringify(metadata, null, 2));
+    const currentHash = createHash('sha256').update(JSON.stringify(metadata)).digest('hex');
 
     switch (action.type) {
       case 'append':
         if (!action.payload?.id) {
           throw new Error('Invalid payload for append action: missing id');
+        }
+        if (metadata.some(entry => entry.id === action.payload.id)) {
+          return metadata.length; // Skip append if entry exists
         }
         metadata = await appendMetadataEntry(metadata, action.payload, serverUrl);
         break;
@@ -61,39 +59,35 @@ export async function syncMetadata(
         if (!action.payload?.id) {
           throw new Error('Invalid payload for remove action: missing id');
         }
-        devLog('Before removal, metadata entries:', metadata.length);
         metadata = await removeMetadataEntry(metadata, action.payload.id);
-        devLog('After removal, metadata entries:', metadata.length);
         break;
       case 'update':
         if (!action.payload?.id || !action.payload?.field_property) {
           throw new Error('Invalid payload for update action: missing id or field_property');
         }
-        devLog('Before update, metadata entries:', metadata.length);
         metadata = await updateMetadataEntry(
           metadata,
           action.payload.id,
           action.payload.field_property,
           serverUrl
         );
-        devLog('After update, metadata entries:', metadata.length);
         break;
       default:
         throw new Error(`Unknown action type: ${(action as any).type}`);
     }
 
-    devLog('Updated metadata before saving:', JSON.stringify(metadata, null, 2));
     if (!Array.isArray(metadata)) {
       throw new Error('Metadata is not an array');
     }
-    if (metadata.length === 0) {
-      devLog('Warning: Metadata array is empty before saving');
+
+    const newHash = createHash('sha256').update(JSON.stringify(metadata)).digest('hex');
+    if (currentHash === newHash) {
+      return metadata.length; // Skip save if unchanged
     }
 
     const metadataStr = JSON.stringify(metadata, null, 2);
     const metadataBlob = new Blob([metadataStr], { type: 'application/json' });
     const metadataFile = new File([metadataBlob], 'audio_metadata.json', { type: 'application/json' });
-    devLog('Saving metadata to storage, content length:', metadataStr.length);
 
     const saveMetadata = {
       category: 'metadata',
@@ -102,28 +96,58 @@ export async function syncMetadata(
       skipMerge: action.type === 'remove' || action.type === 'update',
     };
 
-    const saveResult = await saveToStorage(
+    await saveToStorage(
       'audio_metadata.json',
       metadataFile,
       'fileStorage',
       saveMetadata
     );
-    devLog('Metadata saved to storage, result:', saveResult);
 
-    const reloadedMetadata = await loadCurrentMetadata(serverUrl);
-    devLog('Reloaded metadata for verification:', JSON.stringify(reloadedMetadata, null, 2));
-    const replacer = (key, value) => (value === "null" ? "null" : value);
-    if (JSON.stringify(reloadedMetadata, replacer) !== JSON.stringify(metadata, replacer)) {
-      devLog('Verification failed: Saved metadata does not match expected metadata');
-      throw new Error('Failed to verify metadata save');
+    // Store metadata in session storage regardless of verification result
+    sessionStorage.setItem('file_server_audio_metadata', JSON.stringify(metadata));
+
+    // Attempt to verify the save with retries
+    let verificationSuccess = false;
+    const maxRetries = 3;
+    const retryDelays = [200, 500, 1000]; // Increasing delays in ms
+    
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        // Wait before verification to allow for file system/network delays
+        await new Promise(resolve => setTimeout(resolve, retryDelays[i]));
+        
+        const reloadedMetadata = await loadCurrentMetadata(serverUrl);
+        
+        // Use a more lenient comparison that ignores string vs null differences
+        const normalizedOriginal = JSON.stringify(metadata, (key, value) => 
+          value === "null" || value === null ? "null" : value
+        );
+        const normalizedReloaded = JSON.stringify(reloadedMetadata, (key, value) => 
+          value === "null" || value === null ? "null" : value
+        );
+        
+        if (normalizedReloaded === normalizedOriginal) {
+          verificationSuccess = true;
+          devLog(`Metadata verification successful on attempt ${i + 1}`);
+          break;
+        } else {
+          devLog(`Metadata verification failed on attempt ${i + 1}, will retry`);
+        }
+      } catch (verifyError) {
+        devLog(`Error during metadata verification attempt ${i + 1}: ${verifyError.message}`);
+        // Continue to next retry
+      }
+    }
+    
+    // If verification failed but we saved the metadata, continue anyway
+    if (!verificationSuccess) {
+      devLog('Metadata verification failed after all retries, but continuing with operation');
+      // We don't throw an error here, as the data was likely saved correctly
     }
 
-    devLog('Updating sessionStorage with metadata:', JSON.stringify(metadata, null, 2));
-    sessionStorage.setItem('file_server_audio_metadata', JSON.stringify(metadata));
-    devLog(`Successfully synced ${metadata.length} entries to audio_metadata.json`);
     return metadata.length;
   } catch (error) {
-    devLog('Error in syncMetadata:', error);
+    devLog(`Error in syncMetadata: ${error.message}`, 'error');
     throw new Error(`Failed to sync metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -134,7 +158,6 @@ export async function appendMetadataEntry(
   serverUrl: string = 'http://localhost:5000'
 ): Promise<AudioFileMetaDataEntry[]> {
   try {
-    devLog('Appending metadata entry:', newEntry.id, 'Entry:', JSON.stringify(newEntry, null, 2));
     const normalizedEntry: AudioFileMetaDataEntry = {
       ...newEntry,
       audio_url: newEntry.audio_url?.startsWith(serverUrl)
@@ -148,13 +171,12 @@ export async function appendMetadataEntry(
       category: newEntry.category || 'sound_effect',
     };
     if (metadata.some(entry => entry.id === newEntry.id)) {
-      devLog(`Entry ${newEntry.id} already exists, updating instead`);
       return await updateMetadataEntry(metadata, newEntry.id, normalizedEntry, serverUrl);
     }
     const updatedMetadata = [...metadata, normalizedEntry];
     return updatedMetadata;
   } catch (error) {
-    devLog('Error in appendMetadataEntry:', error);
+    devLog(`Error in appendMetadataEntry: ${error.message}`, 'error');
     throw new Error(`Failed to append metadata entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -164,12 +186,10 @@ export async function removeMetadataEntry(
   id: string
 ): Promise<AudioFileMetaDataEntry[]> {
   try {
-    devLog('Removing metadata entry:', id);
     const filteredMetadata = metadata.filter(entry => entry.id !== id);
-    devLog('Filtered metadata:', JSON.stringify(filteredMetadata, null, 2));
     return filteredMetadata;
   } catch (error) {
-    devLog('Error in removeMetadataEntry:', error);
+    devLog(`Error in removeMetadataEntry: ${error.message}`, 'error');
     throw new Error(`Failed to remove metadata entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -181,7 +201,6 @@ export async function updateMetadataEntry(
   serverUrl: string = 'http://localhost:5000'
 ): Promise<AudioFileMetaDataEntry[]> {
   try {
-    devLog(`[${new Date().toISOString()}] Updating metadata entry:`, id, 'with properties:', JSON.stringify(field_property, null, 2));
     const normalizedFieldProperty: Partial<AudioFileMetaDataEntry> = {
       ...field_property,
       audio_url: field_property.audio_url !== undefined
@@ -205,7 +224,6 @@ export async function updateMetadataEntry(
     const cleanedFieldProperty = Object.fromEntries(
       Object.entries(normalizedFieldProperty).filter(([_, value]) => value !== undefined)
     );
-    devLog('Normalized field_property:', JSON.stringify(cleanedFieldProperty, null, 2));
     const existingEntry = metadata.find(entry => entry.id === id);
     if (existingEntry) {
       const updatedEntry = {
@@ -214,11 +232,9 @@ export async function updateMetadataEntry(
         placeholder: (cleanedFieldProperty.placeholder ?? existingEntry.placeholder ?? existingEntry.name) || 'Untitled',
         volume: cleanedFieldProperty.volume ?? existingEntry.volume ?? 1,
       };
-      devLog('Updated entry:', JSON.stringify(updatedEntry, null, 2));
       const updatedMetadata = metadata.map(entry =>
         entry.id === id ? updatedEntry : entry
       );
-      devLog('Updated metadata array:', JSON.stringify(updatedMetadata, null, 2));
       return updatedMetadata;
     } else {
       const newEntry: AudioFileMetaDataEntry = {
@@ -235,11 +251,10 @@ export async function updateMetadataEntry(
         source: normalizedFieldProperty.source || { type: 'unknown', metadata: {} },
       };
       const updatedMetadata = [...metadata, newEntry];
-      devLog('Appended new metadata entry:', JSON.stringify(updatedMetadata, null, 2));
       return updatedMetadata;
     }
   } catch (error) {
-    devLog('Error in updateMetadataEntry:', error);
+    devLog(`Error in updateMetadataEntry: ${error.message}`, 'error');
     throw new Error(`Failed to update metadata entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

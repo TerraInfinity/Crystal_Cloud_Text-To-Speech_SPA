@@ -22,7 +22,7 @@ import { devLog, devError, devDebug } from '../utils/logUtils';
  */
 const AudioLibrary = () => {
   const { state, actions } = useFileStorage();
-  const { audioLibrary } = state;
+  const { audioLibrary, setAudioLibrary } = state;
   const fileInputRef = useRef(null);
   const [audioName, setAudioName] = useState('');
   const [playingAudioId, setPlayingAudioId] = useState(null);
@@ -41,10 +41,10 @@ const AudioLibrary = () => {
   const [expandedCategories, setExpandedCategories] = useState({
     sound_effect: true,
     uploaded_audio: true,
-    generated_section_audio: false,
+    generated_audio: false,
     music: false,
     Binaural: false,
-    other: true,
+    other: false,
   });
 
   // Fetch audio library on mount
@@ -246,12 +246,38 @@ const AudioLibrary = () => {
 
     if (window.confirm(`Are you sure you want to delete "${audio.name}"?`)) {
       try {
-        await actions.removeFromAudioLibrary(audioId, { category: audio.category });
-        await actions.fetchAudioLibrary();
+        // Make a copy of the essential information needed for deletion
+        const audioInfo = {
+          id: audio.id,
+          name: audio.name,
+          category: audio.category
+        };
 
+        // Stop playback if this audio was playing
         if (playingAudioId === audioId) {
           setPlayingAudioId(null);
         }
+
+        // For better UX, update local state immediately
+        setAudioLibrary(prevState => prevState.filter(a => a.id !== audioId));
+
+        try {
+          // Try to delete from server/context
+          await actions.removeFromAudioLibrary(audioInfo.id, { category: audioInfo.category });
+        } catch (error) {
+          console.error('Error during deletion:', error);
+          
+          // If error contains "not found", consider it already deleted
+          if (error.message?.includes('not found')) {
+            console.log(`Audio ${audioInfo.id} not found in context, but deleting from UI anyway`);
+            // No need to throw, we'll just update the UI
+          } else {
+            throw error; // Re-throw other errors
+          }
+        }
+
+        // Refresh audio library to sync state
+        await actions.fetchAudioLibrary();
 
         setNotification({
           type: 'info',
@@ -283,17 +309,66 @@ const AudioLibrary = () => {
 
     if (window.confirm(`Are you sure you want to delete all ${category.replace('_', ' ')} files?`)) {
       try {
-        for (const audio of audiosByCategory) {
-          await actions.removeFromAudioLibrary(audio.id, { category: audio.category });
-          if (playingAudioId === audio.id) {
-            setPlayingAudioId(null);
-          }
+        // Stop any playing audio in this category
+        if (playingAudioId && audiosByCategory.some(audio => audio.id === playingAudioId)) {
+          setPlayingAudioId(null);
         }
-        await actions.fetchAudioLibrary();
-
+        
         setNotification({
           type: 'info',
-          message: `All ${category.replace('_', ' ')} files deleted successfully.`,
+          message: `Deleting ${audiosByCategory.length} ${category.replace('_', ' ')} files...`,
+        });
+        
+        // Create a complete array of audio info before we start deleting
+        const audiosToDelete = audiosByCategory.map(audio => ({
+          id: audio.id,
+          category: audio.category
+        }));
+        
+        // Process files in batches to avoid overwhelming the system
+        const batchSize = 5; // Process 5 files at a time
+        let deleteCount = 0;
+        let errorCount = 0;
+        
+        // Process files in batches
+        for (let i = 0; i < audiosToDelete.length; i += batchSize) {
+          const batch = audiosToDelete.slice(i, i + batchSize);
+          
+          // Create array of deletion promises
+          const deletionPromises = batch.map(audio => {
+            return new Promise(async (resolve) => {
+              try {
+                await actions.removeFromAudioLibrary(audio.id, { category: audio.category });
+                deleteCount++;
+                resolve({ success: true });
+              } catch (error) {
+                console.error(`Error deleting audio ${audio.id}: ${error.message}`);
+                errorCount++;
+                resolve({ success: false, error: error.message });
+              }
+            });
+          });
+          
+          // Wait for all deletions in this batch to complete
+          await Promise.all(deletionPromises);
+          
+          // Update the notification every few batches
+          if (i % (batchSize * 2) === 0 || i + batchSize >= audiosToDelete.length) {
+            setNotification({
+              type: 'info',
+              message: `Deleting files... (${deleteCount}/${audiosToDelete.length} complete)`,
+            });
+          }
+        }
+        
+        // Final refresh to update UI
+        await actions.fetchAudioLibrary();
+        
+        setNotification({
+          type: errorCount > 0 ? 'info' : 'success',
+          message: errorCount > 0 
+            ? `Deleted ${deleteCount} files. ${errorCount} files could not be deleted.` 
+            : `Successfully deleted ${deleteCount} ${category.replace('_', ' ')} files.`,
         });
       } catch (error) {
         console.error('Error during bulk deletion:', error);
@@ -428,7 +503,7 @@ const AudioLibrary = () => {
               value={editPlaceholder}
               onChange={(e) => setEditPlaceholder(e.target.value)}
               className="input-field text-sm"
-              placeholder="e.g., beep, chime"
+              placeholder="e親g., beep, chime"
             />
           </div>
           <div className="flex space-x-2">
@@ -556,6 +631,8 @@ const AudioLibrary = () => {
   const renderCategorySection = (category, displayName) => {
     if (category === 'merged_audio') return null;
     const items = getAudioByCategory(category);
+    const isGeneratedAudio = category === 'generated_audio';
+
     return (
       <div
         className="mb-2 border border-gray-200 rounded-md overflow-hidden"
@@ -570,7 +647,13 @@ const AudioLibrary = () => {
           style={{ backgroundColor: 'var(--bg-secondary)' }}
         >
           <h3 className="text-sm font-medium flex items-center">
-            {displayName} <span className="ml-2 text-xs text-gray-500">({items.length})</span>
+            {displayName}
+            {isGeneratedAudio && (
+              <span className="ml-1 text-xs text-gray-500 italic">
+                (generated audios are temporary and expire, unless manually saved)
+              </span>
+            )}
+            <span className="ml-2 text-xs text-gray-500">({items.length})</span>
           </h3>
           <div className="flex space-x-2 items-center">
             {items.length > 0 && (
@@ -710,7 +793,7 @@ const AudioLibrary = () => {
             >
               Choose File
             </button>
-            <span className="ml-3 text-sm text-gray-500">
+            <span className="ml-3 text-so text-gray-500">
               {selectedFile ? selectedFile.name : 'No file selected'}
             </span>
           </div>
@@ -788,7 +871,7 @@ const AudioLibrary = () => {
       <div id="audio-library-categories" className="space-y-1">
         {renderCategorySection('sound_effect', 'Sound Effects')}
         {renderCategorySection('uploaded_audio', 'Uploaded Audio')}
-        {renderCategorySection('generated_section_audio', 'Generated Audio')}
+        {renderCategorySection('generated_audio', 'Generated Audio')}
         {renderCategorySection('music', 'Music')}
         {renderCategorySection('binaural', 'Binaural')}
         {renderCategorySection('other', 'Other')}

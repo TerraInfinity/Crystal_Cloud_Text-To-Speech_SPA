@@ -1,29 +1,35 @@
 /**
  * @fileoverview File History component for the Text-to-Speech application.
- * Displays a history of merged audio files (category: merged_audio) with options to play, download, and delete.
+ * Displays a history of audio files, toggling between merged audio (category: merged_audio)
+ * and generated audio (category: generated_audio) with options to play, download, and delete.
  *
  * @requires React
  * @requires ../context/TTSContext.tsx
+ * @requires ./FileHistoryButtons
  */
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useFileStorage } from '../context/TTSContext.tsx';
 import { devLog } from '../utils/logUtils';
+import FileHistoryButtons from './FileHistoryButtons';
 
 const FileHistory = () => {
   const { state, actions } = useFileStorage();
   const [playingEntryId, setPlayingEntryId] = useState(null);
   const [error, setError] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [deleteOption, setDeleteOption] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [historyView, setHistoryView] = useState('merged_audio'); // Toggle state: 'merged_audio' or 'generated_audio'
   const dialogRef = useRef(null);
+  const deleteAllDialogRef = useRef(null);
 
   // Fetch file history on mount
   useEffect(() => {
     actions.refreshFileHistory().catch((err) => {
-      devLog('Error fetching file history:', err);
+      devLog(`[FileHistory] Error fetching file history: ${err.message}`, 'error');
       setError('Failed to load file history');
     });
   }, [actions]);
@@ -31,18 +37,25 @@ const FileHistory = () => {
   // Handle Escape key to close dialog
   const handleKeyDown = useCallback(
     (event) => {
-      if (event.key === 'Escape' && deleteDialogOpen) {
-        handleCloseDeleteDialog();
+      if (event.key === 'Escape') {
+        if (deleteDialogOpen) {
+          setDeleteDialogOpen(false);
+          setSelectedEntry(null);
+          setDeleteOption('');
+          setIsDeleting(false);
+        }
+        if (deleteAllDialogOpen) {
+          setDeleteAllDialogOpen(false);
+          setIsDeleting(false);
+        }
       }
     },
-    [deleteDialogOpen]
+    [deleteDialogOpen, deleteAllDialogOpen]
   );
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
   // Focus dialog when it opens
@@ -50,7 +63,10 @@ const FileHistory = () => {
     if (deleteDialogOpen && dialogRef.current) {
       dialogRef.current.focus();
     }
-  }, [deleteDialogOpen]);
+    if (deleteAllDialogOpen && deleteAllDialogRef.current) {
+      deleteAllDialogRef.current.focus();
+    }
+  }, [deleteDialogOpen, deleteAllDialogOpen]);
 
   // Determine entry type based on audio_url and config_url
   const getEntryType = (entry) => {
@@ -59,7 +75,6 @@ const FileHistory = () => {
     if (hasAudio && hasConfig) return 'audio_and_config';
     if (hasAudio) return 'audio_only';
     if (hasConfig) return 'config_only';
-    devLog('Unknown entry type:', JSON.stringify(entry, null, 2));
     return 'unknown';
   };
 
@@ -85,6 +100,7 @@ const FileHistory = () => {
 
   // Handle audio/config download
   const handleDownload = async (url, filename) => {
+    const fileType = filename.includes('.json') ? 'config' : 'audio';
     try {
       setError(null);
       const serverUrl = state.settings?.storageConfig?.serverUrl || 'http://localhost:5000';
@@ -106,17 +122,15 @@ const FileHistory = () => {
         URL.revokeObjectURL(objectUrl);
       }, 100);
     } catch (err) {
-      devLog('Error downloading file:', err);
+      devLog(`[FileHistory] Error downloading ${fileType} (${filename}): ${err.message}`, 'error');
       setError(`Failed to download file: ${err.message}`);
     }
   };
 
   // Open delete dialog
   const handleOpenDeleteDialog = (entry) => {
-    devLog('[FileHistory] Opening delete dialog for entry:', JSON.stringify(entry, null, 2));
     const entryType = getEntryType(entry);
-    const initialDeleteOption = entryType === 'audio_and_config' ? 'audio_and_config' : entryType;
-    devLog('[FileHistory] Initial deleteOption:', initialDeleteOption);
+    const initialDeleteOption = historyView === 'generated_audio' ? 'audio_only' : (entryType === 'audio_and_config' ? 'audio_and_config' : entryType);
     setSelectedEntry(entry);
     setDeleteOption(initialDeleteOption);
     setDeleteDialogOpen(true);
@@ -124,7 +138,6 @@ const FileHistory = () => {
 
   // Close delete dialog
   const handleCloseDeleteDialog = () => {
-    devLog('[FileHistory] Closing delete dialog');
     setDeleteDialogOpen(false);
     setSelectedEntry(null);
     setDeleteOption('');
@@ -133,63 +146,163 @@ const FileHistory = () => {
 
   // Handle delete option change
   const handleDeleteOptionChange = (e) => {
-    const newOption = e.target.value;
-    devLog('[FileHistory] Delete option changed to:', newOption);
-    setDeleteOption(newOption);
+    setDeleteOption(e.target.value);
   };
 
   // Handle entry deletion
   const handleDelete = async () => {
-    if (!selectedEntry || !deleteOption) {
-      devLog('[FileHistory] handleDelete skipped: missing selectedEntry or deleteOption');
-      return;
-    }
-
-    devLog('[FileHistory] Initiating deletion for entry:', JSON.stringify(selectedEntry, null, 2));
-    devLog('[FileHistory] Delete option:', deleteOption);
-
+    if (!selectedEntry || !deleteOption) return;
+    const title = getEntryTitle(selectedEntry);
     setIsDeleting(true);
     setError(null);
     try {
       const result = await actions.deleteHistoryEntry(selectedEntry, { deleteOption });
-      devLog('[FileHistory] deleteHistoryEntry result:', result);
       if (!result || !result.success) {
         throw new Error('Failed to delete the entry');
       }
       if (playingEntryId === selectedEntry.id) {
-        devLog('[FileHistory] Stopping playback for deleted entry:', selectedEntry.id);
         setPlayingEntryId(null);
       }
-      // Refresh file history to ensure UI reflects latest metadata
       await actions.refreshFileHistory();
       handleCloseDeleteDialog();
     } catch (err) {
-      devLog('[FileHistory] Error deleting entry:', err);
+      devLog(`[FileHistory] Error deleting ${title} (ID: ${selectedEntry.id}): ${err.message}`, 'error');
       setError(`Failed to delete entry: ${err.message || 'Unknown error occurred'}`);
       setIsDeleting(false);
     }
   };
 
-  // Filter fileHistory to only show merged_audio entries
-  const mergedAudioHistory = state.fileHistory.filter((entry) => entry.category === 'merged_audio');
+  // Open delete all dialog
+  const handleOpenDeleteAllDialog = () => {
+    setDeleteAllDialogOpen(true);
+  };
+
+  // Close delete all dialog
+  const handleCloseDeleteAllDialog = () => {
+    setDeleteAllDialogOpen(false);
+    setIsDeleting(false);
+  };
+
+  // Handle delete all entries
+  const handleDeleteAll = async () => {
+    setIsDeleting(true);
+    setError(null);
+    
+    try {
+      const entriesToDelete = uniqueAudioHistory;
+      if (entriesToDelete.length === 0) {
+        setDeleteAllDialogOpen(false);
+        return;
+      }
+      
+      // Stop any playing audio
+      setPlayingEntryId(null);
+
+      // Process files in batches to avoid overwhelming the system
+      const batchSize = 5; // Process 5 files at a time
+      let deleteCount = 0;
+      let errorCount = 0;
+
+      // For merged_audio we delete both audio and config, for generated_audio we delete audio only
+      const defaultDeleteOption = historyView === 'merged_audio' ? 'audio_and_config' : 'audio_only';
+      
+      for (let i = 0; i < entriesToDelete.length; i += batchSize) {
+        const batch = entriesToDelete.slice(i, i + batchSize);
+        
+        // Create array of deletion promises
+        const deletionPromises = batch.map(entry => {
+          return new Promise(async (resolve) => {
+            try {
+              // Use the appropriate delete option based on entry type and current view
+              const entryType = getEntryType(entry);
+              const deleteOption = historyView === 'generated_audio' ? 
+                'audio_only' : (entryType === 'audio_only' || entryType === 'config_only' ? 
+                  entryType : defaultDeleteOption);
+              
+              const result = await actions.deleteHistoryEntry(entry, { deleteOption });
+              if (result && result.success) {
+                deleteCount++;
+              } else {
+                errorCount++;
+              }
+              resolve({ success: true });
+            } catch (err) {
+              console.error(`Error deleting entry ${entry.id}: ${err.message}`);
+              errorCount++;
+              resolve({ success: false, error: err.message });
+            }
+          });
+        });
+        
+        // Wait for all deletions in this batch to complete
+        await Promise.all(deletionPromises);
+      }
+      
+      // Final refresh to update UI
+      await actions.refreshFileHistory();
+      
+      setDeleteAllDialogOpen(false);
+      setIsDeleting(false);
+      
+      // Show result message
+      if (errorCount > 0) {
+        setError(`Deleted ${deleteCount} files. ${errorCount} files could not be deleted.`);
+      }
+    } catch (err) {
+      devLog(`[FileHistory] Error during batch deletion: ${err.message}`, 'error');
+      setError(`Failed to delete files: ${err.message || 'Unknown error occurred'}`);
+      setIsDeleting(false);
+    }
+  };
+
+  // Toggle history view
+  const toggleHistoryView = () => {
+    setHistoryView((prev) => (prev === 'merged_audio' ? 'generated_audio' : 'merged_audio'));
+    setPlayingEntryId(null); // Stop any playing audio when switching views
+  };
+
+  // Memoize filtered and deduplicated history
+  const uniqueAudioHistory = useMemo(() => {
+    const audioHistory = state.fileHistory.filter((entry) => entry.category === historyView);
+    return Array.from(
+      new Map(audioHistory.map((entry) => [entry.id, entry])).values()
+    );
+  }, [state.fileHistory, historyView]);
 
   return (
     <div className="space-y-4" id="file-history-container">
-      <h2 className="text-xl font-semibold mb-4">File History</h2>
-
-      {error && (
-        <div className="p-2 bg-red-100 text-red-700 rounded">{error}</div>
-      )}
-
-      {mergedAudioHistory.length === 0 ? (
-        <p className="text-sm italic text-gray-500">No merged audio files generated yet</p>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">
+          {historyView === 'merged_audio' ? 'Merged Audio History' : 'Generated Audio History'}
+        </h2>
+        <div className="flex space-x-3">
+          {uniqueAudioHistory.length > 0 && (
+            <button
+              onClick={handleOpenDeleteAllDialog}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              title="Delete All Files"
+            >
+              Delete All
+            </button>
+          )}
+          <button
+            onClick={toggleHistoryView}
+            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          >
+            Switch to {historyView === 'merged_audio' ? 'Generated Audio History' : 'Merged Audio History'}
+          </button>
+        </div>
+      </div>
+      {error && <div className="p-2 bg-red-100 text-red-700 rounded">{error}</div>}
+      {uniqueAudioHistory.length === 0 ? (
+        <p className="text-sm italic text-gray-500">
+          No {historyView === 'merged_audio' ? 'merged audio' : 'generated audio'} files generated yet
+        </p>
       ) : (
-        mergedAudioHistory.map((entry) => {
-          devLog('FileHistory entry:', JSON.stringify(entry, null, 2));
+        uniqueAudioHistory.map((entry) => {
           const entryType = getEntryType(entry);
-          devLog('Entry type:', entryType);
           const hasAudio = entryType !== 'config_only';
-          const hasConfig = entryType !== 'audio_only';
+          const hasConfig = entryType !== 'audio_only' && historyView === 'merged_audio'; // Config only for merged_audio
           const title = getEntryTitle(entry);
           const audioFilename = entry.audio_url && entry.audio_url !== 'null' ? entry.audio_url.split('/').pop() : '';
           const configFilename = entry.config_url && entry.config_url !== 'null' ? entry.config_url.split('/').pop() : '';
@@ -203,11 +316,11 @@ const FileHistory = () => {
               <div className="flex justify-between items-center mb-2">
                 <div>
                   <h3 className="font-medium text-white">{title}</h3>
-                  <p className="text-xs text-gray-500">
-                    {new Date(entry.date).toLocaleString()}
-                  </p>
+                  <p className="text-xs text-gray-500">{new Date(entry.date).toLocaleString()}</p>
                   <p className="text-xs text-gray-400">
-                    {entryType === 'audio_only'
+                    {historyView === 'generated_audio'
+                      ? 'Audio Only'
+                      : entryType === 'audio_only'
                       ? 'Audio Only'
                       : entryType === 'config_only'
                       ? 'Config Only'
@@ -229,19 +342,9 @@ const FileHistory = () => {
                         stroke="currentColor"
                       >
                         {playingEntryId === entry.id ? (
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 9v6m4-6v6"
-                          />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6" />
                         ) : (
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 3v18l15-9z"
-                          />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v18l15-9z" />
                         )}
                       </svg>
                     </button>
@@ -269,26 +372,34 @@ const FileHistory = () => {
                     </button>
                   )}
                   {hasConfig && (
-                    <button
-                      onClick={() => handleDownload(entry.config_url, configFilename)}
-                      className="p-2 rounded hover:bg-gray-700"
-                      title="Download Config"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-blue-300"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                    <>
+                      <button
+                        onClick={() => handleDownload(entry.config_url, configFilename)}
+                        className="p-2 rounded hover:bg-gray-700"
+                        title="Download Config"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M15 11V7"
-                        />
-                      </svg>
-                    </button>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-6 w-6 text-blue-300"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M15 11V7"
+                          />
+                        </svg>
+                      </button>
+                      
+                      {/* Add FileHistoryButtons component for config files */}
+                      <FileHistoryButtons 
+                        entry={entry} 
+                        configUrl={state.settings?.storageConfig?.serverUrl || 'http://localhost:5000'}
+                      />
+                    </>
                   )}
                   <button
                     onClick={() => handleOpenDeleteDialog(entry)}
@@ -315,7 +426,11 @@ const FileHistory = () => {
                   onEnded={() => setPlayingEntryId(null)}
                 >
                   <source
-                    src={entry.audio_url.startsWith('http') ? entry.audio_url : `${state.settings?.storageConfig?.serverUrl || 'http://localhost:5000'}${entry.audio_url}`}
+                    src={
+                      entry.audio_url.startsWith('http')
+                        ? entry.audio_url
+                        : `${state.settings?.storageConfig?.serverUrl || 'http://localhost:5000'}${entry.audio_url}`
+                    }
                     type="audio/wav"
                   />
                   Your browser does not support the audio element.
@@ -325,8 +440,6 @@ const FileHistory = () => {
           );
         })
       )}
-
-      {/* Custom Delete Modal */}
       {deleteDialogOpen && selectedEntry && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div
@@ -335,9 +448,7 @@ const FileHistory = () => {
             tabIndex={-1}
             aria-label={`Delete ${getEntryTitle(selectedEntry)}`}
           >
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Delete "{getEntryTitle(selectedEntry)}"
-            </h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Delete "{getEntryTitle(selectedEntry)}"</h3>
             <p className="text-gray-300 mb-4">Please select what you want to delete:</p>
             <div className="space-y-2">
               {getEntryType(selectedEntry) !== 'config_only' && (
@@ -354,7 +465,7 @@ const FileHistory = () => {
                   Delete Audio Only
                 </label>
               )}
-              {getEntryType(selectedEntry) !== 'audio_only' && (
+              {historyView === 'merged_audio' && getEntryType(selectedEntry) !== 'audio_only' && (
                 <label className="flex items-center text-white">
                   <input
                     type="radio"
@@ -368,7 +479,7 @@ const FileHistory = () => {
                   Delete Config Only
                 </label>
               )}
-              {getEntryType(selectedEntry) === 'audio_and_config' && (
+              {historyView === 'merged_audio' && getEntryType(selectedEntry) === 'audio_and_config' && (
                 <label className="flex items-center text-white">
                   <input
                     type="radio"
@@ -399,29 +510,74 @@ const FileHistory = () => {
                 {isDeleting ? (
                   <>
                     <svg
-                      className="animate-spin h-5 w-5 mr-2 text-white"
+                      className="animate-spin h-5 w-5 mr-2"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path
                         className="opacity-75"
                         fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8z"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                       />
                     </svg>
                     Deleting...
                   </>
                 ) : (
                   'Delete'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deleteAllDialogOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div
+            ref={deleteAllDialogRef}
+            className="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md"
+            tabIndex={-1}
+            aria-label="Delete All Files"
+          >
+            <h3 className="text-lg font-semibold text-white mb-4">Delete All Files</h3>
+            <p className="text-gray-300 mb-4">
+              Are you sure you want to delete all{' '}
+              {historyView === 'merged_audio' ? 'merged audio' : 'generated audio'} files?{' '}
+              {historyView === 'merged_audio' && 'This will delete both audio and configuration files.'}
+            </p>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={handleCloseDeleteAllDialog}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAll}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 flex items-center"
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete All'
                 )}
               </button>
             </div>

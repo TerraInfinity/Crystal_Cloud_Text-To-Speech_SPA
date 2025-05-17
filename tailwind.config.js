@@ -54,6 +54,15 @@ module.exports = {
             fontSize: {
                 '3xl': ['1.875rem', { lineHeight: '2.25rem' }], // Ensure text-3xl is included
             },
+            keyframes: {
+                'scale-in': {
+                    '0%': { transform: 'scale(0)', opacity: 0 },
+                    '100%': { transform: 'scale(1)', opacity: 1 }
+                }
+            },
+            animation: {
+                'scale-in': 'scale-in 0.3s ease-out forwards'
+            }
         },
     },
     plugins: [],

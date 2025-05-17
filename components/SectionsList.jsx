@@ -8,13 +8,17 @@
  * @requires ./SectionCard
  * @requires ../context/TTSSessionContext
  * @requires ../utils/logUtils
+ * @requires ../utils/voiceUtils
+ * @requires ./SaveToTemplateButton
  */
 
 import React from 'react';
-import {useTTSContext} from '../context/TTSContext';
+import { useTTSContext } from '../context/TTSContext';
 import SectionCard from './SectionCard';
-import { useTTSSessionContext  } from '../context/TTSSessionContext';
+import { useTTSSessionContext } from '../context/TTSSessionContext';
 import { devLog } from '../utils/logUtils';
+import { validateVoice } from '../utils/voiceUtils';
+import SaveToTemplateButton from './SaveToTemplateButton';
 
 /**
  * SectionsList component for managing TTS and audio sections.
@@ -26,39 +30,42 @@ import { devLog } from '../utils/logUtils';
  */
 const SectionsList = () => {
   const { state, actions } = useTTSContext(); 
-  const { state: sessionState, actions: sessionActions } = useTTSSessionContext ();
+  const { state: sessionState, actions: sessionActions } = useTTSSessionContext();
 
   const sections = sessionState?.sections || []; // Safely access sections with a fallback
- 
-
 
   /**
    * Creates a new section with default settings.
    * Adds the section to the session state.
    */
   const createNewSection = () => {
-    const defaultVoice = {
-      engine: 'gtts',
-      id: 'en-US-Standard-A',
-      name: 'English (US) Standard A',
-      language: 'en-US',
-    };
+    // Use defaultVoice from TTSContext or fallback
+    const ttsDefaultVoice = state?.settings?.defaultVoice || null;
+    const activeVoices = state?.settings?.activeVoices || [];
+    const defaultVoice = validateVoice(
+      ttsDefaultVoice,
+      activeVoices,
+      ttsDefaultVoice, // Fallback to ttsDefaultVoice if validation fails
+      true
+    ) || ttsDefaultVoice; // Ensure non-null fallback
+
     const defaultVoiceSettings = { volume: 1, rate: 1, pitch: 1 };
   
     const newSection = {
       id: `section-${Date.now()}`,
       title: `Section ${sections.length + 1}`,
-      type: 'text-to-speech', // Default to text-to-speech
+      type: 'text-to-speech',
       text: '',
+      voice: defaultVoice,
+      voiceSettings: defaultVoiceSettings,
     };
   
-    if (newSection.type === 'text-to-speech') {
-      newSection.voice = defaultVoice;
-      newSection.voiceSettings = defaultVoiceSettings;
-    }
-  
-    devLog('Creating new section:', newSection);
     sessionActions.addSection(newSection);
+    
+    // Reset the loading flag after a short delay to prevent infinite loops
+    setTimeout(() => {
+      sessionActions.setProcessing(false); // Reset isProcessing
+    }, 200);
   };
 
   /**
@@ -120,6 +127,7 @@ const SectionsList = () => {
     <div id="sections-list-container">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium">Sections</h3>
+        <SaveToTemplateButton />
       </div>
       <div id="sections-wrapper" className="mb-4">
         {sections.map((section, index) => (

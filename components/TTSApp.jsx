@@ -13,7 +13,7 @@
 import React, { useEffect } from 'react';
 import {useTTSContext} from '../context/TTSContext';
 import { useTTSSessionContext  } from '../context/TTSSessionContext';
-import TextInput from './TextInput';
+import InputSection from './InputSection';
 import TemplateSelector from './TemplateSelector';
 import SectionsList from './SectionsList';
 import ToolsTab from './ToolsTab';
@@ -22,6 +22,9 @@ import AudioLibrary from './AudioLibrary';
 import TemplatesTab from './TemplatesTab';
 import AudioPlayer from './AudioPlayer';
 import FileHistory from './FileHistory';
+import { useApiKeyConfirm } from '../context/apiKeyConfirmContext';
+import { registerApiKeyConfirmHandler } from '../services/api/speechEngineAPIs/speechServiceAPI';
+
 import { devLog } from '../utils/logUtils';
 
 /**
@@ -47,10 +50,21 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
   const { state: sessionState, actions: sessionActions } = useTTSSessionContext ();
 
   // Destructure session-specific state
-  const { activeTab, notification, errorMessage, isProcessing } = sessionState || {};
+  const { activeTab, errorMessage, isProcessing } = sessionState || {};
 
   // Destructure persistent state (assuming fileHistory is persistent)
   const { fileHistory } = persistentState || {};
+
+  const apiKeyConfirm = useApiKeyConfirm();
+
+  // Register the API key confirmation handler
+  useEffect(() => {
+    registerApiKeyConfirmHandler(apiKeyConfirm.showConfirm);
+    return () => {
+      // Clean up by setting the handler to null when component unmounts
+      registerApiKeyConfirmHandler(null);
+    };
+  }, [apiKeyConfirm.showConfirm]);
 
   // Set initial values using session actions on first render
   useEffect(() => {
@@ -89,20 +103,6 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
       className="rounded-lg shadow-lg p-6 max-w-6xl mx-auto"
       style={{ backgroundColor: 'var(--card-bg)' }}
     >
-      {/* Notification */}
-      {notification && (
-        <div
-          id="notification-container"
-          className={`p-4 mb-4 rounded-md ${
-            notification.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-          }`}
-        >
-          {notification.message}
-          <button id="notification-close" className="float-right" onClick={() => sessionActions.setNotification(null)}>
-            ×
-          </button>
-        </div>
-      )}
 
       {/* Error Message */}
       {errorMessage && (
@@ -185,7 +185,7 @@ export const TTSApp = ({ initialText = '', initialTemplate = 'general' }) => {
           <div id="main-content-grid" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div id="input-text-container">
               <h3 className="text-lg font-medium mb-3">Input Text</h3>
-              <TextInput />
+              <InputSection />
             </div>
             <div id="sections-container">
               <SectionsList />

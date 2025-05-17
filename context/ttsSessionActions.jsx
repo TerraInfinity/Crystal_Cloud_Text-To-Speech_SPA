@@ -106,14 +106,6 @@ export function createSessionActions(sessionDispatch, loadDemoContent) {
     },
 
     /**
-     * Sets a notification message
-     * @param {Object} notification - The notification object {type, message}
-     */
-    setNotification: (notification) => {
-      sessionDispatch({ type: 'SET_NOTIFICATION', payload: notification });
-    },
-
-    /**
      * Sets generated audio for a specific section
      * @param {string} sectionId - The ID of the section
      * @param {Object} audioData - The audio data {url, blob, etc.}
@@ -127,17 +119,40 @@ export function createSessionActions(sessionDispatch, loadDemoContent) {
       // Only store the URL and minimal metadata to prevent storage quota issues
       const minimalAudioData = {
         url: audioData.url,
-        // Add other essential metadata if needed
         contentType: audioData.contentType || 'audio/wav',
         duration: audioData.duration || null,
         size: audioData.size || null,
+        source: audioData.source || null,
+        name: audioData.name || null,
+        type: audioData.type || null,
+        format: audioData.format || null,
       };
+      
+      // Log URL type for debugging
+      let urlType = 'unknown';
+      if (audioData.url.startsWith('http://') || audioData.url.startsWith('https://')) {
+        urlType = 'full http URL';
+      } else if (audioData.url.startsWith('blob:')) {
+        urlType = 'blob URL';
+      } else if (audioData.url.startsWith('data:')) {
+        urlType = 'data URL';
+      } else if (audioData.url.startsWith('/')) {
+        urlType = 'relative URL';
+      }
       
       sessionDispatch({
         type: 'SET_GENERATED_AUDIO',
         payload: { sectionId, audioData: minimalAudioData },
       });
-      devLog(`Set generated audio for section ${sectionId}:`, minimalAudioData);
+      
+      devLog(`Set generated audio for section ${sectionId}:`, {
+        url: minimalAudioData.url,
+        urlType,
+        source: minimalAudioData.source,
+        name: minimalAudioData.name,
+      });
+      
+      devLog(`Note: The reducer will convert relative URLs to full URLs for section.audioUrl`);
     },
 
     /**
@@ -285,5 +300,17 @@ export function createSessionActions(sessionDispatch, loadDemoContent) {
     clearTemplateCreationForm: () => {
       sessionDispatch({ type: 'CLEAR_TEMPLATE_CREATION_FORM' });
     },
+
+     /**
+     * Reset the session state.
+     */
+    resetSession: () => {
+      sessionDispatch({ type: 'RESET_SESSION' });
+      // Force a re-render of the sections list by dispatching an empty sections array
+      sessionDispatch({ type: 'SET_SECTIONS', payload: [] });
+    },
+    
+    resetLoadingFlag: () => sessionDispatch({ type: 'RESET_LOADING_FLAG' }), // Fixed
   };
+
 }

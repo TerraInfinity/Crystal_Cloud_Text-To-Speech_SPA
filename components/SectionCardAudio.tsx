@@ -10,11 +10,32 @@
  * @requires ../utils/logUtils.ts
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTTSContext, useFileStorage } from '../context/TTSContext';
 import { useTTSSessionContext } from '../context/TTSSessionContext';
 import { saveToStorage } from '../context/storage';
-import { devLog } from '../utils/logUtils';
+import { devLog, devWarn, devError } from '../utils/logUtils';
+import { useNotification } from '../context/notificationContext';
+
+/**
+ * Validates an audio URL to ensure it's in a proper format
+ * @param {string} url - The URL to validate
+ * @returns {boolean} Whether the URL is valid
+ */
+const isValidAudioUrl = (url: string): boolean => {
+  if (!url) return false;
+  
+  // Allow blob and data URLs
+  if (url.startsWith('blob:') || url.startsWith('data:')) return true;
+  
+  // Validate URL format and ensure it's HTTP/HTTPS
+  try {
+    const urlObj = new URL(url);
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
 /**
  * SectionCardAudio component for handling audio-only section content.
@@ -24,222 +45,368 @@ import { devLog } from '../utils/logUtils';
  * @component
  * @param {Object} props - Component props
  * @param {Object} props.section - The section data
- * @returns {JSX.Element} The rendered SectionCardAudio component
+ * @returns {React.ReactElement} The rendered SectionCardAudio component
  */
-const SectionCardAudio: React.FC<{ section: any }> = ({ section }) => {
-  const { state, actions, isLoading } = useTTSContext();
+const SectionCardAudio = ({ section }: { section: any }): React.ReactElement => {
+  const { state, actions } = useTTSContext();
   const { state: sessionState, actions: sessionActions } = useTTSSessionContext();
   const { state: fileStorageState, actions: fileStorageActions } = useFileStorage();
+  const { addNotification } = useNotification();
 
+  // Get audio data from session state
   const audioData = sessionState?.generatedTTSAudios[section.id];
   const hasAudio = !!audioData && !!audioData.url;
 
+  // Local state for UI
   const [audioSource, setAudioSource] = useState(section.audioSource || (hasAudio && audioData.source) || 'library');
   const [playingAudio, setPlayingAudio] = useState(false);
-  const [showPlayAudioItems, setShowPlayAudioItems] = useState(false);
-  const [audioCategory, setAudioCategory] = useState('sound_effect');
+  const [audioCategory, setAudioCategory] = useState(section.category || 'sound_effect');
   const [currentFile, setCurrentFile] = useState<File | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [uploadedAudioPreview, setUploadedAudioPreview] = useState<{ url: string, name: string, type: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Use state.settings.storageConfig.serverUrl, with fallback to http://localhost:5000
-  const serverUrl = state.settings.storageConfig.serverUrl && state.settings.storageConfig.serverUrl !== ''
-    ? state.settings.storageConfig.serverUrl
-    : 'http://localhost:5000';
+  // Server URL for audio files
+  const serverUrl = state.settings.storageConfig.serverUrl || 'http://localhost:5000';
 
-  /**
-   * Logs component initialization, server URL, audio library, and audio data for debugging.
-   */
-  useEffect(() => {
-    devLog('SectionCardAudio mounted with:', {
-      sectionId: section.id,
-      sectionAudioSource: section.audioSource,
-      audioDataSource: audioData?.source,
-      audioSource,
-      audioData,
-      hasAudio,
-      showPlayAudioItems,
-      serverUrl,
-      audioId: section.audioId,
-    });
-    devLog('Server URL from tts_persistant_state:', serverUrl);
-    devLog('Audio library URLs:', fileStorageState.audioLibrary.map((a) => a.audio_url));
-    devLog('Audio data:', {
-      url: audioData?.url,
-      source: audioData?.source,
-      name: audioData?.name,
-      type: audioData?.type,
-      format: audioData?.format,
-    });
-  }, [audioData, audioSource, hasAudio, section.audioSource, showPlayAudioItems, serverUrl, fileStorageState.audioLibrary, section.id, section.audioId]);
+  // Audio categories for selection
+  const audioCategories = useMemo(() => [
+    { value: 'sound_effect', label: 'Sound Effects' },
+    { value: 'uploaded_audio', label: 'Uploaded Audio' },
+    { value: 'merged_audio', label: 'Merged Audio' },
+    { value: 'generated_section_audio', label: 'Generated Audio' },
+    { value: 'music', label: 'Music' },
+    { value: 'binaural', label: 'Binaural' },
+  ], []);
+
+  // Filtered audio library based on selected category
+  const filteredAudioLibrary = useMemo(() => {
+    return fileStorageState.audioLibrary.filter(audio => audio.category === audioCategory);
+  }, [fileStorageState.audioLibrary, audioCategory]);
 
   /**
-   * Updates the visibility of audio playback controls based on audio source and availability.
-   */
-  useEffect(() => {
-    const hasValidAudio = () => {
-      if (audioSource === 'library') {
-        const hasLibraryAudio = !!section.audioId && 
-                              !!audioData && 
-                              typeof audioData.url === 'string' && 
-                              audioData.url.length > 0;
-        devLog('Library audio check:', {
-          sectionAudioId: section.audioId,
-          hasLibraryAudio,
-          audioDataUrl: audioData?.url
-        });
-        return hasLibraryAudio;
-      } else if (audioSource === 'upload') {
-        const hasSessionAudio = !!audioData && 
-                              audioData.source === 'upload' && 
-                              typeof audioData.url === 'string' && 
-                              audioData.url.length > 0;
-        const hasLocalPreview = !!uploadedAudioPreview && 
-                              typeof uploadedAudioPreview.url === 'string' && 
-                              uploadedAudioPreview.url.length > 0;
-        devLog('Upload audio check:', {
-          hasSessionAudio,
-          hasLocalPreview,
-          sessionAudioUrl: audioData?.url,
-          previewUrl: uploadedAudioPreview?.url
-        });
-        return hasSessionAudio || hasLocalPreview;
-      }
-      return false;
-    };
-
-    const shouldShowPlayButton = hasValidAudio();
-    devLog('Audio play button visibility check:', {
-      audioSource,
-      sectionAudioId: section.audioId,
-      hasAudioData: !!audioData,
-      audioDataUrl: audioData?.url,
-      hasUploadedPreview: !!uploadedAudioPreview,
-      uploadedPreviewUrl: uploadedAudioPreview?.url,
-      shouldShowPlayButton
-    });
-
-    setShowPlayAudioItems(shouldShowPlayButton);
-  }, [audioSource, section.audioId, audioData, uploadedAudioPreview]);
-
-  /**
-   * Normalizes a URL to a relative path, using /audio/ for library audio and /Uploads/ for uploaded audio.
+   * Normalizes a URL to a relative path
    */
   const normalizeUrl = (url: string, isLibraryAudio: boolean): string => {
     if (!url) return '';
+    
+    // For blob URLs and data URLs, return as is
+    if (url.startsWith('blob:') || url.startsWith('data:')) return url;
+    
     let normalizedUrl = url;
+    
+    // Extract pathname if it's a full URL
     if (normalizedUrl.includes('://') || normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) {
       try {
         const urlObj = new URL(normalizedUrl.includes('://') ? normalizedUrl : `http://${normalizedUrl}`);
         normalizedUrl = urlObj.pathname;
-        devLog('Normalized URL to pathname:', { original: url, normalized: normalizedUrl });
       } catch (e) {
-        devLog('Invalid URL format:', url);
         return normalizedUrl;
       }
     }
+    
+    // Add proper prefix based on audio source
     const prefix = isLibraryAudio ? '/audio/' : '/Uploads/';
-    normalizedUrl = normalizedUrl.startsWith(prefix) ? normalizedUrl : `${prefix}${normalizedUrl.replace(/^\//, '')}`;
+    normalizedUrl = normalizedUrl.startsWith(prefix) ? normalizedUrl : `${prefix}${normalizedUrl.replace(/^\//,'')}`;
+    
     return normalizedUrl;
   };
 
   /**
-   * Validates and constructs audio URL, forcing serverUrl for library audio.
+   * Validates and constructs the full audio URL
    */
-  const validateAudioUrl = (url: string, source: string | undefined): string => {
-    if (!url) {
-      devLog('Invalid audio URL: empty or undefined');
-      sessionActions.setNotification({
-        type: 'error',
-        message: 'Audio URL is missing.',
-      });
-      return '';
-    }
-    if (source === 'upload' || url.startsWith('blob:')) {
-      devLog('Using blob URL directly for uploaded audio:', url);
+  const getFullAudioUrl = (url: string, source: string): string => {
+    if (!url) return '';
+    
+    // For blob URLs and data URLs, return as is
+    if (url.startsWith('blob:') || url.startsWith('data:')) {
       return url;
     }
-    const normalizedUrl = normalizeUrl(url, true);
-    if (!normalizedUrl) {
-      devLog('Failed to normalize URL:', url);
-      sessionActions.setNotification({
-        type: 'error',
-        message: 'Invalid audio URL format.',
-      });
-      return '';
+    
+    // For http URLs, return as is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
     }
-    const fullUrl = `${serverUrl}${normalizedUrl}`;
-    devLog('Validated audio URL:', { original: url, source, normalized: normalizedUrl, full: fullUrl, serverUrl });
-    return fullUrl;
+    
+    // For all other URLs (relative paths), add server URL
+    const normalizedUrl = normalizeUrl(url, source === 'library');
+    return normalizedUrl ? `${serverUrl}${normalizedUrl}` : '';
   };
 
   /**
-   * Handles audio file upload for the section.
-   * Creates an object URL for the uploaded audio file.
+   * Syncs audio category with selected audio on component mount and when audioId changes
+   */
+  useEffect(() => {
+    if (audioSource === 'library' && section.audioId) {
+      const selectedAudio = fileStorageState.audioLibrary.find(a => a.id === section.audioId);
+      if (selectedAudio?.category && selectedAudio.category !== audioCategory) {
+        setAudioCategory(selectedAudio.category);
+      }
+    }
+  }, [section.audioId, fileStorageState.audioLibrary, audioCategory, audioSource]);
+
+  /**
+   * Hydrates audioData if missing but section.audioId is set
+   */
+  useEffect(() => {
+    if (audioSource === 'library' && section.audioId && (!audioData || !audioData.url)) {
+      const audio = fileStorageState.audioLibrary.find(a => a.id === section.audioId);
+      if (audio?.audio_url) {
+        // First normalize the URL
+        const normalizedUrl = normalizeUrl(audio.audio_url, true);
+        
+        // Then get the full URL
+        const fullAudioUrl = getFullAudioUrl(normalizedUrl, 'library');
+        
+        // Log the URL transformation for debugging
+        devLog('Audio URL transformation in hydration:', { 
+          original: audio.audio_url,
+          normalized: normalizedUrl,
+          full: fullAudioUrl
+        });
+        
+        // Update both the generatedTTSAudios and the section
+        sessionActions.setGeneratedAudio(section.id, {
+          url: normalizedUrl, // Keep using normalized URL for generatedTTSAudios
+          source: 'library',
+          name: audio.name,
+          type: audio.type || 'audio/mpeg',
+          format: audio.audioMetadata?.format || (audio.type ? audio.type.split('/')[1] : 'wav'),
+        });
+        
+        // Also update the section directly with the full URL
+        sessionActions.updateSection({
+          ...section,
+          audioUrl: fullAudioUrl // Store the FULL URL directly in the section
+        });
+      }
+    }
+  }, [audioSource, section.audioId, audioData, fileStorageState.audioLibrary, section.id, sessionActions]);
+
+  /**
+   * Verify audioUrl in session storage
+   */
+  useEffect(() => {
+    const storedState = JSON.parse(sessionStorage.getItem('tts_session_state') || '{}');
+    const storedSection = storedState.sections?.find(s => s.id === section.id);
+    devLog('Section in session storage:', { 
+      id: section.id, 
+      audioUrl: storedSection?.audioUrl,
+      isValidUrl: storedSection?.audioUrl ? isValidAudioUrl(storedSection.audioUrl) : false
+    });
+  }, [section.id]);
+
+  /**
+   * Sets up audio element for playback
+   */
+  useEffect(() => {
+    if (playingAudio) {
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
+      
+      let audioUrl = '';
+      let isValidUrl = false;
+      
+      if (audioSource === 'upload' && uploadedAudioPreview) {
+        audioUrl = uploadedAudioPreview.url;
+        isValidUrl = isValidAudioUrl(audioUrl);
+        devLog('Playing uploaded audio preview:', audioUrl, { isValidUrl });
+      } else if (section.audioUrl) {
+        audioUrl = getFullAudioUrl(section.audioUrl, section.audioSource || audioSource);
+        isValidUrl = isValidAudioUrl(audioUrl);
+        devLog('Playing section.audioUrl:', audioUrl, { isValidUrl });
+      } else if (audioData?.url) {
+        audioUrl = getFullAudioUrl(audioData.url, audioData.source || audioSource);
+        isValidUrl = isValidAudioUrl(audioUrl);
+        devLog('Falling back to generatedTTSAudios:', audioUrl, { isValidUrl });
+      }
+      
+      if (!isValidUrl && audioUrl) {
+        devWarn(`Invalid audioUrl for section ${section.id}: ${audioUrl}`);
+      }
+      
+      if (audioUrl && isValidUrl) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.onended = () => {
+          setPlayingAudio(false);
+          devLog('Playback ended for section:', section.id);
+        };
+        audioRef.current.onerror = (e) => {
+          setPlayingAudio(false);
+          devError(`Audio load error for section ${section.id}: ${audioUrl}`, e);
+          addNotification({
+            type: 'error',
+            message: 'Failed to play audio. The file might be corrupted or unavailable.',
+          });
+        };
+        
+        audioRef.current.play().catch(error => {
+          devWarn('Error playing audio:', error);
+          setPlayingAudio(false);
+          addNotification({
+            type: 'error',
+            message: 'Failed to play audio. Please try again.',
+          });
+        });
+      } else {
+        devWarn(`No valid audio URL for playback in section ${section.id}. URL: ${audioUrl}, Valid: ${isValidUrl}`);
+        setPlayingAudio(false);
+        addNotification({
+          type: 'error',
+          message: 'No valid audio available to play.',
+        });
+      }
+    } else if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [playingAudio, audioSource, uploadedAudioPreview, section.audioUrl, section.audioSource, audioData, section.id, addNotification]);
+
+  /**
+   * Handles library audio selection
+   */
+  const handleLibrarySelection = (e) => {
+    const audioId = e.target.value;
+    
+    // If no audio selected, clear the section
+    if (!audioId) {
+      sessionActions.updateSection({ ...section, audioId: null, audioSource: 'library', audioUrl: null });
+      sessionActions.setGeneratedAudio(section.id, null);
+      setPlayingAudio(false);
+      return;
+    }
+    
+    // Find the selected audio in the library
+    const audio = fileStorageState.audioLibrary.find(a => a.id === audioId);
+    
+    if (audio?.audio_url) {
+      // First normalize the URL
+      const normalizedUrl = normalizeUrl(audio.audio_url, true);
+      
+      // Then get the full URL (with server URL prepended if needed)
+      const fullAudioUrl = getFullAudioUrl(normalizedUrl, 'library');
+      
+      // Log the URL transformation for debugging
+      devLog('Audio URL transformation:', { 
+        original: audio.audio_url,
+        normalized: normalizedUrl,
+        full: fullAudioUrl
+      });
+      
+      // Update section with the selected audio - store FULL URL
+      sessionActions.updateSection({ 
+        ...section, 
+        type: 'audio-only',  // Make sure type is explicitly set
+        audioId, 
+        audioSource: 'library',
+        audioUrl: fullAudioUrl // Store the FULL URL directly in the section
+      });
+      sessionActions.setGeneratedAudio(section.id, {
+        url: normalizedUrl, // Keep using normalized URL for generatedTTSAudios
+        source: 'library',
+        name: audio.name,
+        type: audio.type || 'audio/mpeg',
+        format: audio.audioMetadata?.format || (audio.type ? audio.type.split('/')[1] : 'wav'),
+      });
+      
+      addNotification({
+        type: 'success',
+        message: `Selected audio: ${audio.name}`,
+      });
+    } else {
+      addNotification({
+        type: 'error',
+        message: 'Selected audio is invalid or missing a URL',
+      });
+    }
+    
+    setPlayingAudio(false);
+  };
+
+  /**
+   * Handles file selection for upload
    */
   const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) {
-      sessionActions.setNotification({
+    if (!file) return;
+    
+    if (!file.type.startsWith('audio/')) {
+      addNotification({
         type: 'error',
-        message: 'No file selected.',
+        message: 'Please upload an audio file',
       });
       return;
     }
-    if (!file.type.startsWith('audio/')) {
-      sessionActions.setError('Please upload an audio file');
-      return;
-    }
+    
     try {
-      setCurrentFile(file);
+      setIsUploading(true);
+      
+      // Create object URL for preview - blob URLs are already full URLs
       const audioUrl = URL.createObjectURL(file);
-      if (!audioUrl) {
-        throw new Error('Failed to generate audio URL');
-      }
+      
+      // Log the URL for debugging
+      devLog('Created blob URL for uploaded audio:', audioUrl);
+      
+      setCurrentFile(file);
       setUploadedAudioPreview({ url: audioUrl, name: file.name, type: file.type });
-      sessionActions.updateSection({ ...section, audioId: null, audioSource: 'upload' });
-      const audioData = {
+      
+      // Update section with uploaded audio
+      sessionActions.updateSection({ 
+        ...section, 
+        type: 'audio-only',  // Make sure type is explicitly set
+        audioId: null, 
+        audioSource: 'upload',
+        audioUrl: audioUrl // Blob URLs are already full URLs, no need to modify
+      });
+      sessionActions.setGeneratedAudio(section.id, {
         url: audioUrl,
         source: 'upload',
         name: file.name,
         type: file.type,
         format: file.type.split('/')[1] || 'wav',
-      };
-      sessionActions.setGeneratedAudio(section.id, audioData);
-      setAudioSource('upload');
-      setShowPlayAudioItems(true);
-      sessionActions.setNotification({
-        type: 'success',
-        message: `Audio file "${file.name}" uploaded successfully`,
       });
-      devLog('Uploaded audio data set:', audioData);
+      
+      setAudioSource('upload');
+      
+      addNotification({
+        type: 'success',
+        message: `Audio file "${file.name}" ready to use`,
+      });
     } catch (error: any) {
-      devLog('Error uploading audio:', error);
-      sessionActions.setError(`Error uploading audio: ${error.message}`);
+      addNotification({
+        type: 'error',
+        message: `Error uploading audio: ${error.message}`,
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
   /**
-   * Saves the currently uploaded audio file to the library.
-   * Uses /Uploads/ for uploaded audio.
+   * Saves uploaded audio to the library
    */
   const saveToLibrary = async () => {
     if (!currentFile || !audioData?.url) {
-      sessionActions.setNotification({
+      addNotification({
         type: 'error',
         message: 'No audio file to save',
       });
       return;
     }
+    
     try {
-      setIsSaving(true);
+      setIsUploading(true);
+      
+      // Prepare data for library storage
       const fileName = currentFile.name.replace(/\.[^/.]+$/, '');
-      sessionActions.setNotification({
-        type: 'info',
-        message: `Uploading "${fileName}" to library...`,
-      });
       const audioDataForLibrary = {
         name: fileName,
         category: 'uploaded_audio',
@@ -250,589 +417,323 @@ const SectionCardAudio: React.FC<{ section: any }> = ({ section }) => {
           format: currentFile.type.split('/')[1] || 'wav',
         },
       };
+      
+      // Add to audio library
       const addedAudio = await fileStorageActions.addToAudioLibrary(currentFile, audioDataForLibrary);
+      
+      // First normalize the URL
       const normalizedAudioUrl = normalizeUrl(addedAudio.audio_url, true);
-      sessionActions.setNotification({
-        type: 'success',
-        message: `Audio saved to library as "${fileName}"`,
+      
+      // Then get the full URL (with server URL prepended if needed)
+      const fullAudioUrl = getFullAudioUrl(normalizedAudioUrl, 'library');
+      
+      // Log the URL transformation for debugging
+      devLog('Audio URL transformation in saveToLibrary:', { 
+        original: addedAudio.audio_url,
+        normalized: normalizedAudioUrl,
+        full: fullAudioUrl
       });
+      
+      // Update section to use the library audio
       setAudioSource('library');
       setAudioCategory('uploaded_audio');
       sessionActions.updateSection({
         ...section,
+        type: 'audio-only',  // Make sure type is explicitly set
         audioId: addedAudio.id,
         audioSource: 'library',
+        audioUrl: fullAudioUrl // Store the FULL URL directly in the section
       });
       sessionActions.setGeneratedAudio(section.id, {
-        url: normalizedAudioUrl,
+        url: normalizedAudioUrl, // Keep using normalized URL for generatedTTSAudios
         source: 'library',
         name: addedAudio.name,
-        type: addedAudio.type,
-        format: addedAudio.audioMetadata?.format,
+        type: addedAudio.type || 'audio/mpeg',
+        format: addedAudio.audioMetadata?.format || 'wav',
       });
+      
+      // Clear upload state
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
       setCurrentFile(null);
+      setUploadedAudioPreview(null);
+      
+      addNotification({
+        type: 'success',
+        message: `Audio saved to library as "${fileName}"`,
+      });
     } catch (error: any) {
-      devLog('Error saving to library:', error);
-      sessionActions.setNotification({
+      addNotification({
         type: 'error',
         message: `Error saving to library: ${error.message}`,
       });
     } finally {
-      setIsSaving(false);
+      setIsUploading(false);
     }
   };
 
   /**
-   * Toggles audio playback (play/pause).
+   * Updates audio source to 'library'
    */
-  const togglePlayAudio = () => {
-    if (audioSource === 'upload') {
-      const hasSessionAudio = !!audioData && audioData.source === 'upload' && !!audioData.url;
-      const hasLocalPreview = !!uploadedAudioPreview && !!uploadedAudioPreview.url;
-      if (!hasSessionAudio && !hasLocalPreview) {
-        sessionActions.setNotification({
-          type: 'error',
-          message: 'No uploaded audio to play.',
-        });
-        return;
-      }
-      setPlayingAudio((prev) => !prev);
-      return;
-    }
-    if (!hasAudio || !audioData || !audioData.url) {
-      sessionActions.setNotification({
-        type: 'error',
-        message: 'No audio selected to play.',
-      });
-      return;
-    }
-    setPlayingAudio((prev) => !prev);
-  };
-
-  /**
-   * Filters audio library items by selected category
-   */
-  const getFilteredAudioLibrary = () => {
-    if (!fileStorageState?.audioLibrary) return [];
-    return fileStorageState.audioLibrary.filter((audio) => audio.category === audioCategory);
-  };
-
-  /**
-   * Hydrates audioData if missing but section.audioId is set
-   */
-  useEffect(() => {
-    if (
-      audioSource === 'library' &&
-      section.audioId &&
-      (!audioData || !audioData.url)
-    ) {
-      const audio = fileStorageState.audioLibrary.find((a) => a.id === section.audioId);
-      if (audio && audio.audio_url) {
-        const normalizedAudioUrl = normalizeUrl(audio.audio_url, true);
-        sessionActions.setGeneratedAudio(section.id, {
-          url: normalizedAudioUrl,
-          source: 'library',
-          name: audio.name,
-          type: audio.type,
-          format: audio.audioMetadata?.format || audio.type.split('/')[1] || 'wav',
-        });
-        devLog('Restored library audio:', {
-          audioId: section.audioId,
-          audioCategory,
-          audioName: audio.name,
-        });
-      }
-    }
-  }, [
-    audioSource,
-    section.audioId,
-    audioData,
-    fileStorageState.audioLibrary,
-    section.id,
-    sessionActions,
-  ]);
-
-  /**
-   * Syncs audioCategory with selected audio
-   */
-  useEffect(() => {
-    if (
-      audioSource === 'library' &&
-      section.audioId &&
-      fileStorageState.audioLibrary.length > 0
-    ) {
-      const selectedAudio = fileStorageState.audioLibrary.find(a => a.id === section.audioId);
-      const isAudioInCurrentCategory = fileStorageState.audioLibrary
-        .filter(a => a.category === audioCategory)
-        .some(a => a.id === section.audioId);
-      if (selectedAudio && selectedAudio.category && !isAudioInCurrentCategory) {
-        setAudioCategory(selectedAudio.category);
-        devLog('Updated audioCategory to match selected audio:', selectedAudio.category);
-      }
-    }
-  }, [audioSource, section.audioId, fileStorageState.audioLibrary, audioCategory]);
-
-  // Update the radio button handlers
   const handleLibraryRadioChange = () => {
     setAudioSource('library');
-    // Preserve existing library audio if available
-    if (section.audioId) {
-      sessionActions.updateSection({
-        ...section,
-        audioId: section.audioId,
-        audioSource: 'library',
-      });
-    }
-    if (playingAudio) {
-      setPlayingAudio(false);
-    }
+    if (playingAudio) setPlayingAudio(false);
   };
 
+  /**
+   * Updates audio source to 'upload'
+   */
   const handleUploadRadioChange = () => {
     setAudioSource('upload');
-    // Preserve existing upload audio if available
-    if (audioData?.source === 'upload') {
-      sessionActions.updateSection({
-        ...section,
-        audioId: null,
-        audioSource: 'upload',
-      });
-    }
-    if (playingAudio) {
-      setPlayingAudio(false);
-    }
+    if (playingAudio) setPlayingAudio(false);
   };
 
-  // Update the library selection handler
-  const handleLibrarySelection = (e) => {
-    const audioId = e.target.value;
-    const audio = fileStorageState.audioLibrary.find((a) => a.id === audioId);
-    if (audio && audio.audio_url) {
-      const normalizedAudioUrl = normalizeUrl(audio.audio_url, true);
-      devLog('Selected audio details:', {
-        id: audio.id,
-        name: audio.name,
-        audio_url: normalizedAudioUrl,
-        type: audio.type,
-        format: audio.audioMetadata?.format,
-      });
-      sessionActions.updateSection({ ...section, audioId, audioSource: 'library' });
-      sessionActions.setGeneratedAudio(section.id, {
-        url: normalizedAudioUrl,
-        source: 'library',
-        name: audio.name,
-        type: audio.type,
-        format: audio.audioMetadata?.format || audio.type.split('/')[1] || 'wav',
-      });
-      sessionActions.setNotification({
-        type: 'success',
-        message: `Selected audio: ${audio.name}`,
-      });
-    } else {
-      devLog('Invalid audio selection:', { audioId, audio });
-      sessionActions.updateSection({ ...section, audioId: null, audioSource: 'library' });
-      sessionActions.setGeneratedAudio(section.id, null);
-      if (audioId) {
-        sessionActions.setNotification({
-          type: 'error',
-          message: 'Selected audio is invalid or missing a URL.',
-        });
-      }
+  /**
+   * Toggles audio playback
+   */
+  const togglePlayAudio = () => {
+    let audioUrl = '';
+    let isValidUrl = false;
+    
+    if (audioSource === 'upload' && uploadedAudioPreview) {
+      audioUrl = uploadedAudioPreview.url;
+      isValidUrl = isValidAudioUrl(audioUrl);
+    } else if (section.audioUrl) {
+      audioUrl = getFullAudioUrl(section.audioUrl, section.audioSource || audioSource);
+      isValidUrl = isValidAudioUrl(audioUrl);
+    } else if (audioData?.url) {
+      audioUrl = getFullAudioUrl(audioData.url, audioData.source || audioSource);
+      isValidUrl = isValidAudioUrl(audioUrl);
     }
-    setPlayingAudio(false);
+    
+    const canPlay = !!audioUrl && isValidUrl;
+    
+    if (!canPlay) {
+      addNotification({
+        type: 'error',
+        message: `No valid audio ${audioSource === 'library' ? 'selected' : 'uploaded'} to play.`,
+      });
+      devWarn(`No valid audio to play for section ${section.id}. URL: ${audioUrl}, Valid: ${isValidUrl}`);
+      return;
+    }
+    
+    devLog('Toggling playback for section:', section.id, {
+      audioUrl,
+      source: audioSource === 'upload' && uploadedAudioPreview ? 'uploadedAudioPreview' :
+              section.audioUrl ? 'section.audioUrl' : 'generatedTTSAudios',
+      isValidUrl
+    });
+    
+    setPlayingAudio(!playingAudio);
   };
+
+  // Calculate if we have valid audio to show play button
+  const hasValidAudio = useMemo(() => {
+    if (audioSource === 'library') {
+      return !!section.audioId && (
+        (section.audioUrl && isValidAudioUrl(section.audioUrl)) || 
+        (audioData?.url && isValidAudioUrl(getFullAudioUrl(audioData.url, audioData.source || audioSource)))
+      );
+    } else {
+      return (
+        (audioData?.url && audioData.source === 'upload' && isValidAudioUrl(getFullAudioUrl(audioData.url, audioData.source))) ||
+        (uploadedAudioPreview?.url && isValidAudioUrl(uploadedAudioPreview.url)) ||
+        (section.audioUrl && isValidAudioUrl(section.audioUrl))
+      );
+    }
+  }, [audioSource, section.audioId, section.audioUrl, audioData, uploadedAudioPreview, section.audioSource]);
+
+  /**
+   * Verify audioUrl in session storage
+   */
+  useEffect(() => {
+    const storedState = JSON.parse(sessionStorage.getItem('tts_session_state') || '{}');
+    devLog('Stored sections in session storage:', storedState.sections?.map(s => ({
+      id: s.id,
+      audioUrl: s.audioUrl
+    })));
+  }, [section.id]);
 
   return (
-    <div>
-      <style>
-        {`
-          #section-card-play-audio-items {
-            display: none;
-          }
-          #section-card-play-audio-items.visible {
-            display: flex;
-          }
-          .tooltip {
-            position: relative;
-          }
-          .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: var(--tooltip-bg, #555);
-            color: var(--tooltip-text, white);
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 0.75rem;
-          }
-          .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-          }
-          .info-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 14px;
-            height: 14px;
-            background-color: var(--accent-color);
-            border-radius: 50%;
-            font-style: italic;
-            font-size: 10px;
-            color: white;
-            vertical-align: super;
-            margin-left: 2px;
-          }
-          .compact-select {
-            padding: 4px 8px;
-            font-size: 0.85rem;
-          }
-          .file-upload-container {
-            display: flex;
-            align-items: center;
-          }
-          .file-upload-container input[type="file"] {
-            display: none;
-          }
-          .file-upload-label {
-            display: inline-flex;
-            align-items: center;
-            cursor: pointer;
-            color: var(--accent-color);
-            padding: 2px;
-            border-radius: 4px;
-            transition: all 0.2s;
-          }
-          .file-upload-label:hover {
-            background-color: rgba(var(--accent-color-rgb, 79, 70, 229), 0.1);
-          }
-          .save-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            background-color: var(--accent-color);
-            border: none;
-            border-radius: 4px;
-            padding: 6px 8px;
-            margin-left: 8px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-          }
-          .save-btn:hover {
-            background-color: rgba(var(--accent-color-rgb, 79, 70, 229), 0.8);
-          }
-          .save-btn:disabled {
-            background-color: rgba(var(--accent-color-rgb, 79, 70, 229), 0.5);
-            cursor: not-allowed;
-          }
-          .save-icon {
-            position: relative;
-            color: var(--accent-color);
-            cursor: pointer;
-            margin-left: 10px;
-            transition: color 0.2s;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .save-icon:hover {
-            color: rgba(var(---accent-color-rgb, 79, 70, 229), 0.8);
-          }
-          .save-icon:disabled {
-            color: rgba(var(--- accent-color-rgb, 79, 70, 229), 0.5);
-            cursor: not-allowed;
-          }
-          .save-icon svg {
-            width: 20px;
-            height: 20px;
-          }
-          .info-badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 12px;
-            height: 12px;
-            background-color: var(--accent-color);
-            border-radius: 50%;
-            font-style: italic;
-            font-size: 8px;
-            color: white;
-            border: 1px solid white;
-            z-index: 1;
-          }
-        `}
-      </style>
-      <p style={{ color: 'var(--text-color)' }} className="mb-4" id="section-card-audio-description">
+    <div className="audio-section-card p-4 rounded-lg bg-[var(--card-bg)] border border-[var(--card-border)]">
+      <p className="text-[var(--text-color)] mb-4">
         This is an audio-only section. Choose how to provide the audio:
       </p>
-      <div className="mb-4" id="section-card-audio-source-options">
-        <label className="mr-4" id="section-card-library-option">
+      
+      {/* Audio Source Selection */}
+      <div className="flex space-x-4 mb-4" role="radiogroup" aria-labelledby="audio-source-label">
+        <span id="audio-source-label" className="sr-only">Select Audio Source</span>
+        
+        <label className="flex items-center cursor-pointer">
           <input
             type="radio"
-            name="audioSource"
+            name={`audioSource-${section.id}`}
             value="library"
             checked={audioSource === 'library'}
             onChange={handleLibraryRadioChange}
-            className="radio-input"
+            className="mr-2 h-4 w-4"
           />
-          Select from Library
+          <span>Select from Library</span>
         </label>
-        <label id="section-card-upload-option">
+        
+        <label className="flex items-center cursor-pointer">
           <input
             type="radio"
-            name="audioSource"
+            name={`audioSource-${section.id}`}
             value="upload"
             checked={audioSource === 'upload'}
             onChange={handleUploadRadioChange}
-            className="radio-input"
+            className="mr-2 h-4 w-4"
           />
-          Upload New Audio
+          <span>Upload New Audio</span>
         </label>
       </div>
+      
+      {/* Library Selection */}
       {audioSource === 'library' && (
-        <div className="mb-4" id="section-card-library-selector">
+        <div className="mb-4">
           <div className="flex items-center mb-2 space-x-2">
-            <label htmlFor="section-card-audio-category-select" className="text-sm whitespace-nowrap">
+            <label htmlFor={`audio-category-${section.id}`} className="text-sm whitespace-nowrap">
               Audio type:
             </label>
             <select
-              id="section-card-audio-category-select"
+              id={`audio-category-${section.id}`}
               value={audioCategory}
               onChange={(e) => setAudioCategory(e.target.value)}
-              className="compact-select flex-grow select-field"
-              disabled={isLoading}
+              className="flex-grow select-field py-1 px-2 text-sm rounded-md"
             >
-              <option value="sound_effect">Sound Effects</option>
-              <option value="uploaded_audio">Uploaded Audio</option>
-              <option value="merged_audio">Merged Audio</option>
-              <option value="generated_section_audio">Generated Audio</option>
-              <option value="music">Music</option>
-              <option value="binaural">Binaural</option>
+              {audioCategories.map(category => (
+                <option key={category.value} value={category.value}>
+                  {category.label}
+                </option>
+              ))}
             </select>
           </div>
+          
           <select
-            id="section-card-audio-library-select"
+            id={`audio-library-${section.id}`}
             value={section.audioId || ''}
             onChange={handleLibrarySelection}
-            className="select-field w-full"
-            disabled={isLoading}
+            className="w-full select-field py-2 px-3 rounded-md mb-2"
           >
             <option value="">Select an audio file...</option>
-            {getFilteredAudioLibrary().map((audio) => (
+            {filteredAudioLibrary.map(audio => (
               <option key={audio.id} value={audio.id}>
                 {audio.name}
               </option>
             ))}
           </select>
-          {section.audioId && hasAudio && audioData?.source === 'library' && (
-            <p className="text-sm mt-2 flex items-center" style={{ color: 'var(--text-secondary)' }}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 mr-1"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z"
-                  clipRule="evenodd"
-                />
+          
+          {filteredAudioLibrary.length === 0 && (
+            <p className="text-sm text-[var(--text-secondary)] mb-2">
+              No audio files in the selected category.
+            </p>
+          )}
+          
+          {section.audioId && audioData && (
+            <p className="text-sm flex items-center text-[var(--text-secondary)]">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z" clipRule="evenodd" />
               </svg>
-              Using audio from library: {audioData.name}
+              Using: {audioData.name}
             </p>
           )}
         </div>
       )}
+      
+      {/* Upload Interface */}
       {audioSource === 'upload' && (
-        <div className="mb-4" id="section-card-upload-container">
-          <div className="file-upload-container">
-            <label htmlFor="section-card-audio-upload-input" className="file-upload-label">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-1"
-                viewBox="0 0 512 512"
-                fill="currentColor"
-              >
-                <path d="M288 109.3V352c0 17.7-14.3 32-32 32s-32-14.3-32-32V109.3l-73.4 73.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l128-128c12.5-12.5 32.8-12.5 45.3 0l128 128c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L288 109.3zM64 352H192c0 35.3 28.7 64 64 64s64-28.7 64-64H448c35.3 0 64 28.7 64 64v32c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V416c0-35.3 28.7-64 64-64zm432 64c0-8.8-7.2-16-16-16H384c0 8.8 7.2 16 16 16s16-7.2 16-16z" />
+        <div className="mb-4">
+          <div className="flex items-center space-x-2">
+            <label htmlFor={`audio-upload-${section.id}`} className="cursor-pointer bg-[var(--accent-color)] text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors text-sm font-medium inline-flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
               Choose File
+              <input
+                id={`audio-upload-${section.id}`}
+                type="file"
+                ref={fileInputRef}
+                onChange={handleAudioUpload}
+                accept="audio/*"
+                className="hidden"
+                disabled={isUploading}
+              />
             </label>
-            <input
-              id="section-card-audio-upload-input"
-              data-testid="section-card-audio-upload-input"
-              type="file"
-              ref={fileInputRef}
-              onChange={handleAudioUpload}
-              accept="audio/*"
-              disabled={isLoading || isSaving}
-            />
+            
             {currentFile && (
-              <div className="tooltip">
-                <div
-                  id="save-to-library-btn"
-                  onClick={saveToLibrary}
-                  className="save-icon"
-                  title="Save to Library"
-                >
-                  {isSaving ? (
-                    <svg
-                      className="animate-spin h-5 w-5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
-                  ) : (
-                    <>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        viewBox="0 0 640 512"
-                        fill="currentColor"
-                      >
-                        <path d="M144 480C64.5 480 0 415.5 0 336c0-62.8 40.2-116.2 96.2-135.9c-.1-2.7-.2-5.4-.2-8.1c0-88.4 71.6-160 160-160c59.3 0 111 32.2 138.7 80.2C409.9 102 428.3 96 448 96c53 0 96 43 96 96c0 12.2-2.3 23.8-6.4 34.6C596 238.4 640 290.1 640 352c0 70.7-57.3 128-128 128H144zm79-217c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l39-39V392c0 13.3 10.7 24 24 24s24-10.7 24-24V257.9l39 39c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0l-80 80z" />
-                      </svg>
-                      <span className="info-badge">i</span>
-                    </>
-                  )}
-                  <span className="tooltiptext">Save this audio to your library for reuse in other sections</span>
-                </div>
-              </div>
+              <button
+                onClick={saveToLibrary}
+                disabled={isUploading}
+                className="bg-[var(--secondary-bg)] text-[var(--text-color)] py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors text-sm font-medium inline-flex items-center"
+                title="Save to library for reuse"
+              >
+                {isUploading ? (
+                  <svg className="animate-spin h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
+                  </svg>
+                )}
+                Save to Library
+              </button>
             )}
           </div>
+          
           {currentFile && (
-            <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-sm mt-2 text-[var(--text-secondary)]">
               Selected file: {currentFile.name}
             </p>
           )}
-          {hasAudio && audioData?.source === 'upload' && (
-            <p className="text-sm mt-2 flex items-center" style={{ color: 'var(--text-secondary)' }}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 mr-1"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z"
-                  clipRule="evenodd"
-                />
+          
+          {audioData?.source === 'upload' && (
+            <p className="text-sm mt-2 flex items-center text-[var(--text-secondary)]">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z" clipRule="evenodd" />
               </svg>
               Using uploaded audio: {audioData.name}
             </p>
           )}
         </div>
       )}
-      <div
-        id="section-card-play-audio-items"
-        className={`flex items-center ${showPlayAudioItems ? 'visible' : ''}`}
-      >
-        {showPlayAudioItems && (
-          <>
-            {playingAudio ? (
-              <audio
-                id="section-card-audio-player"
-                data-testid="section-card-audio-player"
-                controls
-                autoPlay
-                className="w-full max-w-md"
-                onEnded={() => setPlayingAudio(false)}
-                onError={(e) => {
-                  const uploadedUrl = audioSource === 'upload' && uploadedAudioPreview ? uploadedAudioPreview.url : null;
-                  const sessionUrl = audioData && audioData.url ? audioData.url : null;
-                  const playbackUrl = uploadedUrl || (sessionUrl ? validateAudioUrl(sessionUrl, audioData?.source) : '');
-                  devLog('Audio playback error:', e, {
-                    playbackUrl,
-                    audioSource,
-                    audioData,
-                    uploadedAudioPreview,
-                    serverUrl,
-                  });
-                  sessionActions.setNotification({
-                    type: 'error',
-                    message: 'Failed to play audio. Please check the file.',
-                  });
-                  setPlayingAudio(false);
-                }}
-                onLoadStart={() => {
-                  const uploadedUrl = audioSource === 'upload' && uploadedAudioPreview ? uploadedAudioPreview.url : null;
-                  const sessionUrl = audioData && audioData.url ? audioData.url : null;
-                  const playbackUrl = uploadedUrl || (sessionUrl ? validateAudioUrl(sessionUrl, audioData?.source) : '');
-                  devLog('Audio loading:', {
-                    playbackUrl,
-                    audioSource,
-                    uploadedAudioPreview,
-                    audioData,
-                    serverUrl,
-                  });
-                }}
-              >
-                <source
-                  src={audioSource === 'upload' && uploadedAudioPreview
-                    ? uploadedAudioPreview.url
-                    : (audioData && audioData.url
-                        ? validateAudioUrl(audioData.url, audioData.source)
-                        : '')}
-                  type={
-                    audioSource === 'upload' && uploadedAudioPreview
-                      ? uploadedAudioPreview.type
-                      : (audioData && (audioData.format
-                          ? `audio/${audioData.format}`
-                          : audioData.type || 'audio/wav'))
-                  }
-                />
-                Your browser does not support the audio element.
-              </audio>
-            ) : (
-              <button
-                id="section-card-play-audio-button-mini"
-                data-testid="section-card-play-audio-button-mini"
-                onClick={togglePlayAudio}
-                className="btn btn-secondary flex items-center mr-2"
-                style={{ padding: '0.5rem' }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-            )}
-          </>
-        )}
-      </div>
-      {!showPlayAudioItems && (
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }} id="section-card-audio-instruction">
+      
+      {/* Audio Playback */}
+      {hasValidAudio && (
+        <div className="mt-4">
+          {playingAudio ? (
+            <button
+              onClick={togglePlayAudio}
+              className="bg-[var(--accent-color)] text-white py-2 px-4 rounded-full hover:bg-opacity-90 transition-colors flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="ml-2">Stop Audio</span>
+            </button>
+          ) : (
+            <button
+              onClick={togglePlayAudio}
+              className="bg-[var(--accent-color)] text-white py-2 px-4 rounded-full hover:bg-opacity-90 transition-colors flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+              </svg>
+              <span className="ml-2">Play Audio</span>
+            </button>
+          )}
+        </div>
+      )}
+      
+      {/* No Audio Selected/Uploaded Message */}
+      {!hasValidAudio && (
+        <p className="text-sm text-[var(--text-secondary)] mt-2">
           {audioSource === 'library'
-            ? 'Please select an audio file from the library to play.'
-            : 'Please upload an audio file to play.'}
+            ? 'Please select an audio file from the library.'
+            : 'Please upload an audio file to use in this section.'}
         </p>
       )}
     </div>

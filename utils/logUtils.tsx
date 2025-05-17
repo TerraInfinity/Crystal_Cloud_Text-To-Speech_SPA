@@ -34,7 +34,7 @@ type LogLevel = typeof LOG_LEVELS[keyof typeof LOG_LEVELS];
  * 4 = Errors, warnings, and info
  * 5 = All logs (including debug)
  */
-let logLevel: LogLevel = LOG_LEVELS.ERROR;
+let logLevel: LogLevel = LOG_LEVELS.DEBUG;
 
 /**
  * Sets the log level to control verbosity
@@ -73,7 +73,7 @@ const shouldLog = (requiredLevel: LogLevel, force: boolean = false): boolean => 
  * @example
  * devCritical('Application crashed:', error, true); // Forces log even if level < CRITICAL
  */
-export const devCritical = (...args: [...any[], boolean?]): void => {
+export const devCritical = (...args: any[]): void => {
   const force = typeof args[args.length - 1] === 'boolean' ? args.pop() : false;
   if (shouldLog(LOG_LEVELS.CRITICAL, force)) {
     console.error('[TTS] CRITICAL:', ...args);
@@ -91,7 +91,7 @@ export const devCritical = (...args: [...any[], boolean?]): void => {
  * @example
  * devError('Failed to fetch data:', error, true); // Forces log even if level < ERROR
  */
-export const devError = (...args: [...any[], boolean?]): void => {
+export const devError = (...args: any[]): void => {
   const force = typeof args[args.length - 1] === 'boolean' ? args.pop() : false;
   if (shouldLog(LOG_LEVELS.ERROR, force)) {
     console.error('[TTS] ERROR:', ...args);
@@ -109,7 +109,7 @@ export const devError = (...args: [...any[], boolean?]): void => {
  * @example
  * devWarn('Deprecated function used:', functionName, true); // Forces log even if level < WARN
  */
-export const devWarn = (...args: [...any[], boolean?]): void => {
+export const devWarn = (...args: any[]): void => {
   const force = typeof args[args.length - 1] === 'boolean' ? args.pop() : false;
   if (shouldLog(LOG_LEVELS.WARN, force)) {
     console.warn('[TTS] WARN:', ...args);
@@ -127,7 +127,7 @@ export const devWarn = (...args: [...any[], boolean?]): void => {
  * @example
  * devLog('User logged in:', userId, true); // Forces log even if level < INFO
  */
-export const devLog = (...args: [...any[], boolean?]): void => {
+export const devLog = (...args: any[]): void => {
   const force = typeof args[args.length - 1] === 'boolean' ? args.pop() : false;
   if (shouldLog(LOG_LEVELS.INFO, force)) {
     console.log('[TTS] INFO:', ...args);
@@ -145,7 +145,7 @@ export const devLog = (...args: [...any[], boolean?]): void => {
  * @example
  * devDebug('State updated:', state, true); // Forces log even if level < DEBUG
  */
-export const devDebug = (...args: [...any[], boolean?]): void => {
+export const devDebug = (...args: any[]): void => {
   const force = typeof args[args.length - 1] === 'boolean' ? args.pop() : false;
   if (shouldLog(LOG_LEVELS.DEBUG, force)) {
     console.log('[TTS] DEBUG:', ...args);

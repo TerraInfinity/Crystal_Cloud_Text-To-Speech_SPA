@@ -1,4 +1,3 @@
-// context/TTSSessionContext.tsx
 import React, { createContext, useContext, useReducer, useEffect, useMemo, useState, useRef } from 'react';
 import { initialSessionState } from './ttsDefaults';
 import { saveToStorage, loadFromStorage } from './storage';
@@ -6,8 +5,10 @@ import { ttsSessionReducer } from './ttsSessionReducer';
 import { createSessionActions } from './ttsSessionActions';
 import { devLog, devError, devWarn } from '../utils/logUtils';
 import { loadDemoContent } from './demoContentLoader';
+import { useNotification } from './notificationContext';
+import { useTTSContext } from './TTSContext';
+import { isValidAudioUrl } from '../utils/audioUtils';
 
-// Extend Window interface to include custom properties
 interface TTSConfig {
   sections: any[];
   title?: string;
@@ -22,14 +23,12 @@ declare global {
   }
 }
 
-// Interfaces
 interface TTSSessionState {
   title: string;
   description: string;
   sections: any[];
   generatedTTSAudios: Record<string, any>;
   mergedAudio: any;
-  notification: { type: string; message: string } | null;
   activeTab: string;
   chunked?: boolean;
   chunkIndex?: number;
@@ -58,16 +57,14 @@ interface TTSSessionContextValue {
   actions: ReturnType<typeof createSessionActions>;
 }
 
-// Context
 const TTSSessionContext = createContext<TTSSessionContextValue | undefined>(undefined);
 
-// Utility Functions
 const estimateObjectSize = (obj: any): number => {
   const jsonStr = JSON.stringify(obj);
-  return jsonStr ? jsonStr.length * 2 : 0; // UTF-16 characters are 2 bytes each
+  return jsonStr ? jsonStr.length * 2 : 0;
 };
 
-const MAX_CHUNK_SIZE = 3.5 * 1024 * 1024; // 3.5MB in bytes
+const MAX_CHUNK_SIZE = 3.5 * 1024 * 1024;
 
 const splitStateIntoChunks = (state: TTSSessionState): any[] => {
   const { generatedTTSAudios, mergedAudio, ...stateWithoutAudio } = state;
@@ -88,7 +85,7 @@ const splitStateIntoChunks = (state: TTSSessionState): any[] => {
     inputText: stateWithoutAudio.inputText,
     inputType: stateWithoutAudio.inputType,
     selectedInputVoice: stateWithoutAudio.selectedInputVoice,
-    isProcessing: stateWithoutAudio.isProcessing,
+    isProcessing: false, // Ensure isProcessing is false in chunks
     isPlaying: stateWithoutAudio.isPlaying,
     selectedAudioLibraryId: stateWithoutAudio.selectedAudioLibraryId,
     templateCreation: stateWithoutAudio.templateCreation,
@@ -137,6 +134,7 @@ const reassembleStateChunks = (stateChunks: any[]): any | null => {
   }
 
   reassembledState.sections = allSections;
+  reassembledState.isProcessing = false; // Ensure isProcessing is false
   delete reassembledState.chunked;
   delete reassembledState.chunkIndex;
   delete reassembledState.totalChunks;
@@ -147,13 +145,17 @@ const reassembleStateChunks = (stateChunks: any[]): any | null => {
 const createStorageOptimizedState = (state: TTSSessionState): any => {
   try {
     const { generatedTTSAudios, mergedAudio, ...baseState } = state;
-    const minimalState = { ...baseState };
+    const minimalState = { ...baseState, isProcessing: false }; // Ensure isProcessing is false
 
     if (estimateObjectSize(minimalState) > 4000000) {
       devLog('State too large, trimming section text content');
       if (minimalState.sections && Array.isArray(minimalState.sections)) {
         minimalState.sections = minimalState.sections.map(section => {
-          const { text, ...sectionWithoutText } = section;
+          const { text, audioUrl, ...sectionWithoutText } = section;
+          
+          // Preserve audioUrl explicitly
+          sectionWithoutText.audioUrl = audioUrl;
+          
           if (text && typeof text === 'string' && text.length > 100) {
             sectionWithoutText.textPreview = text.substring(0, 100) + '...';
           } else {
@@ -163,18 +165,36 @@ const createStorageOptimizedState = (state: TTSSessionState): any => {
         });
       }
     }
+    
+    // Debug log to verify audioUrl is preserved
+    if (minimalState.sections && Array.isArray(minimalState.sections)) {
+      const audioUrlCount = minimalState.sections.filter(s => s.audioUrl).length;
+      devLog(`Optimized state has ${audioUrlCount} sections with audioUrl`);
+      
+      // Log the first few sections with audioUrl for verification
+      const sectionsWithAudio = minimalState.sections.filter(s => s.audioUrl).slice(0, 3);
+      if (sectionsWithAudio.length > 0) {
+        devLog('Sample sections with audioUrl:', 
+          sectionsWithAudio.map(s => ({ id: s.id, type: s.type, audioUrl: s.audioUrl }))
+        );
+      }
+    }
 
     return minimalState;
   } catch (error) {
     devError('Error creating storage-optimized state:', error);
     return {
-      sections: state.sections?.map(s => ({ id: s.id, title: s.title, type: s.type })) || [],
+      sections: state.sections?.map(s => ({ 
+        id: s.id, 
+        title: s.type,
+        audioUrl: s.audioUrl // Preserve audioUrl in error case too
+      })) || [],
       title: state.title,
       description: state.description,
       inputText: state.inputText,
       inputType: state.inputType,
       selectedInputVoice: state.selectedInputVoice,
-      isProcessing: state.isProcessing,
+      isProcessing: false, // Ensure isProcessing is false
       isPlaying: state.isPlaying,
       selectedAudioLibraryId: state.selectedAudioLibraryId,
       templateCreation: state.templateCreation,
@@ -213,33 +233,114 @@ const cleanupOldSessionStorage = (): void => {
         sessionStorage.removeItem(key);
       });
     }
+
+    // Explicitly clear any processing-related storage
+    sessionStorage.removeItem('tts_processing');
   } catch (error) {
     devError('Error cleaning up old session storage:', error);
   }
 };
 
-// Provider Component
 export const TTSSessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { state: ttsState } = useTTSContext();
   const [state, dispatch] = useReducer(ttsSessionReducer, initialSessionState);
   const [isLoading, setIsLoading] = useState(true);
-  const actions = useMemo(() => createSessionActions(dispatch, loadDemoContent), [dispatch]);
+  const { addNotification } = useNotification();
+  const lastProcessedSectionsRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
 
+  // Reset isProcessing on mount to prevent persistent processing-container
   useEffect(() => {
-    window.ttsSessionDispatch = dispatch;
-    return () => {
-      delete window.ttsSessionDispatch;
-    };
-  }, [dispatch]);
+    dispatch({ type: 'SET_PROCESSING', payload: false });
+    sessionStorage.removeItem('tts_processing');
+    cleanupOldSessionStorage();
+  }, []);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      dispatch({ type: 'SET_PROCESSING', payload: false });
+      sessionStorage.removeItem('tts_processing');
+      cleanupOldSessionStorage();
+    };
+  }, []);
+
+  // Enhanced dispatch to include context
+  const enhancedDispatch = (action) => {
+    dispatch({
+      ...action,
+      context: {
+        activeVoices: ttsState.settings.activeVoices || [],
+        defaultVoice: ttsState.settings.defaultVoice,
+      },
+    });
+  };
+
+  // Create actions with enhanced dispatch
+  const actions = useMemo(() => {
+    const baseActions = createSessionActions(enhancedDispatch, loadDemoContent);
+    return {
+      ...baseActions,
+      setSections: (sections) => enhancedDispatch({ type: 'SET_SECTIONS', payload: sections }),
+      addSection: (section) => enhancedDispatch({ type: 'ADD_SECTION', payload: section }),
+      updateSection: (section) => enhancedDispatch({ type: 'UPDATE_SECTION', payload: section }),
+      reorderSections: (sections) => enhancedDispatch({ type: 'REORDER_SECTIONS', payload: sections }),
+      setSectionVoice: (sectionId, voice) => enhancedDispatch({ type: 'SET_SECTION_VOICE', payload: { sectionId, voice } }),
+    };
+  }, []);
+
+  // Log TTSContext defaultVoice for debugging
+  useEffect(() => {
+    devLog('TTSContext defaultVoice:', ttsState.settings.defaultVoice);
+    if (!ttsState.settings.defaultVoice) {
+      devWarn('No default voice found in ttsState.settings.defaultVoice');
+    }
+  }, [ttsState.settings.defaultVoice]);
+
+  // Load session state
   useEffect(() => {
     const loadState = async () => {
       try {
         cleanupOldSessionStorage();
         const savedState = await loadFromStorage('tts_session_state', false, 'sessionStorage');
         if (savedState) {
-          devLog('Loaded session state:', savedState);
+          devLog('Loaded session state:', {
+            sectionCount: savedState.sections?.length,
+            sectionsWithAudioUrl: savedState.sections?.filter(s => s.audioUrl).length,
+            hasMergedAudio: !!savedState.mergedAudio,
+            isValidMergedAudio: savedState.mergedAudio && isValidAudioUrl(savedState.mergedAudio)
+          });
+          
+          // Validate mergedAudio if present
+          let mergedAudio = savedState.mergedAudio;
+          if (mergedAudio && !isValidAudioUrl(mergedAudio)) {
+            devWarn(`Invalid mergedAudio URL: ${mergedAudio}. Removing it.`);
+            mergedAudio = null;
+          }
+          
+          const defaultVoice = ttsState.settings.defaultVoice;
+          if (!defaultVoice) {
+            devWarn('No default voice available during session state load');
+          }
+          
+          const updatedSections = savedState.sections.map((section) => {
+            // ONLY apply default voice if the section is missing a voice completely
+            if (section.type === 'text-to-speech' && !section.voice && defaultVoice) {
+              devLog('Section missing voice, applying default voice for section:', section.id);
+              return { ...section, voice: { ...defaultVoice } };
+            }
+            
+            // Validate audioUrl if present
+            if (section.audioUrl && !isValidAudioUrl(section.audioUrl)) {
+              devWarn(`Invalid audioUrl in section ${section.id}: ${section.audioUrl}. Removing it.`);
+              return { ...section, audioUrl: undefined };
+            }
+            
+            // Otherwise preserve the user's selected voice and valid audioUrl
+            return section;
+          });
+          
           if (savedState.chunked === true) {
             devLog('Loading chunked state');
             const stateChunks = [savedState];
@@ -247,33 +348,89 @@ export const TTSSessionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               try {
                 const chunkKey = `tts_session_chunk_${i}`;
                 const chunk = await loadFromStorage(chunkKey, false, 'sessionStorage');
-                if (chunk) {
-                  stateChunks.push(chunk);
-                }
+                if (chunk) stateChunks.push(chunk);
               } catch (chunkError) {
                 devError(`Error loading state chunk ${i}:`, chunkError);
               }
             }
+            
             const fullState = reassembleStateChunks(stateChunks);
             if (fullState) {
+              const chunkedSections = fullState.sections.map((section) => {
+                // ONLY apply default voice if the section is missing a voice completely
+                if (section.type === 'text-to-speech' && !section.voice && defaultVoice) {
+                  devLog('Section missing voice, applying default voice for section:', section.id);
+                  return { ...section, voice: { ...defaultVoice } };
+                }
+                
+                // Validate audioUrl if present
+                if (section.audioUrl && !isValidAudioUrl(section.audioUrl)) {
+                  devWarn(`Invalid audioUrl in chunked section ${section.id}: ${section.audioUrl}. Removing it.`);
+                  return { ...section, audioUrl: undefined };
+                }
+                
+                // Otherwise preserve the user's selected voice
+                return section;
+              });
+              
+              // Debug: Check for audioUrl in loaded sections
+              const sectionsWithAudioUrl = chunkedSections.filter(s => s.audioUrl).length;
+              devLog(`After loading from chunked storage: ${sectionsWithAudioUrl} of ${chunkedSections.length} sections have audioUrl`);
+              
+              if (sectionsWithAudioUrl > 0) {
+                const sampleSections = chunkedSections.filter(s => s.audioUrl).slice(0, 2);
+                devLog('Sample sections with audioUrl after loading:', 
+                  sampleSections.map(s => ({ 
+                    id: s.id, 
+                    type: s.type, 
+                    audioUrl: s.audioUrl,
+                    isValidUrl: isValidAudioUrl(s.audioUrl)
+                  }))
+                );
+              }
+              
               const mergedState = {
                 ...fullState,
+                sections: chunkedSections,
+                mergedAudio: mergedAudio,
                 generatedTTSAudios: state.generatedTTSAudios || {},
-                mergedAudio: state.mergedAudio,
+                isProcessing: false, // Ensure isProcessing is false
               };
-              dispatch({ type: 'LOAD_SESSION_STATE', payload: mergedState });
-              devLog('Loaded state from chunks, preserved audio data from current state');
+              
+              enhancedDispatch({ type: 'LOAD_SESSION_STATE', payload: mergedState });
+              sessionStorage.setItem('tts_session_state', JSON.stringify(mergedState));
+              devLog('Loaded state from chunks, preserved audio data');
             } else {
               devLog('Failed to reassemble chunks, using initial state');
             }
           } else {
             const mergedState = {
               ...savedState,
+              sections: updatedSections,
+              mergedAudio: mergedAudio,
               generatedTTSAudios: state.generatedTTSAudios || {},
-              mergedAudio: state.mergedAudio,
+              isProcessing: false, // Ensure isProcessing is false
             };
-            dispatch({ type: 'LOAD_SESSION_STATE', payload: mergedState });
-            devLog('Loaded state, preserved audio data from current state');
+            
+            // Debug: Check for audioUrl in loaded sections
+            const sectionsWithAudioUrl = updatedSections.filter(s => s.audioUrl).length;
+            devLog(`After loading from storage: ${sectionsWithAudioUrl} of ${updatedSections.length} sections have audioUrl`);
+            
+            if (sectionsWithAudioUrl > 0) {
+              const sampleSections = updatedSections.filter(s => s.audioUrl).slice(0, 2);
+              devLog('Sample sections with audioUrl after loading:', 
+                sampleSections.map(s => ({ 
+                  id: s.id, 
+                  type: s.type, 
+                  audioUrl: s.audioUrl,
+                  isValidUrl: isValidAudioUrl(s.audioUrl)
+                }))
+              );
+            }
+            
+            enhancedDispatch({ type: 'LOAD_SESSION_STATE', payload: mergedState });
+            sessionStorage.setItem('tts_session_state', JSON.stringify(mergedState));
+            devLog('Loaded state, preserved audio data');
           }
         } else {
           devLog('No saved session state found, using initialSessionState');
@@ -288,11 +445,78 @@ export const TTSSessionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     loadState();
   }, []);
 
+  // Migrate voices
+  useEffect(() => {
+    if (!state.sections.length || !ttsState.settings.defaultVoice) {
+      devLog('Skipping voice migration: no sections or no default voice', {
+        sectionsLength: state.sections.length,
+        defaultVoice: ttsState.settings.defaultVoice,
+      });
+      return;
+    }
+    if (state.isProcessing) {
+      devLog('Skipping voice migration: isProcessing is true');
+      return;
+    }
+    const sectionsSignature = JSON.stringify(state.sections);
+    if (lastProcessedSectionsRef.current === sectionsSignature) {
+      devLog('Skipping voice migration: sections unchanged');
+      return;
+    }
+
+    const defaultVoice = ttsState.settings.defaultVoice;
+    devLog('Checking for voice migration:', {
+      defaultVoice,
+      activeVoices: ttsState.settings.activeVoices,
+      sections: state.sections.map(s => ({
+        id: s.id,
+        type: s.type,
+        voice: s.voice,
+      })),
+    });
+
+    // Only migrate sections that have NO voice at all, not just different voices
+    const needsMigration = state.sections.some(
+      (section) => section.type === 'text-to-speech' && !section.voice
+    );
+
+    if (needsMigration) {
+      const updatedSections = state.sections.map((section) => {
+        if (section.type === 'text-to-speech' && !section.voice) {
+          devLog('Migrating voice for section:', section.id, 'to:', defaultVoice, {
+            sectionVoice: section.voice,
+            conditions: {
+              noVoice: !section.voice
+            },
+          });
+          return { ...section, voice: { ...defaultVoice } };
+        }
+        return section;
+      });
+      lastProcessedSectionsRef.current = JSON.stringify(updatedSections);
+      enhancedDispatch({ type: 'SET_SECTIONS', payload: updatedSections });
+      sessionStorage.setItem('tts_session_state', JSON.stringify({ ...state, sections: updatedSections, isProcessing: false }));
+      devLog('Updated sections with migrated voices:', updatedSections.map(s => ({
+        id: s.id,
+        type: s.type,
+        voice: s.voice,
+      })));
+    } else {
+      lastProcessedSectionsRef.current = sectionsSignature;
+      devLog('No voice migration needed');
+    }
+  }, [ttsState.settings.defaultVoice, state.sections, state.isProcessing]);
+
+  useEffect(() => {
+    window.ttsSessionDispatch = enhancedDispatch;
+    return () => {
+      delete window.ttsSessionDispatch;
+    };
+  }, []);
+
   useEffect(() => {
     if (!isLoading) {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(async () => {
         try {
           cleanupOldSessionStorage();
@@ -306,6 +530,35 @@ export const TTSSessionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           devLog(`Original state size: ${Math.round(originalSize / 1024)} KB`);
           devLog(`Audio data size: ${Math.round(audioSize / 1024)} KB`);
           devLog(`Optimized state size (no audio): ${Math.round(stateSize / 1024)} KB`);
+          
+          // Debug: Check for mergedAudio before saving to storage
+          devLog(`Before saving: mergedAudio: ${state.mergedAudio || 'none'}`, {
+            isValid: state.mergedAudio ? isValidAudioUrl(state.mergedAudio) : false
+          });
+          
+          // Debug: Check for audioUrl in sections before saving to storage
+          const sectionsWithAudioUrl = state.sections.filter(s => s.audioUrl).length;
+          devLog(`Before saving: ${sectionsWithAudioUrl} of ${state.sections.length} sections have audioUrl`);
+          
+          // Validate audioUrls before saving
+          const validAudioUrls = state.sections
+            .filter(s => s.audioUrl && isValidAudioUrl(s.audioUrl))
+            .map(s => ({ id: s.id, audioUrl: s.audioUrl }));
+          
+          const invalidAudioUrls = state.sections
+            .filter(s => s.audioUrl && !isValidAudioUrl(s.audioUrl))
+            .map(s => ({ id: s.id, audioUrl: s.audioUrl }));
+          
+          if (validAudioUrls.length > 0) {
+            devLog(`Found ${validAudioUrls.length} sections with valid audioUrls`, 
+              validAudioUrls.slice(0, 2)); // Show only first 2 for brevity
+          }
+          
+          if (invalidAudioUrls.length > 0) {
+            devWarn(`Found ${invalidAudioUrls.length} sections with INVALID audioUrls`, 
+              invalidAudioUrls);
+          }
+          
           if (stateSize > 5000000) {
             devWarn(`Session state is still very large (${Math.round(stateSize / 1024)} KB). This may cause storage issues.`);
           }
@@ -322,9 +575,7 @@ export const TTSSessionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               await saveToStorage('tts_session_state', optimizedState, 'sessionStorage');
               devLog('Saved session state to sessionStorage (no audio data)');
             }
-            if (storageError) {
-              setStorageError(null);
-            }
+            if (storageError) setStorageError(null);
           } catch (saveError: any) {
             devError('Error saving session state:', saveError);
             setStorageError('Failed to save session state: ' + saveError.message);
@@ -339,11 +590,12 @@ export const TTSSessionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                   type: s.type,
                   voice: s.voice,
                   language: s.language,
+                  audioUrl: s.audioUrl && isValidAudioUrl(s.audioUrl) ? s.audioUrl : undefined,
                 })) || [],
                 inputText: state.inputText,
                 inputType: state.inputType,
                 selectedInputVoice: state.selectedInputVoice,
-                isProcessing: state.isProcessing,
+                isProcessing: false, // Ensure isProcessing is false
                 isPlaying: state.isPlaying,
                 selectedAudioLibraryId: state.selectedAudioLibraryId,
                 templateCreation: state.templateCreation,
@@ -365,37 +617,31 @@ export const TTSSessionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }, 1000);
     }
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
   }, [state, isLoading, storageError]);
 
   useEffect(() => {
-    if (state.notification) {
-      devLog('Setting notification timeout');
-      const timer = setTimeout(() => {
-        dispatch({ type: 'SET_NOTIFICATION', payload: null });
-        devLog('Notification cleared');
-      }, 5000);
-      return () => {
-        devLog('Cleaning up notification timeout');
-        clearTimeout(timer);
-      };
-    }
-  }, [state.notification]);
-
-  useEffect(() => {
     if (storageError) {
-      dispatch({
-        type: 'SET_NOTIFICATION',
-        payload: {
-          type: 'warning',
-          message: storageError,
-        },
+      addNotification({
+        type: 'warning',
+        message: storageError,
       });
     }
-  }, [storageError, dispatch]);
+  }, [storageError, addNotification]);
+
+  useEffect(() => {
+    const handleNotification = (event: CustomEvent<{ type: string; message: string }>) => {
+      addNotification({
+        type: event.detail.type as 'success' | 'warning' | 'error' | 'info',
+        message: event.detail.message,
+      });
+    };
+    window.addEventListener('trigger-notification', handleNotification as EventListener);
+    return () => {
+      window.removeEventListener('trigger-notification', handleNotification as EventListener);
+    };
+  }, [addNotification]);
 
   useEffect(() => {
     const handleLoadConfig = (event: CustomEvent<{ config: TTSConfig | string }>) => {
@@ -411,28 +657,26 @@ export const TTSSessionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           devLog('Invalid config received, missing sections array:', configObj);
           return;
         }
-        dispatch({ type: 'RESET_SESSION' });
-        dispatch({ type: 'SET_SECTIONS', payload: configObj.sections });
+        enhancedDispatch({ type: 'RESET_SESSION' });
+        enhancedDispatch({ type: 'SET_SECTIONS', payload: configObj.sections });
         if (configObj.description) {
-          dispatch({ type: 'SET_DESCRIPTION', payload: configObj.description });
+          enhancedDispatch({ type: 'SET_DESCRIPTION', payload: configObj.description });
         }
         if (configObj.title) {
-          dispatch({ type: 'SET_TITLE', payload: configObj.title });
+          enhancedDispatch({ type: 'SET_TITLE', payload: configObj.title });
         }
-        dispatch({ type: 'SET_ACTIVE_TAB', payload: 'main' });
-        dispatch({
-          type: 'SET_NOTIFICATION',
-          payload: {
-            type: 'success',
-            message: 'Configuration loaded successfully',
-          },
+        enhancedDispatch({ type: 'SET_ACTIVE_TAB', payload: 'main' });
+        enhancedDispatch({ type: 'SET_PROCESSING', payload: false }); // Ensure processing is reset
+        addNotification({
+          type: 'success',
+          message: 'Configuration loaded successfully',
         });
         devLog('Successfully loaded configuration from history');
       } catch (error) {
         devError('Error handling load-tts-config event:', error);
-        dispatch({
-          type: 'SET_ERROR',
-          payload: `Failed to load configuration: ${error.message}`,
+        addNotification({
+          type: 'error',
+          message: `Failed to load configuration: ${error.message}`,
         });
       }
     };
@@ -456,18 +700,16 @@ export const TTSSessionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       devLog('Removing load-tts-config event listener');
       window.removeEventListener('load-tts-config', handleLoadConfig as EventListener);
     };
-  }, [dispatch]);
+  }, []);
 
   if (isLoading) {
     return <div id="tts-loading-session-state">Loading session state...</div>;
   }
 
   const value: TTSSessionContextValue = { state, actions };
-
   return <TTSSessionContext.Provider value={value}>{children}</TTSSessionContext.Provider>;
 };
 
-// Custom Hook
 export const useTTSSessionContext = (): TTSSessionContextValue => {
   const context = useContext(TTSSessionContext);
   if (!context) {

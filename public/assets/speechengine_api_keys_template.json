@@ -1,0 +1,25 @@
+{
+    "elevenlabs": {
+        "api_endpoint": "https://api.elevenlabs.io/v1",
+        "keys": [
+            { "name": "ELEVENLABS_API_KEY_1", "key": "your_api_key_here", "active": true, "remaining_tokens": 10000 },
+            { "name": "ELEVENLABS_API_KEY_2", "key": "your_api_key_here", "active": true, "remaining_tokens": 10000 }
+        ]
+    },
+    "google_cloud": {
+        "api_endpoint": "https://texttospeech.googleapis.com/v1",
+        "keys": []
+    },
+    "aws_polly": {
+        "api_endpoint": "https://polly.amazonaws.com/v1",
+        "keys": []
+    },
+    "ibm_watson": {
+        "api_endpoint": "https://api.us-south.text-to-speech.watson.cloud.ibm.com",
+        "keys": []
+    },
+    "azure": {
+        "api_endpoint": "https://eastus.tts.speech.microsoft.com/cognitiveservices/v1",
+        "keys": []
+    }
+}

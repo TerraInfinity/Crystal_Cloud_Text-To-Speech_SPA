@@ -2,6 +2,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { TTSApp } from '../components/TTSApp';
 import ThemeToggle from '../components/ThemeToggle';
+import Notification from '../components/notification';
 
 /**
  * Home Page Component
@@ -21,9 +22,10 @@ export default function Home() {
       <Head>
         <title>Text-to-Speech Application</title>
         <meta name="description" content="Convert text to speech with customizable templates" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.ico" type="image/ico" />
       </Head>
         <main id="main-content" className="container mx-auto px-4 py-8">
+          <Notification />
           <header id="app-header" className="flex justify-between items-center mb-8">
             <h1 id="app-title" className="text-3xl font-bold text-indigo-700">
               Text-to-Speech Converter

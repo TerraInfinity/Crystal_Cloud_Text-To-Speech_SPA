@@ -1,0 +1,68 @@
+{
+  "title": "jjj",
+  "description": "",
+  "sections": [
+    {
+      "id": "section-1747372403727",
+      "title": "Audio Section 4",
+      "type": "audio-only",
+      "text": "",
+      "audioId": "1ec822c8-4a5a-48ad-9d60-eb1339c041de",
+      "audioSource": "library"
+    },
+    {
+      "id": "section-1747370846461",
+      "title": "Text Section 1",
+      "type": "text-to-speech",
+      "text": "abv",
+      "voice": {
+        "id": "en-com.au",
+        "name": "Australian English",
+        "language": "en",
+        "engine": "gtts",
+        "tld": "com.au"
+      },
+      "voiceSettings": {
+        "volume": 1,
+        "rate": 1,
+        "pitch": 1
+      }
+    },
+    {
+      "id": "section-1747370857097",
+      "title": "Text Section 2",
+      "type": "text-to-speech",
+      "text": "jghj",
+      "voice": {
+        "id": "en-com",
+        "name": "American English",
+        "language": "en",
+        "engine": "gtts",
+        "tld": "com"
+      },
+      "voiceSettings": {
+        "volume": 1,
+        "rate": 1,
+        "pitch": 1
+      }
+    },
+    {
+      "id": "section-1747372400847",
+      "title": "Audio Section 3",
+      "type": "audio-only",
+      "text": "",
+      "audioId": "581e6286-c9da-460a-bad3-fd9fd3f27408",
+      "audioSource": "library"
+    },
+    {
+      "id": "section-1747374889240",
+      "title": "Audio Section 5",
+      "type": "audio-only",
+      "text": "",
+      "audioId": null,
+      "audioSource": "upload"
+    }
+  ],
+  "audioId": "455db12f-4a24-42b9-836f-244c5bfe0647",
+  "createdAt": "2025-05-16T06:04:50.542Z"
+}

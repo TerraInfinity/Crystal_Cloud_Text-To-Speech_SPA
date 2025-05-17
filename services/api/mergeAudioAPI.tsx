@@ -140,22 +140,50 @@ async function mergeAudioFiles(audioUrls: string[], metadata: StorageMetadata = 
     : `merged-audio-${Date.now()}`;
   outputFilePath = path.join(os.tmpdir(), `${baseName}.wav`);
 
-  devLog('Temporary output file path:', outputFilePath);
-
   try {
     for (let i = 0; i < audioUrls.length; i++) {
       const url = audioUrls[i];
       let tempFile: string;
-      if (url.startsWith('data:')) {
-        tempFile = await saveDataUrlToTempFile(url, i);
-      } else if (url.startsWith('http://') || url.startsWith('https://')) {
-        tempFile = await downloadFileToTemp(url, i);
-      } else {
-        tempFile = url;
-        devLog(`Assuming local file path for input ${i} (may fail):`, tempFile);
+      try {
+        if (url.startsWith('data:')) {
+          tempFile = await saveDataUrlToTempFile(url, i);
+          devLog(`Processed data URL for input ${i}, saved to temp file:`, tempFile);
+        } else if (url.startsWith('http://') || url.startsWith('https://')) {
+          tempFile = await downloadFileToTemp(url, i);
+          devLog(`Downloaded URL for input ${i}, saved to temp file:`, tempFile);
+        } else if (url.startsWith('blob:')) {
+          devLog(`Blob URL detected for input ${i}, this is not supported server-side`);
+          throw new Error(`Blob URLs are not supported server-side: ${url}`);
+        } else {
+          tempFile = url;
+          devLog(`Assuming local file path for input ${i}:`, tempFile);
+        }
+        
+        // Verify the file exists and has content
+        if (!existsSync(tempFile)) {
+          devLog(`Warning: Temp file does not exist for input ${i}: ${tempFile}`);
+          continue; // Skip this file instead of failing the whole process
+        }
+        
+        const stats = await fs.stat(tempFile);
+        if (stats.size < 44) { // Minimum WAV header size
+          devLog(`Warning: Temp file too small for input ${i}: ${tempFile} (${stats.size} bytes)`);
+          continue; // Skip this file
+        }
+        
+        tempFiles.push(tempFile);
+      } catch (error) {
+        devLog(`Error processing audio input ${i} (${url.substring(0, 30)}...): ${error.message}`);
+        // Continue with other files rather than failing completely
       }
-      tempFiles.push(tempFile);
     }
+
+    // Must have at least one valid file to continue
+    if (tempFiles.length === 0) {
+      throw new Error('No valid audio files were processed for merging');
+    }
+
+    devLog(`Proceeding with ${tempFiles.length} valid audio files for merge`);
 
     for (const file of tempFiles) {
       if (!existsSync(file)) {
@@ -233,21 +261,83 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ message: 'Request body is missing' });
   }
 
-  const { audioUrls, metadata = {}, config }: { audioUrls?: string[]; metadata?: StorageMetadata; config?: any } = req.body;
-  devLog('audioUrls:', audioUrls?.map(url => url.slice(0, 30) + (url.length > 30 ? '..' : '')) || 'undefined');
+  const { audioUrls, metadata = {}, config, useSectionAudioUrl = false, sections = [] }: { 
+    audioUrls?: string[]; 
+    metadata?: StorageMetadata; 
+    config?: any;
+    useSectionAudioUrl?: boolean;
+    sections?: { id: string; title: string; type: string; audioUrl: string; voice?: string; }[];
+  } = req.body;
+  
+  devLog('audioUrls count:', audioUrls?.length || 0);
+  devLog('sections count:', sections?.length || 0);
+  devLog('useSectionAudioUrl:', useSectionAudioUrl);
   devLog('metadata:', metadata);
   devLog('config:', config);
 
-  if (!audioUrls || !Array.isArray(audioUrls) || audioUrls.length === 0) {
-    devLog('Invalid or missing audioUrls');
-    return res.status(400).json({ message: 'audioUrls array is required and must be non-empty' });
+  let finalAudioUrls: string[];
+
+  // Choose audio URLs based on useSectionAudioUrl toggle
+  if (useSectionAudioUrl) {
+    // Validate sections when using section audio URLs
+    if (!sections || !Array.isArray(sections) || sections.length === 0) {
+      devLog('Invalid or missing sections');
+      return res.status(400).json({ message: 'When useSectionAudioUrl is true, sections array is required and must be non-empty' });
+    }
+
+    // Extract audioUrl from each section 
+    // - First check section.audioUrl (direct property)
+    // - If not found, try to get from audioUrls array using section index
+    finalAudioUrls = sections.map((section, index) => {
+      // Prefer direct audioUrl in section if available
+      if (section.audioUrl) {
+        devLog(`Using audioUrl from section ${section.id}: ${section.audioUrl}`);
+        return section.audioUrl;
+      } else if (audioUrls && audioUrls[index]) {
+        devLog(`No audioUrl in section ${section.id}, falling back to audioUrls[${index}]`);
+        return audioUrls[index];
+      }
+      return null;
+    }).filter(Boolean);
+    
+    // Check if all sections have audioUrl
+    if (finalAudioUrls.length !== sections.length) {
+      devLog('Some sections are missing audioUrl');
+      return res.status(400).json({ message: 'When useSectionAudioUrl is true, all sections must have an audioUrl or a corresponding entry in audioUrls array' });
+    }
+    
+    if (finalAudioUrls.length === 0) {
+      devLog('No valid audioUrls found in sections');
+      return res.status(400).json({ message: 'No valid audioUrls found in sections' });
+    }
+    
+    devLog('Using audio URLs from sections:', finalAudioUrls.length);
+  } else {
+    // Use audioUrls as before (default behavior)
+    if (!audioUrls || !Array.isArray(audioUrls) || audioUrls.length === 0) {
+      devLog('Invalid or missing audioUrls');
+      return res.status(400).json({ message: 'When useSectionAudioUrl is false, audioUrls array is required and must be non-empty' });
+    }
+    finalAudioUrls = audioUrls;
+    devLog('Using provided audioUrls array:', finalAudioUrls.length);
   }
 
   let mergedFilePath: string | undefined;
   try {
     devLog('Starting audio merge process...');
-    mergedFilePath = await mergeAudioFiles(audioUrls, metadata);
+    mergedFilePath = await mergeAudioFiles(finalAudioUrls, metadata);
     devLog('Audio files merged successfully:', mergedFilePath);
+
+    // Check that the merged file exists and has content
+    if (!existsSync(mergedFilePath)) {
+      throw new Error('Merged audio file does not exist');
+    }
+
+    const fileStats = await fs.stat(mergedFilePath);
+    if (fileStats.size === 0) {
+      throw new Error('Merged audio file is empty');
+    }
+    devLog('Merged file size:', fileStats.size, 'bytes');
 
     const audioId = uuidv4();
     let uploadedAudioUrl: string | null = null;
@@ -267,7 +357,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const fileBuffer = await fs.readFile(mergedFilePath);
     if (fileBuffer.length === 0) {
-      throw new Error('Merged audio file is empty');
+      throw new Error('Merged audio file buffer is empty');
     }
     devLog('Merged file buffer size:', fileBuffer.length, 'bytes');
 
@@ -280,12 +370,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const audioFilename = `${baseName}.wav`;
     const configFilename = `${baseName}.json`;
 
-    devLog('Saving merged audio to:', audioFilename);
-    uploadedAudioUrl = (await storageService.uploadFile(audioFilename, fileBlob, 'audio', {
-      category: 'merged_audio',
-      name: metadata.name || 'Merged Audio',
-    })).url;
-    devLog('Successfully uploaded merged audio:', uploadedAudioUrl);
+    try {
+      devLog('Saving merged audio to:', audioFilename);
+      const uploadResponse = await storageService.uploadFile(audioFilename, fileBlob, 'audio', {
+        category: 'merged_audio',
+        name: metadata.name || 'Merged Audio',
+      });
+      
+      if (!uploadResponse || !uploadResponse.url) {
+        throw new Error('Failed to get URL from storage service after upload');
+      }
+      
+      uploadedAudioUrl = uploadResponse.url;
+      devLog('Successfully uploaded merged audio:', uploadedAudioUrl);
+    } catch (uploadError: any) {
+      devLog('Error uploading merged audio:', uploadError.message, uploadError.stack);
+      throw new Error(`Failed to upload merged audio: ${uploadError.message}`);
+    }
 
     // Extract relative URL paths from the absolute URLs
     const relativeAudioUrl = `/audio/${audioFilename}`;
@@ -319,6 +420,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         relativeConfigUrl = `/configs/${configFilename}`;
       } catch (configError: any) {
         devLog('Failed to save config file:', configError.message, configError.stack);
+        // Don't fail the entire process if config save fails
         uploadedConfigUrl = undefined;
       }
     }
@@ -349,13 +451,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
 
       devLog('Metadata entry created:', JSON.stringify(metadataEntry, null, 2));
-      const metadataResult = await storageService.updateMetadata(audioId, metadataEntry);
-      devLog('Metadata update result:', metadataResult);
-      if (!metadataResult.success) {
-        throw new Error('Metadata update failed');
+      try {
+        const metadataResult = await storageService.updateMetadata(audioId, metadataEntry);
+        devLog('Metadata update result:', metadataResult);
+        if (!metadataResult.success) {
+          devLog('Metadata update was not successful, but continuing');
+        }
+      } catch (metadataUpdateError: any) {
+        devLog('Error during metadata update:', metadataUpdateError.message);
+        // Continue even if metadata update fails
       }
     } catch (metadataError: any) {
-      devLog('Failed to update audio_metadata.json:', metadataError.message, metadataError.stack);
+      devLog('Failed to create or update audio_metadata.json:', metadataError.message, metadataError.stack);
+      // Continue even if metadata creation fails
     }
 
     devLog('Merging successful, uploaded URL:', uploadedAudioUrl);
@@ -368,7 +476,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error: any) {
     devLog('Error merging audio:', error.message, error.stack);
-    return res.status(500).json({ message: `Error merging audio: ${error.message}` });
+    return res.status(500).json({ 
+      message: `Error merging audio: ${error.message}`,
+      details: error.stack
+    });
   } finally {
     if (mergedFilePath && existsSync(mergedFilePath)) {
       try {
