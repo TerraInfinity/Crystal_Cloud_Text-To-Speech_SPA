@@ -22,7 +22,7 @@ import { devLog, devError, devDebug } from '../utils/logUtils';
  */
 const AudioLibrary = () => {
   const { state, actions } = useFileStorage();
-  const { audioLibrary, setAudioLibrary } = state;
+  const { audioLibrary } = state;
   const fileInputRef = useRef(null);
   const [audioName, setAudioName] = useState('');
   const [playingAudioId, setPlayingAudioId] = useState(null);
@@ -258,9 +258,7 @@ const AudioLibrary = () => {
           setPlayingAudioId(null);
         }
 
-        // For better UX, update local state immediately
-        setAudioLibrary(prevState => prevState.filter(a => a.id !== audioId));
-
+        // We'll let the actions handle state updates instead of updating local state directly
         try {
           // Try to delete from server/context
           await actions.removeFromAudioLibrary(audioInfo.id, { category: audioInfo.category });
@@ -307,8 +305,10 @@ const AudioLibrary = () => {
       return;
     }
 
-    if (window.confirm(`Are you sure you want to delete all ${category.replace('_', ' ')} files?`)) {
+    if (window.confirm(`Are you sure you want to delete all ${audiosByCategory.length} ${category.replace('_', ' ')} files? This cannot be undone.`)) {
       try {
+        setIsProcessing(true);
+        
         // Stop any playing audio in this category
         if (playingAudioId && audiosByCategory.some(audio => audio.id === playingAudioId)) {
           setPlayingAudioId(null);
@@ -322,60 +322,123 @@ const AudioLibrary = () => {
         // Create a complete array of audio info before we start deleting
         const audiosToDelete = audiosByCategory.map(audio => ({
           id: audio.id,
+          name: audio.name,
           category: audio.category
         }));
         
         // Process files in batches to avoid overwhelming the system
-        const batchSize = 5; // Process 5 files at a time
+        const batchSize = 3; // Reduce batch size to 3 for more reliable processing
         let deleteCount = 0;
         let errorCount = 0;
+        let errorMessages = [];
+        
+        devLog(`Starting batch deletion of ${audiosToDelete.length} files in category ${category}`, 'info');
         
         // Process files in batches
         for (let i = 0; i < audiosToDelete.length; i += batchSize) {
           const batch = audiosToDelete.slice(i, i + batchSize);
           
-          // Create array of deletion promises
-          const deletionPromises = batch.map(audio => {
-            return new Promise(async (resolve) => {
-              try {
-                await actions.removeFromAudioLibrary(audio.id, { category: audio.category });
-                deleteCount++;
-                resolve({ success: true });
-              } catch (error) {
-                console.error(`Error deleting audio ${audio.id}: ${error.message}`);
-                errorCount++;
-                resolve({ success: false, error: error.message });
-              }
-            });
+          // Update notification for progress
+          setNotification({
+            type: 'info',
+            message: `Deleting files ${i+1}-${Math.min(i+batchSize, audiosToDelete.length)} of ${audiosToDelete.length}...`,
           });
           
-          // Wait for all deletions in this batch to complete
-          await Promise.all(deletionPromises);
+          // Process each file sequentially within the batch
+          for (const audio of batch) {
+            try {
+              devLog(`Deleting audio ${audio.id} (${audio.name}) in category ${audio.category}`, 'info');
+              
+              // Use the deletion option based on category
+              const deleteOption = audio.category === 'sound_effect' ? 'audio_only' : 'audio_and_config';
+              
+              await actions.removeFromAudioLibrary(audio.id, { category: audio.category });
+              deleteCount++;
+              
+              // Small delay between files to avoid overwhelming server
+              await new Promise(resolve => setTimeout(resolve, 200));
+            } catch (error) {
+              console.error(`Error deleting audio ${audio.id} (${audio.name}):`, error);
+              devLog(`Error deleting audio ${audio.id}: ${error.message}`, 'error');
+              errorCount++;
+              
+              // Store error details for debugging
+              errorMessages.push(`${audio.name}: ${error.message || 'Unknown error'}`);
+              
+              // Continue with other files even if one fails
+              continue;
+            }
+          }
           
-          // Update the notification every few batches
+          // Periodically refresh to see progress
           if (i % (batchSize * 2) === 0 || i + batchSize >= audiosToDelete.length) {
-            setNotification({
-              type: 'info',
-              message: `Deleting files... (${deleteCount}/${audiosToDelete.length} complete)`,
-            });
+            try {
+              await actions.refreshFileHistory();
+            } catch (refreshError) {
+              console.warn("Failed to refresh file history during batch deletion:", refreshError);
+            }
           }
         }
         
-        // Final refresh to update UI
-        await actions.fetchAudioLibrary();
+        devLog(`Batch deletion completed: ${deleteCount} deleted, ${errorCount} errors`, 'info');
         
-        setNotification({
-          type: errorCount > 0 ? 'info' : 'success',
-          message: errorCount > 0 
-            ? `Deleted ${deleteCount} files. ${errorCount} files could not be deleted.` 
-            : `Successfully deleted ${deleteCount} ${category.replace('_', ' ')} files.`,
-        });
+        // Final refresh to update UI with accurate state
+        try {
+          // Do both refreshes to ensure consistency
+          await actions.fetchAudioLibrary();
+          await actions.refreshFileHistory();
+        } catch (refreshError) {
+          console.warn("Failed to refresh after batch deletion:", refreshError);
+        }
+        
+        if (errorCount > 0) {
+          setNotification({
+            type: 'warning',
+            message: `Deleted ${deleteCount} files. ${errorCount} files could not be deleted. ${errorMessages.length > 0 ? 'First error: ' + errorMessages[0] : ''}`,
+          });
+        } else if (deleteCount > 0) {
+          setNotification({
+            type: 'success',
+            message: `Successfully deleted all ${deleteCount} ${category.replace('_', ' ')} files.`,
+          });
+        } else {
+          setNotification({
+            type: 'error',
+            message: `No files were deleted. Try again or delete files individually.`,
+          });
+        }
+        
+        // Add a delayed final refresh to ensure UI is updated after backend has fully processed all deletions
+        // Use a properly awaited timeout rather than setTimeout with an async callback
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+          // Refresh both data sources again to ensure UI is in sync
+          await actions.fetchAudioLibrary();
+          await actions.refreshFileHistory();
+          
+          // One more check if there are still files in this category
+          const currentState = await actions.getState();
+          const remainingFiles = currentState.audioLibrary.filter(a => a.category === category);
+          
+          if (remainingFiles.length > 0 && deleteCount > 0) {
+            devLog(`Still found ${remainingFiles.length} remaining files after deletion, performing final refresh`, 'warn');
+            // Wait a bit longer and try one last time
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await actions.fetchAudioLibrary();
+            await actions.refreshFileHistory();
+          }
+        } catch (finalError) {
+          console.warn("Failed final refresh:", finalError);
+        }
       } catch (error) {
         console.error('Error during bulk deletion:', error);
+        devLog(`Error during bulk deletion: ${error.message}`, 'error');
         setNotification({
           type: 'error',
           message: `Error deleting files: ${error.message}`,
         });
+      } finally {
+        setIsProcessing(false);
       }
     }
   };

@@ -10,7 +10,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useFileStorage } from '../context/TTSContext';
 import { v4 as uuidv4 } from 'uuid';
-import { AudioLibraryItem, FileStorageState, FileStorageActions } from '../context/types/types';
+import { AudioLibraryItem } from '../context/types/types';
 import { devLog } from '../utils/logUtils';
 
 interface Notification {
@@ -26,10 +26,11 @@ interface Notification {
  * @returns {JSX.Element} The rendered AudioFilesTab component
  */
 const AudioFilesTab: React.FC = () => {
-  const { state, actions }: { state: FileStorageState; actions: FileStorageActions } = useFileStorage();
+  const { state, actions } = useFileStorage();
   const audioLibrary: AudioLibraryItem[] = state?.audioLibrary || [];
   const [notification, setNotification] = useState<Notification | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isDeletingAll, setIsDeletingAll] = useState<boolean>(false);
 
   // Refs and state
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -188,6 +189,113 @@ const AudioFilesTab: React.FC = () => {
   };
 
   /**
+   * Deletes all sound effect audio files after confirmation.
+   */
+  const deleteAllAudio = async () => {
+    if (soundEffects.length === 0) {
+      setNotification({ type: 'info', message: 'No audio files to delete.' });
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete ALL ${soundEffects.length} sound effect files? This cannot be undone.`)) {
+      try {
+        setIsDeletingAll(true);
+        setNotification({ type: 'info', message: `Deleting ${soundEffects.length} sound effect files...` });
+        
+        // Stop any playing audio
+        if (playingAudioId && soundEffects.some(audio => audio.id === playingAudioId)) {
+          setPlayingAudioId(null);
+        }
+        
+        // Create a complete array of audio info before we start deleting
+        const audiosToDelete = soundEffects.map(audio => ({
+          id: audio.id,
+          category: audio.category
+        }));
+        
+        // Process files sequentially to avoid overwhelming the system
+        let deleteCount = 0;
+        let errorCount = 0;
+        
+        // Process files one by one for more reliable operation
+        for (let i = 0; i < audiosToDelete.length; i++) {
+          const audio = audiosToDelete[i];
+          
+          try {
+            // Update progress message
+            setNotification({
+              type: 'info',
+              message: `Deleting file ${i + 1} of ${audiosToDelete.length}...`,
+            });
+            
+            devLog(`Deleting audio ${audio.id}`, 'info');
+            await actions.removeFromAudioLibrary(audio.id, { category: 'sound_effect' });
+            deleteCount++;
+            
+            // Small delay between deletions
+            await new Promise(resolve => setTimeout(resolve, 200));
+          } catch (error: any) {
+            console.error(`Error deleting audio ${audio.id}:`, error);
+            devLog(`Error deleting audio ${audio.id}: ${error.message}`, 'error');
+            errorCount++;
+          }
+          
+          // Refresh periodically
+          if (i % 5 === 0 || i === audiosToDelete.length - 1) {
+            try {
+              await actions.fetchAudioLibrary();
+            } catch (refreshError) {
+              console.warn("Failed to refresh during deletion");
+            }
+          }
+        }
+        
+        // Final refresh to update UI
+        try {
+          await actions.fetchAudioLibrary();
+        } catch (refreshError) {
+          console.warn("Failed final refresh:", refreshError);
+        }
+        
+        // Add a delayed final refresh to ensure UI is updated after backend has fully processed
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Do a proper refresh sequence
+        try {
+          // First refresh
+          await actions.fetchAudioLibrary();
+          
+          // Wait a bit longer and try again to ensure latest state
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          await actions.fetchAudioLibrary();
+        } catch (finalError) {
+          console.warn("Failed additional refresh:", finalError);
+        }
+        
+        if (errorCount > 0) {
+          setNotification({
+            type: 'info',
+            message: `Deleted ${deleteCount} files. ${errorCount} files could not be deleted.`,
+          });
+        } else {
+          setNotification({
+            type: 'success',
+            message: `Successfully deleted all ${deleteCount} sound effect files.`,
+          });
+        }
+      } catch (error: any) {
+        devLog('Error during bulk deletion:', error);
+        setNotification({
+          type: 'error',
+          message: `Error deleting files: ${error.message}`,
+        });
+      } finally {
+        setIsDeletingAll(false);
+      }
+    }
+  };
+
+  /**
    * Updates audio metadata (placeholder or volume).
    */
   const updateAudioMetadata = async (audioId: string, updatedData: Partial<AudioLibraryItem>) => {
@@ -314,7 +422,20 @@ const AudioFilesTab: React.FC = () => {
         </p>
       </div>
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <h3 className="text-lg font-medium mb-3">Your Audio Files</h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-lg font-medium">Your Audio Files</h3>
+          {soundEffects.length > 0 && (
+            <button
+              onClick={deleteAllAudio}
+              disabled={isDeletingAll}
+              className={`px-3 py-1 rounded-md text-white ${
+                isDeletingAll ? 'bg-red-300' : 'bg-red-600 hover:bg-red-700'
+              }`}
+            >
+              {isDeletingAll ? 'Deleting...' : 'Delete All'}
+            </button>
+          )}
+        </div>
         {soundEffects.length === 0 ? (
           <p className="text-gray-500">No audio files in your library yet.</p>
         ) : (
@@ -440,33 +561,4 @@ const AudioFilesTab: React.FC = () => {
                       Volume
                     </label>
                     <input
-                      id={`volume-${audio.id}`}
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={audio.audioMetadata?.volume ?? 1}
-                      onChange={(e) =>
-                        updateAudioMetadata(audio.id, {
-                          audioMetadata: {
-                            duration: audio.audioMetadata?.duration ?? 0,
-                            format: audio.audioMetadata?.format ?? 'wav',
-                            placeholder: audio.audioMetadata?.placeholder,
-                            volume: parseFloat(e.target.value),
-                          },
-                        })
-                      }
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default AudioFilesTab;
+                      id={`

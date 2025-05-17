@@ -230,51 +230,88 @@ const FileHistory = () => {
       setPlayingEntryId(null);
 
       // Process files in batches to avoid overwhelming the system
-      const batchSize = 5; // Process 5 files at a time
+      const batchSize = 3; // Smaller batch size for better reliability
       let deleteCount = 0;
       let errorCount = 0;
+      let errorMessages = [];
 
       // For merged_audio we delete both audio and config, for generated_audio we delete audio only
       const defaultDeleteOption = historyView === 'merged_audio' ? 'audio_and_config' : 'audio_only';
       
+      devLog(`[FileHistory] Starting deletion of ${entriesToDelete.length} entries`, 'info');
+      
       for (let i = 0; i < entriesToDelete.length; i += batchSize) {
         const batch = entriesToDelete.slice(i, i + batchSize);
         
-        // Create array of deletion promises
-        const deletionPromises = batch.map(entry => {
-          return new Promise(async (resolve) => {
-            try {
-              // Use the appropriate delete option based on entry type and current view
-              const entryType = getEntryType(entry);
-              const deleteOption = historyView === 'generated_audio' ? 
-                'audio_only' : (entryType === 'audio_only' || entryType === 'config_only' ? 
-                  entryType : defaultDeleteOption);
-              
-              devLog(`[FileHistory] Batch deleting ${entry.id} with option ${deleteOption}`, 'info');
-              const result = await actions.deleteHistoryEntry(entry, { deleteOption });
-              if (result && result.success) {
-                deleteCount++;
-                devLog(`[FileHistory] Successfully deleted ${entry.id}`, 'info');
-              } else {
-                errorCount++;
-                devLog(`[FileHistory] Failed to delete ${entry.id}`, 'error');
-              }
-              resolve({ success: true });
-            } catch (err) {
-              console.error(`Error deleting entry ${entry.id}: ${err.message}`);
-              devLog(`[FileHistory] Error deleting entry ${entry.id}: ${err.message}`, 'error');
-              errorCount++;
-              resolve({ success: false, error: err.message });
+        // Process files sequentially within each batch for better stability
+        for (const entry of batch) {
+          try {
+            // Update progress message
+            const progressMessage = `Deleting ${i + batch.indexOf(entry) + 1} of ${entriesToDelete.length}...`;
+            if (addNotification) {
+              addNotification({ type: 'info', message: progressMessage });
+            } else {
+              setError(progressMessage);
             }
-          });
-        });
+            
+            // Use the appropriate delete option based on entry type and current view
+            const entryType = getEntryType(entry);
+            const deleteOption = historyView === 'generated_audio' ? 
+              'audio_only' : (entryType === 'audio_only' || entryType === 'config_only' ? 
+                entryType : defaultDeleteOption);
+            
+            const entryTitle = getEntryTitle(entry);
+            devLog(`[FileHistory] Deleting entry "${entryTitle}" (${entry.id}) with option ${deleteOption}`, 'info');
+            
+            const result = await actions.deleteHistoryEntry(entry, { deleteOption });
+            
+            if (result && result.success) {
+              deleteCount++;
+              devLog(`[FileHistory] Successfully deleted entry ${entryTitle} (${entry.id})`, 'info');
+            } else {
+              errorCount++;
+              const errorMsg = `Failed to delete entry ${entryTitle}`;
+              devLog(`[FileHistory] ${errorMsg}`, 'error');
+              errorMessages.push(errorMsg);
+            }
+            
+            // Add a small delay between deletions to prevent overwhelming the server
+            await new Promise(resolve => setTimeout(resolve, 200));
+          } catch (err) {
+            const entryTitle = getEntryTitle(entry);
+            const errorMsg = `Error deleting ${entryTitle}: ${err.message}`;
+            console.error(errorMsg);
+            devLog(`[FileHistory] ${errorMsg}`, 'error');
+            errorMessages.push(errorMsg);
+            errorCount++;
+          }
+        }
         
-        // Wait for all deletions in this batch to complete
-        await Promise.all(deletionPromises);
+        // Periodically refresh to see progress
+        if (i % (batchSize * 2) === 0 || i + batchSize >= entriesToDelete.length) {
+          try {
+            await actions.refreshFileHistory();
+          } catch (refreshError) {
+            console.warn("[FileHistory] Failed to refresh during deletion:", refreshError);
+          }
+        }
       }
       
-      // Final refresh to update UI
-      await actions.refreshFileHistory();
+      // Final refresh sequence
+      try {
+        // First refresh to update UI
+        await actions.refreshFileHistory();
+        
+        // Add a delayed second refresh to ensure backend has processed everything
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await actions.refreshFileHistory();
+        
+        // And one last refresh after a longer delay for stubborn cases
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await actions.refreshFileHistory();
+      } catch (refreshError) {
+        console.warn("[FileHistory] Failed final refresh sequence:", refreshError);
+      }
       
       setDeleteAllDialogOpen(false);
       setIsDeleting(false);
@@ -283,32 +320,37 @@ const FileHistory = () => {
       if (errorCount > 0) {
         if (deleteCount > 0) {
           // Some succeeded, some failed
+          const message = `Deleted ${deleteCount} files. ${errorCount} files could not be deleted. ${errorMessages.length > 0 ? 'First error: ' + errorMessages[0] : ''}`;
           if (addNotification) {
             addNotification({
               type: 'warning',
-              message: `Deleted ${deleteCount} files. ${errorCount} files could not be deleted.`
+              message: message
             });
           } else {
-            setError(`Deleted ${deleteCount} files. ${errorCount} files could not be deleted.`);
+            setError(message);
           }
         } else {
           // All failed
+          const message = `Failed to delete all ${errorCount} files. ${errorMessages.length > 0 ? 'First error: ' + errorMessages[0] : ''}`;
           if (addNotification) {
             addNotification({
               type: 'error',
-              message: `Failed to delete all ${errorCount} files.`
+              message: message
             });
           } else {
-            setError(`Failed to delete all ${errorCount} files.`);
+            setError(message);
           }
         }
       } else if (deleteCount > 0) {
         // All succeeded
+        const message = `Successfully deleted all ${deleteCount} files.`;
         if (addNotification) {
           addNotification({
             type: 'success',
-            message: `Successfully deleted all ${deleteCount} files.`
+            message: message
           });
+        } else {
+          setError(message);
         }
       }
     } catch (err) {
